@@ -6,7 +6,7 @@
 
 ## Emulators and a bit of Game Boy history...
 
-An emulator is often simulating physical hardware and electronics in software, and in the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU. In computing, an emulator is hardware or software that enables one computer system (called the host) to behave like another computer system (called the guest). An emulator typically enables the host system to run software or use peripheral devices designed for the guest system. Emulation refers to the ability of a computer program in an electronic device to emulate (or imitate) another program or device.
+An emulator is often simulating physical hardware and electronics in software, and in the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU. The Game Boy CPU is a hybrid between the Intel 8080 and the Zilog Z80. In computing, an emulator is hardware or software that enables one computer system (called the host) to behave like another computer system (called the guest). An emulator typically enables the host system to run software or use peripheral devices designed for the guest system. Emulation refers to the ability of a computer program in an electronic device to emulate (or imitate) another program or device.
 
 Back to Z80...
 
@@ -22,7 +22,11 @@ The Game Boy contains optional input or output connectors. On the left side of t
 
 The right side of the device offers a port that allows a user to connect to another Game Boy system via a link cable, provided both users are playing games that support connecting to each other (most often, only copies of the same game, although for example, the Pokémon games can connect between different generations). The port can also be used to connect a Game Boy Printer. The link cable was originally designed for players to play head-to-head two-player games such as in Tetris. However, game developer Satoshi Tajiri later used the link cable technology as a method of communication and networking in the popular Pokémon video game series.
 
-## Gameboy
+Anyway, enough about the Game Boy history.
+
+The Z80 was designed to be binary compatible with the already existing Intel 8080. This means that the instruction set found in the 8080 was also implemented by the Z80 (in essence, the 8080 can be seen as a subset of the Z80). The Game Boy’s custom hybrid chip official name is *Sharp LR35902*.
+
+## Gameboy (LR35902)
 
 # Resources & References
 
@@ -34,3 +38,6 @@ The right side of the device offers a port that allows a user to connect to anot
 - https://en.wikipedia.org/wiki/Zilog_Z80
 - https://en.wikipedia.org/wiki/Game_Boy
 - https://medium.com/@andrewimm/writing-a-game-boy-emulator-in-wasm-part-1-1ba023eb2c7c
+- https://github.com/yodalee/ruGameboy
+- https://www.youtube.com/watch?v=LqcEg3IVziQ
+- https://realboyemulator.wordpress.com/2013/01/01/the-nintendo-game-boy-1/
