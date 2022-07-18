@@ -1,4 +1,4 @@
-> ### Gameboy Emulator written in Rust & WebAssembly
+> ### Gameboy emulator written in Rust & WebAssembly
 >
 > Disclaimer: This project doesn't endorse or promote any type of piracy activities. The act of build or install a emulator isn't an illegal activity. As many others emulators written, this *project is a study case*.
 >
@@ -38,6 +38,14 @@ The Z80 was designed to be binary compatible with the already existing Intel 808
 
 <img src="resources/LR35902.jpg" alt="LR35902" width="600px" />
 
+## Running
+
+Run this command:
+
+```sh
+make start
+```
+
 # Resources & References
 
 - https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
@@ -47,6 +55,8 @@ The Z80 was designed to be binary compatible with the already existing Intel 808
 - https://www.youtube.com/watch?v=LqcEg3IVziQ
 - https://en.wikipedia.org/wiki/Zilog_Z80
 - https://en.wikipedia.org/wiki/Game_Boy
+- https://github.com/mvdnes/rboy
+- https://github.com/alexcrichton/jba/tree/rust
 - https://medium.com/@andrewimm/writing-a-game-boy-emulator-in-wasm-part-1-1ba023eb2c7c
 - https://github.com/yodalee/ruGameboy
 - https://www.youtube.com/watch?v=LqcEg3IVziQ
