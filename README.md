@@ -4,6 +4,10 @@
 >
 > `...` 
 
+<img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" width="600px" />
+
+* (c) Jeff Frohwein Source: http://www.devrs.com/gb/hardware.php#hardgb
+
 ## Emulators and a bit of Game Boy history...
 
 An emulator is often simulating physical hardware and electronics in software, and in the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU. The Game Boy CPU is a hybrid between the Intel 8080 and the Zilog Z80. In computing, an emulator is hardware or software that enables one computer system (called the host) to behave like another computer system (called the guest). An emulator typically enables the host system to run software or use peripheral devices designed for the guest system. Emulation refers to the ability of a computer program in an electronic device to emulate (or imitate) another program or device.
@@ -28,6 +32,8 @@ The Z80 was designed to be binary compatible with the already existing Intel 808
 
 ## Gameboy (LR35902)
 
+<img src="resources/LR35902.jpg" alt="LR35902" width="600px" />
+
 # Resources & References
 
 - https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
@@ -41,3 +47,4 @@ The Z80 was designed to be binary compatible with the already existing Intel 808
 - https://github.com/yodalee/ruGameboy
 - https://www.youtube.com/watch?v=LqcEg3IVziQ
 - https://realboyemulator.wordpress.com/2013/01/01/the-nintendo-game-boy-1/
+- https://gbdev.gg8.se/wiki/articles/DMG_Schematics
