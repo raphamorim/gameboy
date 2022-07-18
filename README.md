@@ -2,13 +2,13 @@
 
 #### Disclaimer
 
-This project doesn't endorse or promote any type of piracy activities. The act of build or install a emulator isn't an illegal activity. As many others emulators written, this project is also a study case.
+This project doesn't endorse or promote any type of piracy activities. The act of build or install a emulator isn't an illegal activity. As many others emulators written, this *project is a study case*.
 
 ## Emulators...
 
 An emulator is often simulating physical hardware and electronics in software, and in the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU.
 
-![Zilog Z80](resources/zilog-Z80.jpg)
+<img src="resources/zilog-Z80.jpg" alt="Zilog Z80" width="220px" />
 
 The Z80 is an 8-bit microprocessor introduced by Zilog as the startup company's first product. The Z80 was conceived by Federico Faggin in late 1974 and developed by him and his 11 employees starting in early 1975. The first working samples were delivered in March 1976, and it was officially introduced on the market in July 1976. With the revenue from the Z80, the company built its own chip factories and grew to over a thousand employees over the following two years.
 
