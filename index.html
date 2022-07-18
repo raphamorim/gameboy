@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <title>LR35902</title>
     <script type="module">
-      // fetch('lr35902.wasm')
-      // .then(response => response.arrayBuffer())
-      // .then(bytes => {
-      //   const modulo = new WebAssembly.Module(bytes);
+      fetch('./pkg/LF35902_bg.wasm')
+      .then(response => response.arrayBuffer())
+      .then(bytes => {
+        const modulo = new WebAssembly.Module(bytes);
 
-      //   WebAssembly.instantiate(modulo).then(result => {
-      //     console.log(result.exports.soma(1, 4))
-      //   });
-      // });
+        WebAssembly.instantiate(modulo).then(result => {
+          console.log(result.exports.soma(1, 4))
+        });
+      });
     </script>
   </head>
   <body></body>

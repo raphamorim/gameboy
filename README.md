@@ -1,4 +1,4 @@
-> ### Gameboy emulator written in Rust & WebAssembly
+> ### Gameboy emulator written in Rust to WebAssembly
 >
 > Disclaimer: This project doesn't endorse or promote any type of piracy activities. The act of build or install a emulator isn't an illegal activity. As many others emulators written, this *project is a study case*.
 >
@@ -36,6 +36,10 @@ The Z80 was designed to be binary compatible with the already existing Intel 808
 
 ## Gameboy (LR35902)
 
+### Information we know
+
+The screen resolution of the original Game Boy [is 160×144 pixels]()
+
 <img src="resources/LR35902.jpg" alt="LR35902" width="600px" />
 
 ## Running
@@ -63,3 +67,4 @@ make start
 - https://realboyemulator.wordpress.com/2013/01/01/the-nintendo-game-boy-1/
 - https://gbdev.gg8.se/wiki/articles/DMG_Schematics
 - https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
+- https://github.com/torch2424/wasmboy/
