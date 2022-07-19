@@ -20,6 +20,10 @@ install:
 
 start: build run
 
+s:
+	# My command to debug things quickly
+	rustup run nightly cargo build && ./target/debug/LF35902 ./tests/cpu_instrs/cpu_instrs.gb
+
 build:
 # 	RUST_LOG=info wasm-pack build src/lib.rs --out-dir wasm
 	rustup run nightly cargo build --release
