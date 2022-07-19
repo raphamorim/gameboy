@@ -36,7 +36,37 @@ The Z80 was designed to be binary compatible with the already existing Intel 808
 
 ## Gameboy (LR35902)
 
-### Information we know
+#### Architecture (at a high level)
+
+##### CPU (`src/cpu.rs`)
+
+A central processing unit (CPU), also called a central processor, main processor or just processor, is the electronic circuitry that executes instructions comprising a computer program. The CPU performs basic arithmetic, logic, controlling, and input/output (I/O) operations specified by the instructions in the program. This contrasts with external components such as main memory and I/O circuitry, and specialized processors such as graphics processing units (GPUs). 
+
+The CPU is composed of 8 different "registers". Registers are responsible for holding on to little pieces of data that the CPU can manipulate when it executes various instructions. The Game Boy's CPU is an 8-Bit CPU, meaning that each of its registers can hold 8 bits (_1 byte_) of data. The CPU has 8 different registers labled as "a", "b", "c", "d", "e", "f", "h", "l". 
+
+Example below:
+
+```rust
+// Note the usage of the type u8 for our registers. u8 are 8-bit unsigned integers.
+
+#[derive(Copy, Clone)]
+pub struct Registers {
+    pub a: u8,
+    pub b: u8,
+    pub c: u8,
+    pub d: u8,
+    pub e: u8,
+    pub h: u8,
+    pub l: u8
+}
+```
+
+##### GPU (`src/gpu.rs`)
+
+##### RAM
+
+##### ROM
+
 
 The screen resolution of the original Game Boy [is 160×144 pixels]()
 
@@ -68,3 +98,4 @@ make start
 - https://gbdev.gg8.se/wiki/articles/DMG_Schematics
 - https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
 - https://github.com/torch2424/wasmboy/
+- https://rylev.github.io/DMG-01/public/book/introduction.html
