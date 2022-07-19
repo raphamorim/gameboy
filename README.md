@@ -61,7 +61,15 @@ pub struct Registers {
 
 ##### GPU (`src/gpu.rs`)
 
-##### RAM
+##### Memory
+
+The Game Boy has a 16-bit address-BUS. Giving an addressable range of `65535 Bytes` (or 64kB). All hardware components
+of the Game Boy including RAM, ROM, Video RAM and I /O Ports are memory
+mapped as shown below.
+
+<img src="resources/gbproject.png" alt="Memory map" width="420px" />
+
+* Image retired from http://marc.rawer.de/Gameboy/Docs/GBProject.pdf
 
 ##### ROM
 
@@ -114,3 +122,8 @@ make start
 - https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
 - https://github.com/torch2424/wasmboy/
 - https://rylev.github.io/DMG-01/public/book/introduction.html
+- https://github.com/gbdev/awesome-gbdev
+- http://marc.rawer.de/Gameboy/Docs/GBProject.pdf
+- https://shonumi.github.io/dandocs.html
+- https://github.com/Baekalfen/PyBoy/blob/master/PyBoy.pdf
+- https://media.ccc.de/v/rustfest-rome-3-gameboy-emulator
