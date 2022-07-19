@@ -70,13 +70,30 @@ The screen resolution of the original Game Boy [is 160×144 pixels]()
 
 <img src="resources/LR35902.jpg" alt="LR35902" width="600px" />
 
-## Running
+# Running
+
+Install `wasm-pack`:
+
+```zsh
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+```
 
 Run this command:
 
-```sh
+```zsh
 make start
 ```
+
+# TODO
+
+- [x] `./target/release/LR35902` flags
+    - [x] `--browser` runs in the browser with WASM (default)
+    - [x] `--desktop` runs in a desktop window
+- [ ] `--desktop`
+    - [ ] Create desktop window
+- [ ] `--browser`
+    - [ ] Create server using port `8888`
+- [ ] Audio
 
 # Resources & References
 

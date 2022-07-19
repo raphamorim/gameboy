@@ -15,24 +15,20 @@ fix-lint:
 test:
 	rustup run nightly cargo test --release
 
-run:
-	open index.html
-
-install-wasm-pack:
-	curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
 install:
 	rustup run nightly cargo install
 
-b:
-	rustup run nightly cargo build --release
+start: build run
 
 build:
-	RUST_LOG=info wasm-pack build
+# 	RUST_LOG=info wasm-pack build src/lib.rs --out-dir wasm
+	rustup run nightly cargo build --release
 
-# Debug
+run:
+	./target/release/LF35902
+
 build-debug:
 	rustup run nightly cargo build
 
-start-debug:
-	./target/debug/LR35902
+run-debug:
+	./target/debug/LF35902

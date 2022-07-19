@@ -1,6 +1,6 @@
-use wasm_bindgen::prelude::*;
+// use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-pub fn olamundo() -> String {
-    String::from("Olá mundo!!!")
-}
+// #[wasm_bindgen]
+// pub fn olamundo() -> String {
+//     String::from("Olá mundo!!!")
+// }
