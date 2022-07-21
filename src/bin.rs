@@ -1,7 +1,14 @@
-#![allow(non_snake_case)]
+#[allow(non_snake_case)]
+extern crate clap;
+extern crate LR35902;
 
-use std::fs;
+use std::io::Read;
+use std::fs::File;
 use clap::Parser;
+
+use LR35902::{
+    gb
+};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -20,18 +27,34 @@ struct Args {
     /// Enable Audio
     #[clap(short, long)]
     audio: bool,
+
+    /// Scale screen
+    #[clap(default_value_t = 1)]
+    scale: u8,
 }
 
-fn read_rom_from_path(rom_path: &String) -> Result<Vec<u8>, String> {
-    match fs::read(rom_path) {
-        Ok(rom) => Ok(rom),
-        Err(_) => Err(format!("Could not open file {}", rom_path)),
-    }
+fn get_rom_from_filepath(filepath: &String) -> Result<Vec<u8>, String> {
+    let mut rom = Vec::new();
+    let file = File::open(filepath);
+    match file.and_then(|mut f| f.read_to_end(&mut rom)) {
+        Ok(..) => {}
+        Err(e) => {
+            return Err(format!("failed to read {}: {}", filepath, e))
+        }
+    };
+
+    Ok(rom)
 }
 
 fn main() {
     let args = Args::parse();
-    let rom = read_rom_from_path(&args.filepath);
+    let rom = get_rom_from_filepath(&args.filepath);
     
     println!("{:?}", rom);
+
+    let mut gb = gb::Gb::new();
+    
+    gb.load(rom);
+
+    // vm::run(gb);
 }

@@ -1,17 +1,18 @@
 [package]
-name = "LF35902"
+name = "LR35902"
 version = "0.1.0"
 description = "Gameboy emulator written in Rust and WebAssembly"
 authors = ["Raphael Amorim <rapha850@gmail.com>"]
 edition = "2021"
 
 [lib]
-name = "LF35902"
+name = "LR35902"
 path = "src/lib.rs"
-crate-type = ["cdylib"]
+# Explore wasm later with cdylib
+# crate-type = ["cdylib"]
 
 [[bin]]
-name = "LF35902"
+name = "LR35902"
 path = "src/bin.rs"
 test = false
 bench = false

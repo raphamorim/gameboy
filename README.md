@@ -14,9 +14,9 @@
 
 ## Emulators and a bit of Game Boy history...
 
-An emulator is often simulating physical hardware and electronics in software, and in the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU. The Game Boy CPU is a hybrid between the Intel 8080 and the Zilog Z80. In computing, an emulator is hardware or software that enables one computer system (called the host) to behave like another computer system (called the guest). An emulator typically enables the host system to run software or use peripheral devices designed for the guest system. Emulation refers to the ability of a computer program in an electronic device to emulate (or imitate) another program or device.
+An emulator typically enables the host system to run software or use peripheral devices designed for the guest system. Emulation refers to the ability of a computer program in an electronic device to emulate (or imitate) another program or device. In the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU. The Game Boy CPU is a hybrid between the Intel 8080 and the Zilog Z80. In computing, an emulator is hardware or software that enables one computer system (called the host) to behave like another computer system (called the guest).
 
-Back to Z80...
+About the Z80...
 
 <img src="resources/zilog-Z80.jpg" alt="Zilog Z80" width="220px" />
 
@@ -25,6 +25,21 @@ The Z80 is an 8-bit microprocessor introduced by Zilog as the startup company's 
 That means manipulating a lot of individual bytes, especially while navigating through huge banks of ROM and RAM. The Game Boy is a pretty simple architecture — getting button input requires reading specific memory addresses, writing pixels to the screen involves pushing bytes to specific places in VRAM.
 
 The Game Boy has four operation buttons labeled _"A"_, _"B"_, _"SELECT"_, and _"START"_, and a _directional pad (d-pad)_. There is a volume control dial on the right side of the device and a similar dial on the left side to adjust the contrast. At the top of the Game Boy, a sliding on-off switch and the slot for the Game Boy cartridges are located. The on-off switch includes a physical lockout to prevent users from either inserting or removing a cartridge while the unit is switched on. Nintendo recommends users leave a cartridge in the slot to prevent dust and dirt from entering the system.
+
+```rust
+#[derive(PartialEq, Debug)]
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
+pub enum GameboyButton {
+    A,
+    B,
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN,
+    START,
+    SELECT,
+}
+```
 
 The Game Boy contains optional input or output connectors. On the left side of the system is an external 3.5 mm × 1.35 mm DC power supply jack that allows users to use an external rechargeable battery pack or AC adapter (sold separately) instead of four AA batteries. The Game Boy requires 6 V DC of at least 150 mA. A 3.5 mm stereo headphone jack is located on the bottom side of the unit which allows users to listen to the audio with the bundled headphones or external speakers.
 
@@ -117,6 +132,9 @@ make start
     - [ ] Create desktop window
 - [ ] `--browser`
     - [ ] Create server using port `8888`
+- [ ] `.gb`
+- [ ] `.cgb`
+- [ ] `.sgb`
 - [ ] Audio
 
 # Resources & References
