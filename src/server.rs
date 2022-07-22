@@ -1,23 +1,10 @@
 // use axum::{
-//     routing::{get, post},
-//     Json, Router,
+//     Router,
+//     service::get,
 // };
-// use std::net::SocketAddr;
+// use tower_http::services::ServeDir;
 
-// #[tokio::main]
-// async fn main() {
-//     let app = Router::new()
-//         .route("/", get(root))
+// // Serves files inside the `public` directory at `GET /public/*`
+// let serve_dir_service = ServeDir::new("public");
 
-//     let addr = SocketAddr::from(([127, 0, 0, 1], 8888));
-//     tracing::debug!("listening on {}", addr);
-//     axum::Server::bind(&addr)
-//         .serve(app.into_make_service())
-//         .await
-//         .unwrap();
-// }
-
-// // basic handler that responds with a static string
-// async fn root() -> &'static str {
-//     "Hello, World!"
-// }
+// let app = Router::new().nest("/public", get(serve_dir_service));
