@@ -57,9 +57,9 @@ A central processing unit (CPU), also called a central processor, main processor
 
 The Game Boy CPU is composed of 8 different "registers". Registers are responsible for holding on to little pieces of data that the CPU can manipulate when it executes various instructions. The Game Boy's CPU is an 8-Bit CPU, meaning that each of its registers can hold 8 bits (_1 byte_) of data. The CPU has 8 different registers labled as `a`, `b`, `c`, `d`, `e`, `f`, `h`, `l`. 
 
-Each of them is one byte, so each one can hold a value from 0 to 255. A `u8` can store numbers from 0 to 28 - 1, which equals 0 to 255.
+Each of them is one byte, so each one can hold a value from 0 to 255. An `u8` can do that job for us, since it can store between `0` and `(2^8 - 1)`
 
-Each of them is one byte, so each one can hold a value from 0 to 255. Since an u8, can store numbers from 0$ to $(2^8 - 1):
+$$ numberOfU8Possibilities=(2^8) $$
 
 Example below:
 
