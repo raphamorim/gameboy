@@ -1,14 +1,12 @@
+extern crate LR35902;
 #[allow(non_snake_case)]
 extern crate clap;
-extern crate LR35902;
 
-use std::io::Read;
-use std::fs::File;
 use clap::Parser;
+use std::fs::File;
+use std::io::Read;
 
-use LR35902::{
-    gb
-};
+use LR35902::gb;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -38,9 +36,7 @@ fn get_rom_from_filepath(filepath: &String) -> Result<Vec<u8>, String> {
     let file = File::open(filepath);
     match file.and_then(|mut f| f.read_to_end(&mut rom)) {
         Ok(..) => {}
-        Err(e) => {
-            return Err(format!("failed to read {}: {}", filepath, e))
-        }
+        Err(e) => return Err(format!("failed to read {}: {}", filepath, e)),
     };
 
     Ok(rom)
@@ -49,11 +45,11 @@ fn get_rom_from_filepath(filepath: &String) -> Result<Vec<u8>, String> {
 fn main() {
     let args = Args::parse();
     let rom = get_rom_from_filepath(&args.filepath);
-    
+
     println!("{:?}", rom);
 
     let mut gb = gb::Gb::new();
-    
+
     gb.load(rom);
 
     // vm::run(gb);

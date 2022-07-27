@@ -5,8 +5,8 @@
 //     String::from("Olá mundo!!!")
 // }
 
+pub mod cpu;
 pub mod gb;
 pub mod input;
-pub mod cpu;
 pub mod gpu;
 pub mod memory;

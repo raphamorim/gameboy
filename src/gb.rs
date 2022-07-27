@@ -1,5 +1,5 @@
-use crate::cpu::cpu::{Memory, Cpu};
-use std::memory;
+use crate::cpu::cpu::{Cpu, Memory};
+use std::mem;
 
 pub const WIDTH: usize = 160;
 pub const HEIGHT: usize = 144;
@@ -27,19 +27,19 @@ impl Gb {
         self.memory.load_cartridge(rom);
     }
 
-    pub fn frame(&mut self) {
-        // http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
-        self.cycles += 70224;
+    // pub fn frame(&mut self) {
+    //     // http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
+    //     // for the timing for this constant
+    //     self.cycles += 70224;
 
-        while self.cycles <= 70224 {
-            let time = self.cpu.exec(&mut self.memory);
-            self.memory.timer.step(time, &mut self.memory.if_, self.memory.speed);
-            self.memory.gpu.step(time, &mut self.memory.if_);
-            self.cycles -= time;
-        }
-
-        self.fps += 1;
-    }
+    //     while self.cycles <= 70224 {
+    //         let time = self.cpu.exec(&mut self.mem);
+    //         self.mem.timer.step(time, &mut self.mem.if_, self.mem.speed);
+    //         self.mem.gpu.step(time, &mut self.mem.if_);
+    //         self.cycles -= time;
+    //     }
+    //     self.fps += 1;
+    // }
 
     pub fn image(&self) -> &[u8] {
         &*self.memory.gpu.image_data
@@ -57,8 +57,8 @@ impl Gb {
         self.memory.input.keyup(key);
     }
 
-    #[cfg(test)]
-    pub fn test_done(&self) -> bool {
-        !self.memory.sound_on && self.cpu.is_loopback(&self.memory)
-    }
+    // #[cfg(test)]
+    // pub fn test_done(&self) -> bool {
+    //     !self.mem.sound_on && self.cpu.is_loopback(&self.mem)
+    // }
 }
