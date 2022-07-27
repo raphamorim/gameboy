@@ -9,4 +9,4 @@ pub mod cpu;
 pub mod gb;
 pub mod input;
 pub mod gpu;
-pub mod memory;
+pub mod mmu;

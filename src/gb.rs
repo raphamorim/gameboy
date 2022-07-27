@@ -1,12 +1,10 @@
-use crate::cpu::cpu::{Cpu, Memory};
-use std::mem;
+use crate::cpu::cpu::{Cpu};
 
 pub const WIDTH: usize = 160;
 pub const HEIGHT: usize = 144;
 
 pub struct Gb {
     cpu: Cpu,
-    memory: Memory,
     fps: u32,
     cycles: u32,
 }
@@ -14,17 +12,16 @@ pub struct Gb {
 impl Gb {
     pub fn new() -> Gb {
         let mut gb = Gb {
-            memory: Memory::new(),
             cpu: Cpu::new(),
             fps: 0,
             cycles: 0,
         };
-        gb.memory.power_on();
+        // gb.memory.power_on();
         return gb;
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
-        self.memory.load_cartridge(rom);
+        // self.memory.load_cartridge(rom);
     }
 
     // pub fn frame(&mut self) {
@@ -41,21 +38,21 @@ impl Gb {
     //     self.fps += 1;
     // }
 
-    pub fn image(&self) -> &[u8] {
-        &*self.memory.gpu.image_data
-    }
+    // pub fn image(&self) -> &[u8] {
+    //     &*self.memory.gpu.image_data
+    // }
 
-    pub fn frames(&mut self) -> u32 {
-        memory::replace(&mut self.fps, 0)
-    }
+    // pub fn frames(&mut self) -> u32 {
+    //     memory::replace(&mut self.fps, 0)
+    // }
 
-    pub fn keydown(&mut self, key: input::Button) {
-        self.memory.input.keydown(key, &mut self.memory.if_);
-    }
+    // pub fn keydown(&mut self, key: input::Button) {
+    //     self.memory.input.keydown(key, &mut self.memory.if_);
+    // }
 
-    pub fn keyup(&mut self, key: input::Button) {
-        self.memory.input.keyup(key);
-    }
+    // pub fn keyup(&mut self, key: input::Button) {
+    //     self.memory.input.keyup(key);
+    // }
 
     // #[cfg(test)]
     // pub fn test_done(&self) -> bool {

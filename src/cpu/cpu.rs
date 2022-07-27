@@ -1,20 +1,46 @@
 use crate::cpu::registers::{Clock, Registers};
-use crate::cpu::mmu::{Mmu};
+use crate::mmu::mmu::{Mmu};
 
 #[derive(Debug)]
 pub struct Cpu {
     _r: Registers, // registers
-                   // clock: Clock
+    clock: Clock,
+    // instructions: Vec<fn()>
 }
 
 impl Cpu {
     pub fn new() -> Self {
         Cpu {
             _r: Registers::default(),
+            clock: Clock{m:0, t:0},
+            // instructions: vec![]
         }
     }
 
-    pub fn exec() {}
+    fn load_instructions() {
+        // self.instructions = vec![
+        //     self.no_operation,
+        //     self.LDBCnn,
+        //     self.LDBCmA,
+        //     self.INCBC,
+        //     self.INCr_b,
+        // ];
+    }
+
+    pub fn exec(&mut self) {
+        loop {
+            // Fetch instruction
+            let op = Mmu::rb(self._r.pc);
+            self._r.pc += 1;
+            // Dispatch
+            // self._map[op]();
+            // Mask PC to 16 bits
+            self._r.pc &= 65535;
+            // Add time to CPU clock
+            self.clock.m += self._r.m;
+            self.clock.t += self._r.t;
+        }
+    }
 
     // Add E to A, leaving result in A (ADD A, E)
     fn add_register_e(&mut self) {
