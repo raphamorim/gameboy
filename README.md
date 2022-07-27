@@ -1,6 +1,6 @@
 > ### Gameboy emulator written in Rust to WebAssembly
 >
-> Disclaimer: This project doesn't endorse or promote any type of piracy activities. The act of build or install a emulator isn't an illegal activity. As many others emulators written, this *project is a study case*.
+> Disclaimer: This project doesn't endorse or promote any type of piracy activities. The act of build or install an emulator isn't an illegal activity. As many others emulators that have been created, this *project is just a study case*.
 >
 > `...` 
 
@@ -27,9 +27,7 @@ That means manipulating a lot of individual bytes, especially while navigating t
 The Game Boy has four operation buttons labeled _"A"_, _"B"_, _"SELECT"_, and _"START"_, and a _directional pad (d-pad)_. There is a volume control dial on the right side of the device and a similar dial on the left side to adjust the contrast. At the top of the Game Boy, a sliding on-off switch and the slot for the Game Boy cartridges are located. The on-off switch includes a physical lockout to prevent users from either inserting or removing a cartridge while the unit is switched on. Nintendo recommends users leave a cartridge in the slot to prevent dust and dirt from entering the system.
 
 ```rust
-#[derive(PartialEq, Debug)]
-#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
-pub enum GameboyButton {
+pub enum Controls {
     A,
     B,
     LEFT,
