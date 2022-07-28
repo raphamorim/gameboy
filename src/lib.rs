@@ -16,8 +16,8 @@ pub fn start() -> Result<(), JsValue> {
         .create_element("canvas")?
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
     document.body().unwrap().append_child(&canvas)?;
-    canvas.set_width(640);
-    canvas.set_height(480);
+    canvas.set_width(gb::WIDTH);
+    canvas.set_height(gb::HEIGHT);
     canvas.style().set_property("border", "solid")?;
     let context = canvas
         .get_context("2d")?

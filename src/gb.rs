@@ -1,8 +1,8 @@
 use crate::cpu::cpu::Cpu;
 use crate::mmu::mmu::Mmu;
 
-pub const WIDTH: usize = 160;
-pub const HEIGHT: usize = 144;
+pub const WIDTH: u32 = 160;
+pub const HEIGHT: u32 = 144;
 
 pub struct Gb {
     cpu: Cpu,

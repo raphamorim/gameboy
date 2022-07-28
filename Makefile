@@ -39,7 +39,7 @@ desktop:
 ######## LR35902 ###########
 ############################
 build:
-	wasm-pack build --out-dir wasm --debug
+	wasm-pack build --debug
 
 ############################
 ######### Server ###########

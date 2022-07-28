@@ -1,2 +1,2 @@
-import('./wasm')
+import('./pkg')
   .catch(console.error);
