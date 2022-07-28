@@ -1,4 +1,5 @@
 use crate::cpu::cpu::Cpu;
+use crate::mmu::mmu::Mmu;
 
 pub const WIDTH: usize = 160;
 pub const HEIGHT: usize = 144;
@@ -7,6 +8,7 @@ pub struct Gb {
     cpu: Cpu,
     fps: u32,
     cycles: u32,
+    memory: Mmu
 }
 
 impl Gb {
@@ -15,13 +17,15 @@ impl Gb {
             cpu: Cpu::new(),
             fps: 0,
             cycles: 0,
+            memory: Mmu::new()
         };
-        // gb.memory.power_on();
-        return gb;
+
+        gb.memory.power_on();
+        gb
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
-        // self.memory.load_cartridge(rom);
+        self.memory.load_rom(rom);
     }
 
     // pub fn frame(&mut self) {
@@ -59,3 +63,15 @@ impl Gb {
     //     !self.mem.sound_on && self.cpu.is_loopback(&self.mem)
     // }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+
+//     #[test]
+    // fn test_create_gb() {
+        // let country: Country = get_countries("SE").ok().unwrap();
+        // assert_eq!(country.language_code, "sv");
+    // }
+// }
+

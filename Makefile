@@ -20,13 +20,15 @@ install:
 
 start: build run
 
-s:
-#	My command to debug things quickly
-	rustup run nightly cargo build && ./target/debug/LF35902 ./tests/cpu_instrs/cpu_instrs.gb
-
 build:
-# 	RUST_LOG=info wasm-pack build src/lib.rs --out-dir wasm
-	rustup run nightly cargo build --release
+	RUST_LOG=debug wasm-pack build --out-dir wasm
+
+bin:
+#	My command to debug things quickly
+	rustup run nightly cargo build && ./target/debug/LR35902 ./tests/cpu_instrs/cpu_instrs.gb
+
+# build:
+# 	rustup run nightly cargo build --release
 
 run:
 	./target/release/LF35902
@@ -36,3 +38,12 @@ build-debug:
 
 run-debug:
 	./target/debug/LF35902
+
+############################
+######### Server ###########
+############################
+build-server:
+	cd server && rustup run nightly cargo build --release && ./target/release/server
+
+run-server:
+	./target/release/server

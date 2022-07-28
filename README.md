@@ -184,9 +184,10 @@ make start
 - [ ] `--browser`
     - [ ] Create server using port `8888`
 - [ ] `.gb`
+- [ ] Keyboard
+- [ ] Audio
 - [ ] `.cgb`
 - [ ] `.sgb`
-- [ ] Audio
 
 # Resources & References
 

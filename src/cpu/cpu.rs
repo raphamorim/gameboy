@@ -5,7 +5,6 @@ use crate::mmu::mmu::Mmu;
 pub struct Cpu {
     _r: Registers, // registers
     clock: Clock,
-    // instructions: Vec<fn()>
 }
 
 impl Cpu {
@@ -13,7 +12,6 @@ impl Cpu {
         Cpu {
             _r: Registers::default(),
             clock: Clock { m: 0, t: 0 },
-            // instructions: vec![]
         }
     }
 
@@ -27,10 +25,11 @@ impl Cpu {
         // ];
     }
 
-    pub fn exec(&mut self) {
+    // cpu.exec(&mut self.mem)
+    pub fn exec(&mut self, m: &mut Mmu) {
         loop {
             // Fetch instruction
-            let op = Mmu::rb(self._r.pc);
+            let _op = Mmu::r8b(m, self._r.pc);
             self._r.pc += 1;
             // Dispatch
             // self._map[op]();
@@ -67,7 +66,7 @@ impl Cpu {
     // Compare B to A, setting flags (CP A, B)
     fn compare_register_b(&mut self) {
         // Temp copy of A
-        let i = self._r.a;
+        let mut i = self._r.a;
         // Subtract B
         i -= self._r.b;
         // Set subtraction flag
@@ -93,28 +92,28 @@ impl Cpu {
     }
 
     // Push registers B and C to the stack (PUSH BC)
-    fn push_registers_b_c(&mut self) {
+    fn push_registers_b_c(&mut self, m: &mut Mmu) {
         // Drop through the stack
         self._r.sp -= 1;
         // Write B
-        Mmu::wb(self._r.sp, self._r.b);
+        Mmu::w8b(m, self._r.sp, self._r.b);
         // Drop through the stack
         self._r.sp -= 1;
         // Write C
-        Mmu::wb(self._r.sp, self._r.c);
+        Mmu::w8b(m, self._r.sp, self._r.c);
         // 3 M-times taken
         self._r.m = 3;
         self._r.t = 12;
     }
 
     // Pop registers H and L off the stack (POP HL)
-    fn pop_registers_h_l(&mut self) {
+    fn pop_registers_h_l(&mut self, m: &mut Mmu) {
         // Read L
-        self._r.l = Mmu::rb(self._r.sp);
+        self._r.l = Mmu::r8b(m, self._r.sp);
         // Move back up the stack
         self._r.sp += 1;
         // Read H
-        self._r.h = Mmu::rb(self._r.sp);
+        self._r.h = Mmu::r8b(m, self._r.sp);
         // Move back up the stack
         self._r.sp += 1;
         // 3 M-times taken
@@ -123,13 +122,13 @@ impl Cpu {
     }
 
     // Read a byte from absolute location into A (LD A, addr)
-    fn ldamm(&mut self) {
+    fn ldamm(&mut self, m: &mut Mmu) {
         // Get address from instr
-        let addr = Mmu::rw(self._r.pc);
+        let addr = Mmu::r16b(m, self._r.pc);
         // Advance Program Counter
         self._r.pc += 2;
         // Read from address
-        self._r.a = Mmu::rb(addr);
+        self._r.a = Mmu::r8b(m, addr);
         // 4 M-times taken
         self._r.m = 4;
         self._r.t = 16;

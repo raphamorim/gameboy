@@ -46,11 +46,7 @@ fn main() {
     let args = Args::parse();
     let rom = get_rom_from_filepath(&args.filepath);
 
-    println!("{:?}", rom);
-
     let mut gb = gb::Gb::new();
 
-    gb.load(rom);
-
-    // vm::run(gb);
+    gb.load(rom.unwrap());
 }

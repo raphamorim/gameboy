@@ -17,13 +17,13 @@ impl Clock {
 #[derive(Debug)]
 pub struct Registers {
     // 8-bit registers
-    pub a: u16,
-    pub b: u16,
-    pub c: u16,
-    pub d: u16,
-    pub e: u16,
-    pub h: u16,
-    pub l: u16,
+    pub a: u8,
+    pub b: u8,
+    pub c: u8,
+    pub d: u8,
+    pub e: u8,
+    pub h: u8,
+    pub l: u8,
 
     // The flags register (F)
     // it automatically calculates certain bits, or flags, based on the result of the last operation.
