@@ -1,13 +1,13 @@
 [package]
-name = "server"
+name = "web"
 version = "0.1.0"
-description = "Server for LR35902"
+description = "Web server for LR35902"
 authors = ["Raphael Amorim <rapha850@gmail.com>"]
 edition = "2021"
 
 [[bin]]
-name = "server"
-path = "server.rs"
+name = "web"
+path = "web.rs"
 test = false
 bench = false
 

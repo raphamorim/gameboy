@@ -8,15 +8,9 @@ license = "MPL-2.0"
 edition = "2021"
 
 [lib]
-name = "LR35902"
+name = "lr35902"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
-
-[[bin]]
-name = "LR35902"
-path = "src/bin.rs"
-test = false
-bench = false
 
 [dependencies]
 wasm-bindgen = "0.2.74"

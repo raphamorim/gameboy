@@ -8,7 +8,7 @@ pub struct Gb {
     cpu: Cpu,
     fps: u32,
     cycles: u32,
-    memory: Mmu
+    memory: Mmu,
 }
 
 impl Gb {
@@ -17,7 +17,7 @@ impl Gb {
             cpu: Cpu::new(),
             fps: 0,
             cycles: 0,
-            memory: Mmu::new()
+            memory: Mmu::new(),
         };
 
         gb.memory.power_on();
@@ -69,9 +69,8 @@ impl Gb {
 //     use super::*;
 
 //     #[test]
-    // fn test_create_gb() {
-        // let country: Country = get_countries("SE").ok().unwrap();
-        // assert_eq!(country.language_code, "sv");
-    // }
+// fn test_create_gb() {
+// let country: Country = get_countries("SE").ok().unwrap();
+// assert_eq!(country.language_code, "sv");
 // }
-
+// }

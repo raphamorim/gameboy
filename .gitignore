@@ -1,8 +1,8 @@
 /target/
 
-# Server
-/server/target/debug
-/server/Cargo.lock
+# Web
+/web/target
+/web/Cargo.lock
 
 # Server
 /desktop/target

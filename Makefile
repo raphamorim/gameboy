@@ -1,5 +1,7 @@
 .DEFAULT_GOAL := build
 
+.PHONY: web desktop
+
 all: build install
 
 # cargo install cargo-watch
@@ -26,10 +28,10 @@ start: build run
 br:
 	make build-desktop && make run-desktop
 
-build-desktop:
+desktop-build:
 	cd desktop && rustup run nightly cargo build
 
-run-desktop:
+desktop:
 #	Runs with a demo
 	./desktop/target/debug/desktop ./tests/cpu_instrs/cpu_instrs.gb
 
@@ -42,8 +44,8 @@ build:
 ############################
 ######### Server ###########
 ############################
-build-server:
-	cd server && rustup run nightly cargo build --release && ./target/release/server
+web-build:
+	cd web && rustup run nightly cargo build --release && ./target/release/web
 
-run-server:
-	./target/release/server
+web:
+	open http://0.0.0.0:3000; cd web && ./target/release/web

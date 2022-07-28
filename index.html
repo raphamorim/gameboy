@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>LR35902</title>
+    <title>Gameboy Emulator</title>
     <script type="module">
-      fetch('./wasm/LR35902_bg.wasm')
+      fetch('./wasm/lr35902_bg.wasm')
       .then(response => response.arrayBuffer())
       .then(bytes => {
         const LR35902 = new WebAssembly.Module(bytes);
@@ -14,5 +14,7 @@
       });
     </script>
   </head>
-  <body></body>
+  <body>
+    <h1>Gameboy Emulator</h1>
+  </body>
 </html>

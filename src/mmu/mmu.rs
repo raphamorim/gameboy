@@ -23,7 +23,7 @@ pub struct Mmu {
 
 impl Mmu {
     pub fn new() -> Mmu {
-        Mmu{
+        Mmu {
             rom: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
             zram: Box::new([0; ZRAM_SIZE]),
@@ -78,9 +78,8 @@ impl Mmu {
             0x0000..=0x3FFF => self.rom[address as usize],
             // ROM1 (unbanked) (16k)
             0x4000..=0x7FFF => {
-                self.rom[(((self.rombank as u32) << 14) |
-                         ((address as u32) & 0x3fff)) as usize]
-            },
+                self.rom[(((self.rombank as u32) << 14) | ((address as u32) & 0x3fff)) as usize]
+            }
             // Graphics VRAM (8k)
             // 0x8000..=0x9FFF => self.gpu.rb(address),
             // // External RAM (8k)
