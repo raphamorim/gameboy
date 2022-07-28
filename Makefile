@@ -21,14 +21,23 @@ install:
 start: build run
 
 ############################
+######## Desktop ###########
+############################
+br:
+	make build-desktop && make run-desktop
+
+build-desktop:
+	cd desktop && rustup run nightly cargo build
+
+run-desktop:
+#	Runs with a demo
+	./desktop/target/debug/desktop ./tests/cpu_instrs/cpu_instrs.gb
+
+############################
 ######## LR35902 ###########
 ############################
 build:
 	wasm-pack build --out-dir wasm --debug
-
-bin:
-#	My command to debug things quickly
-	rustup run nightly cargo build && ./target/debug/LR35902 ./tests/cpu_instrs/cpu_instrs.gb
 
 ############################
 ######### Server ###########

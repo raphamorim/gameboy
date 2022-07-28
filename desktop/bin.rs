@@ -1,5 +1,5 @@
-extern crate LR35902;
 #[allow(non_snake_case)]
+extern crate LR35902;
 extern crate clap;
 
 use clap::Parser;
@@ -48,5 +48,6 @@ fn main() {
 
     let mut gb = gb::Gb::new();
 
+    println!("> gameboy loading...");
     gb.load(rom.unwrap());
 }

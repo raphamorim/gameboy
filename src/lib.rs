@@ -1,10 +1,10 @@
 #[allow(non_snake_case)]
 
-// pub mod cpu;
-// pub mod gb;
-// pub mod gpu;
-// pub mod input;
-// pub mod mmu;
+pub mod cpu;
+pub mod gb;
+pub mod gpu;
+pub mod input;
+pub mod mmu;
 
 use std::cell::RefCell;
 use std::rc::Rc;
