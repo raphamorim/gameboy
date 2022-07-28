@@ -1,4 +1,3 @@
-
 use axum::{
     http::StatusCode,
     response::IntoResponse,
@@ -6,7 +5,7 @@ use axum::{
     Router,
 };
 use std::{io, net::SocketAddr};
-use tower_http::{services::ServeDir};
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
