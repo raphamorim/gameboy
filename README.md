@@ -4,13 +4,35 @@
 >
 > `...` 
 
-<img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" width="600px" />
+<img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" width="400px" />
 
 * (c) Jeff Frohwein Source: http://www.devrs.com/gb/hardware.php#hardgb
 
-<img src="resources/dmg-main-board-schematic-circuit.png" alt="GameBoy Internals" width="600px" />
+<img src="resources/dmg-main-board-schematic-circuit.png" alt="GameBoy Internals" width="400px" />
 
 * A scan of the main logic board for the DMG 01: https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
+
+## tl;dr
+
+Personally, I dislike when have to scroll down to the bottom of the page to see the demo or final output.
+
+##### Web with WebAssembly
+
+![Demo Web with Assembly](resources/demo-wasm.png)
+
+> Quick way to run locally:
+>
+> `git clone https://github.com/raphamorim/LR35902.git && cd LR35902 && make build && make web`
+>
+
+##### Desktop GUI with Rust
+
+![Demo Desktop GUI](resources/demo-desktop.png)
+
+> Quick way to run locally:
+>
+> `git clone https://github.com/raphamorim/LR35902.git && cd LR35902 && make desktop`
+>
 
 ## Emulators and a bit of Game Boy history...
 
