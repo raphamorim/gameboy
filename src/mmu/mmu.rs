@@ -102,7 +102,7 @@ impl Mmu {
     //         }
     //     }
     // }
-    
+
     fn set_initial(&mut self) {
         self.wb(0xFF05, 0);
         self.wb(0xFF06, 0);
@@ -144,23 +144,23 @@ impl Mmu {
     // Read 8-bit word from a given address
     pub fn rb(&mut self, address: u16) -> u8 {
         match address {
-            0x0000 ..= 0x7FFF => self.nop(address),
-            0x8000 ..= 0x9FFF => self.nop(address),
-            0xA000 ..= 0xBFFF => self.nop(address),
-            0xC000 ..= 0xCFFF | 0xE000 ..= 0xEFFF => self.nop(address),
-            0xD000 ..= 0xDFFF | 0xF000 ..= 0xFDFF => self.nop(address),
-            0xFE00 ..= 0xFE9F => self.nop(address),
+            0x0000..=0x7FFF => self.nop(address),
+            0x8000..=0x9FFF => self.nop(address),
+            0xA000..=0xBFFF => self.nop(address),
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.nop(address),
+            0xD000..=0xDFFF | 0xF000..=0xFDFF => self.nop(address),
+            0xFE00..=0xFE9F => self.nop(address),
             0xFF00 => self.nop(address),
-            0xFF01 ..= 0xFF02 => self.nop(address),
-            0xFF04 ..= 0xFF07 => self.nop(address),
+            0xFF01..=0xFF02 => self.nop(address),
+            0xFF04..=0xFF07 => self.nop(address),
             0xFF0F => self.nop(address),
-            0xFF10 ..= 0xFF3F => self.nop(address),
-            0xFF4D => {0},
-            0xFF40 ..= 0xFF4F => self.nop(address),
-            0xFF51 ..= 0xFF55 => self.nop(address),
-            0xFF68 ..= 0xFF6B => self.nop(address),
+            0xFF10..=0xFF3F => self.nop(address),
+            0xFF4D => 0,
+            0xFF40..=0xFF4F => self.nop(address),
+            0xFF51..=0xFF55 => self.nop(address),
+            0xFF68..=0xFF6B => self.nop(address),
             0xFF70 => self.nop(address),
-            0xFF80 ..= 0xFFFE => self.nop(address),
+            0xFF80..=0xFFFE => self.nop(address),
             0xFFFF => self.inte,
             _ => 0,
         }
@@ -174,26 +174,26 @@ impl Mmu {
     // Write 8-bit byte to a given address
     pub fn wb(&mut self, address: u16, value: u8) {
         match address {
-            0x0000 ..= 0x7FFF => self.nop(address),
-            0x8000 ..= 0x9FFF => self.nop(address),
-            0xA000 ..= 0xBFFF => self.nop(address),
-            0xC000 ..= 0xCFFF | 0xE000 ..= 0xEFFF => self.nop(address),
-            0xD000 ..= 0xDFFF | 0xF000 ..= 0xFDFF => self.nop(address),
-            0xFE00 ..= 0xFE9F => self.nop(address),
+            0x0000..=0x7FFF => self.nop(address),
+            0x8000..=0x9FFF => self.nop(address),
+            0xA000..=0xBFFF => self.nop(address),
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.nop(address),
+            0xD000..=0xDFFF | 0xF000..=0xFDFF => self.nop(address),
+            0xFE00..=0xFE9F => self.nop(address),
             0xFF00 => self.nop(address),
-            0xFF01 ..= 0xFF02 => self.nop(address),
-            0xFF04 ..= 0xFF07 => self.nop(address),
-            0xFF10 ..= 0xFF3F => self.nop(address),
+            0xFF01..=0xFF02 => self.nop(address),
+            0xFF04..=0xFF07 => self.nop(address),
+            0xFF10..=0xFF3F => self.nop(address),
             0xFF46 => self.nop(address),
-            0xFF4D => {0},
-            0xFF40 ..= 0xFF4F => self.nop(address),
-            0xFF51 ..= 0xFF55 => self.nop(address),
-            0xFF68 ..= 0xFF6B => self.nop(address),
+            0xFF4D => 0,
+            0xFF40..=0xFF4F => self.nop(address),
+            0xFF51..=0xFF55 => self.nop(address),
+            0xFF68..=0xFF6B => self.nop(address),
             0xFF0F => self.nop(address),
-            0xFF70 => {0},
-            0xFF80 ..= 0xFFFE => self.nop(address),
+            0xFF70 => 0,
+            0xFF80..=0xFFFE => self.nop(address),
             0xFFFF => self.nop(address),
-            _ => {0},
+            _ => 0,
         };
     }
 

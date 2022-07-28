@@ -1,5 +1,5 @@
 use crate::cpu::registers::{Clock, Registers};
-use crate::mmu::mmu::{Mmu};
+use crate::mmu::mmu::Mmu;
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -12,7 +12,7 @@ impl Cpu {
     pub fn new() -> Self {
         Cpu {
             _r: Registers::default(),
-            clock: Clock{m:0, t:0},
+            clock: Clock { m: 0, t: 0 },
             // instructions: vec![]
         }
     }
@@ -132,6 +132,6 @@ impl Cpu {
         self._r.a = Mmu::rb(addr);
         // 4 M-times taken
         self._r.m = 4;
-        self._r.t=16;
+        self._r.t = 16;
     }
 }

@@ -1,4 +1,4 @@
-use crate::cpu::cpu::{Cpu};
+use crate::cpu::cpu::Cpu;
 
 pub const WIDTH: usize = 160;
 pub const HEIGHT: usize = 144;

@@ -1,3 +1,1 @@
-pub struct Gpu {
-
-}
+pub struct Gpu {}
