@@ -49,7 +49,7 @@ The Z80 was designed to be binary compatible with the already existing Intel 808
 
 ## LR35902 ~ High level architecture
 
-##### CPU (`src/cpu.rs`)
+#### CPU (`src/cpu`)
 
 A central processing unit (CPU), also called a central processor, main processor or just processor, is the electronic circuitry that executes instructions comprising a computer program. The CPU performs basic arithmetic, logic, controlling, and input/output (I/O) operations specified by the instructions in the program. This contrasts with external components such as main memory and I/O circuitry, and specialized processors such as graphics processing units (GPUs). 
 
@@ -75,9 +75,11 @@ pub struct Registers {
 
 If there are 256 possible values in the first byte of an instruction, that makes for 256 possible instructions in the basic table. That table is detailed in the Gameboy Z80 opcode map: http://imrannazar.com/Gameboy-Z80-Opcode-Map.
 
-##### GPU (`src/gpu.rs`)
+#### Memory (`src/mmu`)
 
-##### Memory
+![MMU map](resources/jsgb-mmu-map.png)
+
+* Image retired from http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Memory
 
 The Game Boy has a 16-bit address-BUS. Giving an addressable range of `65535 Bytes` (or 64kB). All hardware components
 of the Game Boy including RAM, ROM, Video RAM and I /O Ports are memory
@@ -86,6 +88,10 @@ mapped as shown below.
 <img src="resources/gbproject.png" alt="Memory map" width="420px" />
 
 * Image retired from http://marc.rawer.de/Gameboy/Docs/GBProject.pdf
+
+##### 64kB
+
+###### Memory map:
 
 - `0x0000` - `0x00FF`: Boot ROM
 - `0x0000` - `0x3FFF`: Game ROM Bank 0
@@ -101,12 +107,56 @@ mapped as shown below.
 - `0xFF80` - `0xFFFE`: High RAM Area
 - `0xFFFF`: Interrupt Enabled Register
 
-* More information: https://rylev.github.io/DMG-01/public/book/memory_map.html
+More information: https://rylev.github.io/DMG-01/public/book/memory_map.html
 
-##### ROM
+You can set the map the initial memory struct with something like this:
 
+```rust
+fn set_initial(&mut self) {
+    self.write_byte(0xFF05, 0);
+    self.write_byte(0xFF06, 0);
+    self.write_byte(0xFF07, 0);
+    self.write_byte(0xFF10, 0x80);
+    self.write_byte(0xFF11, 0xBF);
+    self.write_byte(0xFF12, 0xF3);
+    self.write_byte(0xFF14, 0xBF);
+    self.write_byte(0xFF16, 0x3F);
+    self.write_byte(0xFF16, 0x3F);
+    self.write_byte(0xFF17, 0);
+    self.write_byte(0xFF19, 0xBF);
+    self.write_byte(0xFF1A, 0x7F);
+    self.write_byte(0xFF1B, 0xFF);
+    self.write_byte(0xFF1C, 0x9F);
+    self.write_byte(0xFF1E, 0xFF);
+    self.write_byte(0xFF20, 0xFF);
+    self.write_byte(0xFF21, 0);
+    self.write_byte(0xFF22, 0);
+    self.write_byte(0xFF23, 0xBF);
+    self.write_byte(0xFF24, 0x77);
+    self.write_byte(0xFF25, 0xF3);
+    self.write_byte(0xFF26, 0xF1);
+    self.write_byte(0xFF40, 0x91);
+    self.write_byte(0xFF42, 0);
+    self.write_byte(0xFF43, 0);
+    self.write_byte(0xFF45, 0);
+    self.write_byte(0xFF47, 0xFC);
+    self.write_byte(0xFF48, 0xFF);
+    self.write_byte(0xFF49, 0xFF);
+    self.write_byte(0xFF4A, 0);
+    self.write_byte(0xFF4B, 0);
+}
+```
 
-The screen resolution of the original Game Boy [is 160×144 pixels]()
+#### GPU (`src/gpu`)
+
+The screen resolution of the original Game Boy is 160×144 pixels: 
+
+```rust
+pub const WIDTH: usize = 160;
+pub const HEIGHT: usize = 144;
+```
+
+> https://github.com/raphamorim/LR35902/blob/main/src/gb.rs#L3-L4
 
 <img src="resources/LR35902.jpg" alt="LR35902" width="600px" />
 

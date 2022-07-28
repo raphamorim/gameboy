@@ -104,37 +104,37 @@ impl Mmu {
     // }
 
     fn set_initial(&mut self) {
-        self.wb(0xFF05, 0);
-        self.wb(0xFF06, 0);
-        self.wb(0xFF07, 0);
-        self.wb(0xFF10, 0x80);
-        self.wb(0xFF11, 0xBF);
-        self.wb(0xFF12, 0xF3);
-        self.wb(0xFF14, 0xBF);
-        self.wb(0xFF16, 0x3F);
-        self.wb(0xFF16, 0x3F);
-        self.wb(0xFF17, 0);
-        self.wb(0xFF19, 0xBF);
-        self.wb(0xFF1A, 0x7F);
-        self.wb(0xFF1B, 0xFF);
-        self.wb(0xFF1C, 0x9F);
-        self.wb(0xFF1E, 0xFF);
-        self.wb(0xFF20, 0xFF);
-        self.wb(0xFF21, 0);
-        self.wb(0xFF22, 0);
-        self.wb(0xFF23, 0xBF);
-        self.wb(0xFF24, 0x77);
-        self.wb(0xFF25, 0xF3);
-        self.wb(0xFF26, 0xF1);
-        self.wb(0xFF40, 0x91);
-        self.wb(0xFF42, 0);
-        self.wb(0xFF43, 0);
-        self.wb(0xFF45, 0);
-        self.wb(0xFF47, 0xFC);
-        self.wb(0xFF48, 0xFF);
-        self.wb(0xFF49, 0xFF);
-        self.wb(0xFF4A, 0);
-        self.wb(0xFF4B, 0);
+        self.write_byte(0xFF05, 0);
+        self.write_byte(0xFF06, 0);
+        self.write_byte(0xFF07, 0);
+        self.write_byte(0xFF10, 0x80);
+        self.write_byte(0xFF11, 0xBF);
+        self.write_byte(0xFF12, 0xF3);
+        self.write_byte(0xFF14, 0xBF);
+        self.write_byte(0xFF16, 0x3F);
+        self.write_byte(0xFF16, 0x3F);
+        self.write_byte(0xFF17, 0);
+        self.write_byte(0xFF19, 0xBF);
+        self.write_byte(0xFF1A, 0x7F);
+        self.write_byte(0xFF1B, 0xFF);
+        self.write_byte(0xFF1C, 0x9F);
+        self.write_byte(0xFF1E, 0xFF);
+        self.write_byte(0xFF20, 0xFF);
+        self.write_byte(0xFF21, 0);
+        self.write_byte(0xFF22, 0);
+        self.write_byte(0xFF23, 0xBF);
+        self.write_byte(0xFF24, 0x77);
+        self.write_byte(0xFF25, 0xF3);
+        self.write_byte(0xFF26, 0xF1);
+        self.write_byte(0xFF40, 0x91);
+        self.write_byte(0xFF42, 0);
+        self.write_byte(0xFF43, 0);
+        self.write_byte(0xFF45, 0);
+        self.write_byte(0xFF47, 0xFC);
+        self.write_byte(0xFF48, 0xFF);
+        self.write_byte(0xFF49, 0xFF);
+        self.write_byte(0xFF4A, 0);
+        self.write_byte(0xFF4B, 0);
     }
 
     pub fn nop(&mut self, address: u16) -> u8 {
@@ -172,7 +172,7 @@ impl Mmu {
     }
 
     // Write 8-bit byte to a given address
-    pub fn wb(&mut self, address: u16, value: u8) {
+    pub fn write_byte(&mut self, address: u16, value: u8) {
         match address {
             0x0000..=0x7FFF => self.nop(address),
             0x8000..=0x9FFF => self.nop(address),
@@ -199,7 +199,7 @@ impl Mmu {
 
     // Write 16-bit byte to a given address
     pub fn ww(&mut self, address: u16, value: u16) {
-        self.wb(address, (value & 0xFF) as u8);
-        self.wb(address + 1, (value >> 8) as u8);
+        self.write_byte(address, (value & 0xFF) as u8);
+        self.write_byte(address + 1, (value >> 8) as u8);
     }
 }
