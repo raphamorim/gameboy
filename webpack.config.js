@@ -7,7 +7,7 @@ module.exports = {
     entry: './index.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'index.js',
+        filename: 'index.js'
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -16,14 +16,18 @@ module.exports = {
         new WasmPackPlugin({
             crateDirectory: path.resolve(__dirname, ".")
         }),
-        // Have this example work in Edge which doesn't ship `TextEncoder` or
-        // `TextDecoder` at this time.
         new webpack.ProvidePlugin({
           TextDecoder: ['text-encoding', 'TextDecoder'],
           TextEncoder: ['text-encoding', 'TextEncoder']
         })
     ],
     mode: 'development',
+    devServer: {
+        compress: false,
+        host: '0.0.0.0',
+        open: true,
+        port: 8080,
+    },
     experiments: {
         asyncWebAssembly: true
    }
