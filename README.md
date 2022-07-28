@@ -17,7 +17,7 @@
 | Web with WebAssembly | Desktop GUI with Rust |
 | --- | --- |
 | ![Demo Web with Assembly](resources/demo-wasm.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
-| `make build && make web` | `make desktop` |
+| `make web` | `make desktop` |
 
 > Disclaimer 1.1: There's a lot of features to do yet, you can track in TODO section.
 

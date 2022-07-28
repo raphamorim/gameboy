@@ -1,4 +1,7 @@
+Cargo.lock
+
 /target/
+/node_modules/
 
 # Web
 /web/target

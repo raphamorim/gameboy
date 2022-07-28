@@ -48,4 +48,8 @@ web-build:
 	cd web && rustup run nightly cargo build --release && ./target/release/web
 
 web:
+	yarn && yarn serve
+
+# TODO: migrate to Rust
+web-rust:
 	open http://0.0.0.0:3000; cd web && ./target/release/web

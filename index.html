@@ -1,18 +1,7 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8" />
     <title>LR35902 WebAssembly</title>
-    <script type="module">
-      fetch('./wasm/lr35902_bg.wasm')
-      .then(response => response.arrayBuffer())
-      .then(bytes => {
-        const LR35902 = new WebAssembly.Module(bytes);
-        WebAssembly.instantiate(LR35902).then(result => {
-          console.log(result)
-        });
-      });
-    </script>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
   </head>
   <body>
     <h1>LR35902 WebAssembly</h1>
