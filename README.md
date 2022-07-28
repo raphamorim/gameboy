@@ -2,17 +2,6 @@
 >
 > Disclaimer 1.0: This project doesn't endorse or promote any type of piracy activities. The act of build or install an emulator isn't an illegal activity. As many others emulators that have been created, this *project is just a study case*.
 >
-> `...` 
-
-<img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" width="500px" />
-
-* (c) Jeff Frohwein Source: http://www.devrs.com/gb/hardware.php#hardgb
-
-<img src="resources/dmg-main-board-schematic-circuit.png" alt="GameBoy Internals" width="500px" />
-
-* A scan of the main logic board for the DMG 01: https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
-
-## tl;dr
 
 | Web with WebAssembly | Desktop GUI with Rust |
 | --- | --- |
@@ -22,6 +11,16 @@
 > Disclaimer 1.1: There's a lot of features to do yet, you can track in TODO section.
 
 > Disclaimer 1.2: This project was created using rustc 1.62.1 (e092d0b6b 2022-07-16)
+
+## Internals
+
+<img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" width="500px" />
+
+* (c) Jeff Frohwein Source: http://www.devrs.com/gb/hardware.php#hardgb
+
+<img src="resources/dmg-main-board-schematic-circuit.png" alt="GameBoy Internals" width="500px" />
+
+* A scan of the main logic board for the DMG 01: https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
 
 ## Emulators and a bit of Game Boy history...
 
