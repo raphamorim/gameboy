@@ -45,8 +45,9 @@ pub fn render(mut gb: Gb) {
         .unwrap();
     let gl_window = unsafe { gl_window.make_current().unwrap() };
 
-    // let context = Glcx::new(gl_window);
-    gl::load_with(|s| gl_window.get_proc_address(s) as *const _);
+    let gl = gl::load_with(|s| gl_window.get_proc_address(s) as *const _);
+
+    // let cx = Glcx::new();
 
     event_loop.run(move |event, _, control_flow| {
         // for event in window.poll_events() {
@@ -55,8 +56,8 @@ pub fn render(mut gb: Gb) {
             // }
         // }
 
-        // gb.frame();
-        // context.draw(gb.image());
+        gb.frame();
+        // cx.draw(gb.image());
         gl_window.swap_buffers().unwrap();
         thread::sleep(Duration::from_millis(10));
     })
@@ -132,7 +133,7 @@ void main() {
 ";
 
 // impl Glcx {
-//     fn new(window: ContextWrapper) -> Glcx {
+//     fn new(gl: gl::Gl) -> Glcx {
 //         unsafe {
 //             let mut vao = 0;
 //             gl::GenVertexArrays(1, &mut vao);

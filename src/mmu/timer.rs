@@ -42,7 +42,7 @@ impl Timer {
     }
 
     // Details: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Timers
-    pub fn step(&mut self, ticks: u32, if_: &mut u8) {
+    pub fn step(&mut self, ticks: u32) {
         // undo the multiplication in the cpu
         let ticks = ticks / 4;
         self.clock.div += ticks;

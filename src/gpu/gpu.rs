@@ -41,6 +41,36 @@ impl Gpu {
         }
     }
 
+    pub fn step(&mut self, clocks: u32, if_: &mut u8) {
+        self.clock += clocks;
+
+        // // If clock >= 456, then we've completed an entire line. This line might
+        // // have been part of a vblank or part of a scanline.
+        // if self.clock >= 456 {
+        //     self.clock -= 456;
+        //     self.ly = (self.ly + 1) % 154; // 144 lines tall, 10 for a vblank
+
+        //     if self.ly >= 144 && self.mode != Mode::VBlank {
+        //         self.switch(Mode::VBlank, if_);
+        //     }
+
+        //     if self.ly == self.lyc && self.lycly {
+        //         *if_ |= Interrupt::LCDStat as u8;
+        //     }
+        // }
+
+        // // Hop between modes if we're not in vblank
+        // if self.ly < 144 {
+        //     if self.clock <= 80 { // RDOAM takes 80 cycles
+        //         if self.mode != Mode::RdOam { self.switch(Mode::RdOam, if_); }
+        //     } else if self.clock <= 252 { // RDVRAM takes 172 cycles
+        //         if self.mode != Mode::RdVram { self.switch(Mode::RdVram, if_); }
+        //     } else { // HBLANK takes rest of time before line rendered
+        //         if self.mode != Mode::HBlank { self.switch(Mode::HBlank, if_); }
+        //     }
+        // }
+    }
+
     pub fn set_blank(&mut self) {
         for slot in self.image_data.iter_mut() {
             *slot = 0xff; // white

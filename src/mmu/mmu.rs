@@ -10,7 +10,7 @@ pub const ZRAM_SIZE: usize = 0x7F;
 pub struct Mmu {
     // memory: u32,
 
-    // pub intf: u8,
+    pub f_flag: u8,
     // pub inte: u8,
     // Flag indicating BIOS is mapped in
     // BIOS is unmapped with the first instruction above 0x00FF
@@ -32,6 +32,7 @@ pub struct Mmu {
 impl Mmu {
     pub fn new() -> Mmu {
         Mmu {
+            f_flag: 0,
             rom: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
             zram: Box::new([0; ZRAM_SIZE]),

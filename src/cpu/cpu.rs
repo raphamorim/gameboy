@@ -27,7 +27,8 @@ impl Cpu {
 
     // cpu.exec(&mut self.mem)
     pub fn exec(&mut self, m: &mut Mmu) {
-        loop {
+        let mut ticks = 0;
+        while ticks < 63802933 * 2 {
             // Fetch instruction
             let _op = Mmu::r8b(m, self._r.pc);
             self._r.pc += 1;
