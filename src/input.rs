@@ -2,10 +2,10 @@
 pub enum Input {
     A,
     B,
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
-    START,
-    SELECT,
+    Left,
+    Right,
+    Up,
+    Down,
+    Start,
+    Select,
 }

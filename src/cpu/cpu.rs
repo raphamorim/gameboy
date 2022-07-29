@@ -26,20 +26,11 @@ impl Cpu {
     }
 
     // cpu.exec(&mut self.mem)
-    pub fn exec(&mut self, m: &mut Mmu) {
-        let mut ticks = 0;
-        while ticks < 63802933 * 2 {
-            // Fetch instruction
-            let _op = Mmu::r8b(m, self._r.pc);
-            self._r.pc += 1;
-            // Dispatch
-            // self._map[op]();
-            // Mask PC to 16 bits
-            self._r.pc &= 65535;
-            // Add time to CPU clock
-            self.clock.m += self._r.m;
-            self.clock.t += self._r.t;
-        }
+    pub fn exec(&mut self, m: &mut Mmu) -> u32 {
+        let op = m.r8b(self._r.pc);
+        self._r.pc += 1;
+        // Z80._map[op]();
+        self._r.pc.into()
     }
 
     // Add E to A, leaving result in A (ADD A, E)

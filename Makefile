@@ -10,17 +10,10 @@ watch:
 
 lint:
 	cargo fmt --check
-
-fix-lint:
-	cargo fmt
+# 	cargo clippy --all-targets -- -D warnings
 
 test:
 	cargo test --release
-
-install:
-	cargo install
-
-start: build run
 
 ############################
 ######## Desktop ###########
