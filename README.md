@@ -1,16 +1,20 @@
 > ### Gameboy emulator written in Rust to WebAssembly
 >
-> Disclaimer 1.0: This project doesn't endorse or promote any type of piracy activities. The act of build or install an emulator isn't an illegal activity. As many others emulators that have been created, this *project is just a study case*.
+> Disclaimer 1.0: This project does not endorse or promote any type of piracy activity. The act of build or install an emulator is not illegal. As many others emulators that have been created over past decades, this *project is just a study case*.
 >
 
-| Web with WebAssembly | Desktop GUI with Rust |
+| WebGL with WebAssembly | Desktop GUI with Rust |
 | --- | --- |
 | ![Demo Web with Assembly](resources/demo-wasm.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
+| Firefox 102.0.1 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
 | `make web` | `make desktop` |
 
-> Disclaimer 1.1: There's a lot of features to do yet, you can track in TODO section.
-
+> Disclaimer 1.1: There is a lot of missing features. You can track it by checking the TODO section in the end of the README.md.
+>
 > Disclaimer 1.2: This project was created using rustc 1.62.1 (e092d0b6b 2022-07-16)
+>
+> Disclaimer 1.3: 
+>
 
 ## Internals
 
@@ -37,7 +41,7 @@ That means manipulating a lot of individual bytes, especially while navigating t
 The Game Boy has four operation buttons labeled _"A"_, _"B"_, _"SELECT"_, and _"START"_, and a _directional pad (d-pad)_. There is a volume control dial on the right side of the device and a similar dial on the left side to adjust the contrast. At the top of the Game Boy, a sliding on-off switch and the slot for the Game Boy cartridges are located. The on-off switch includes a physical lockout to prevent users from either inserting or removing a cartridge while the unit is switched on. Nintendo recommends users leave a cartridge in the slot to prevent dust and dirt from entering the system.
 
 ```rust
-pub enum Controls {
+pub enum Input {
     A,
     B,
     LEFT,
@@ -67,7 +71,12 @@ The Game Boy CPU is composed of 8 different "registers". Registers are responsib
 
 Each of them is one byte, so each one can hold a value from 0 to 255. An `u8` can do that job for us, since it can store between `0` and `(2^8 - 1)`
 
-$$ numberOfU8Possibilities=(2^8) $$
+$$ u8PossibleValues=(2^8) $$
+
+```rust
+assert_eq!(u8::MIN, 0);
+assert_eq!(u8::MAX, 255);
+```
 
 Example below:
 
@@ -168,8 +177,6 @@ pub const HEIGHT: usize = 144;
 
 > https://github.com/raphamorim/LR35902/blob/main/src/gb.rs#L3-L4
 
-<img src="resources/LR35902.jpg" alt="LR35902" width="600px" />
-
 # Running
 
 Install `wasm-pack`:
@@ -186,18 +193,17 @@ make start
 
 # TODO
 
-- [x] `./target/release/LR35902` flags
-    - [x] `--browser` runs in the browser with WASM (default)
-    - [x] `--desktop` runs in a desktop window
-- [ ] `--desktop`
-    - [ ] Create desktop window
-- [ ] `--browser`
-    - [ ] Create server using port `8888`
+- [x] Desktop
+    - [x] Create desktop window
+- [x] Browser
+    - [x] Create server using port `3000`
 - [ ] `.gb`
-- [ ] Keyboard
+- [ ] Keyboard handlers
 - [ ] Audio
-- [ ] `.cgb`
-- [ ] `.sgb`
+    - [ ] Desktop
+    - [ ] Web
+- [ ] Support `.cgb` rom (Game Boy Color)
+- [ ] Support `.sgb` rom (Super Game Boy)
 
 # Resources & References
 
