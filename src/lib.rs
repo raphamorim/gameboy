@@ -1,8 +1,8 @@
+mod cpu;
 pub mod gameboy;
 pub mod gpu;
 mod input;
 mod mmu;
-mod cpu;
 pub mod renderer;
 
 // use std::cell::Cell;

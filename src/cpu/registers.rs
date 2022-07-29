@@ -61,17 +61,13 @@ impl Default for Registers {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_clock_set() {
-        let clock: Clock = Clock{
-            t: 0,
-            m: 0
-        };
+        let clock: Clock = Clock { t: 0, m: 0 };
         assert_eq!(clock.t, 0);
         assert_eq!(clock.m, 0);
 
@@ -79,6 +75,6 @@ mod tests {
         clock.set_t(2);
 
         assert_eq!(clock.t, 2);
-        assert_eq!(clock.m, 1);        
+        assert_eq!(clock.m, 1);
     }
 }

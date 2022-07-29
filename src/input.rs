@@ -9,4 +9,3 @@ pub enum Input {
     START,
     SELECT,
 }
-

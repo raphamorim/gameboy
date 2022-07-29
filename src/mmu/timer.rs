@@ -23,20 +23,25 @@ impl Timer {
             tma: 0,
             tac: 0,
             tima_speed: 256,
-            clock: Clock {
-                tima: 0,
-                div: 0,
-            }
+            clock: Clock { tima: 0, div: 0 },
         }
     }
 
     pub fn update(&mut self) {
         // See step() function for timings
         match self.tac & 0x3 {
-            0x0 => { self.tima_speed = 256; }
-            0x1 => { self.tima_speed = 4; }
-            0x2 => { self.tima_speed = 16; }
-            0x3 => { self.tima_speed = 64; }
+            0x0 => {
+                self.tima_speed = 256;
+            }
+            0x1 => {
+                self.tima_speed = 4;
+            }
+            0x2 => {
+                self.tima_speed = 16;
+            }
+            0x3 => {
+                self.tima_speed = 64;
+            }
             _ => {}
         }
     }

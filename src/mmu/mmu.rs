@@ -9,7 +9,6 @@ pub const ZRAM_SIZE: usize = 0x7F;
 
 pub struct Mmu {
     // memory: u32,
-
     pub f_flag: u8,
     // pub inte: u8,
     // Flag indicating BIOS is mapped in
@@ -24,7 +23,6 @@ pub struct Mmu {
     rombank: u16,
     // _bios: [],
     // _eram: [],
-
     pub gpu: Box<Gpu>,
     pub timer: Box<Timer>,
 }

@@ -1,8 +1,8 @@
+extern crate gl;
 extern crate glutin;
 extern crate libc;
-extern crate gl;
 
-use crate::gameboy::{ Gameboy, WIDTH, HEIGHT };
+use crate::gameboy::{Gameboy, HEIGHT, WIDTH};
 use std::ffi::CString;
 use std::iter::repeat;
 use std::mem;
@@ -12,8 +12,8 @@ use std::thread;
 use std::time::Duration;
 
 use gl::types::*;
-use glutin::event::{Event, ElementState, VirtualKeyCode};
-use glutin::window::{ Window, WindowBuilder };
+use glutin::event::{ElementState, Event, VirtualKeyCode};
+use glutin::window::{Window, WindowBuilder};
 use glutin::ContextWrapper;
 
 struct Glcx {
@@ -30,16 +30,16 @@ struct Glcx {
 pub fn render(mut gameboy: Gameboy) {
     let mut ratio = 1 + (WIDTH / 10);
     let event_loop = glutin::event_loop::EventLoop::new();
-    let inner_size = glutin::dpi::LogicalSize{
+    let inner_size = glutin::dpi::LogicalSize {
         width: WIDTH,
-        height: HEIGHT
+        height: HEIGHT,
     };
     let window = glutin::window::WindowBuilder::new()
         .with_title("LR35902")
         .with_inner_size(inner_size)
         // .with_dimensions(glium::glutin::dpi::LogicalSize::new(WIDTH, HEIGHT))
         .with_resizable(false);
-    
+
     let gl_window = glutin::ContextBuilder::new()
         .build_windowed(window, &event_loop)
         .unwrap();
@@ -51,9 +51,9 @@ pub fn render(mut gameboy: Gameboy) {
 
     event_loop.run(move |event, _, control_flow| {
         // for event in window.poll_events() {
-            // if !handle(event, &mut gb, &window, &mut ratio, &mut focused) {
-            //     break 'outer
-            // }
+        // if !handle(event, &mut gb, &window, &mut ratio, &mut focused) {
+        //     break 'outer
+        // }
         // }
 
         // gameboy.frame();
