@@ -2,7 +2,7 @@ extern crate glutin;
 extern crate libc;
 extern crate gl;
 
-use crate::gb::{ Gb, WIDTH, HEIGHT };
+use crate::gameboy::{ Gameboy, WIDTH, HEIGHT };
 use std::ffi::CString;
 use std::iter::repeat;
 use std::mem;
@@ -27,7 +27,7 @@ struct Glcx {
     vao: GLuint,
 }
 
-pub fn render(mut gb: Gb) {
+pub fn render(mut gameboy: Gameboy) {
     let mut ratio = 1 + (WIDTH / 10);
     let event_loop = glutin::event_loop::EventLoop::new();
     let inner_size = glutin::dpi::LogicalSize{
@@ -56,7 +56,7 @@ pub fn render(mut gb: Gb) {
             // }
         // }
 
-        gb.frame();
+        // gameboy.frame();
         // cx.draw(gb.image());
         gl_window.swap_buffers().unwrap();
         thread::sleep(Duration::from_millis(10));

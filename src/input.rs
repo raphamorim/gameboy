@@ -1,5 +1,4 @@
-#[derive(PartialEq, Debug)]
-#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
+#[derive(Debug)]
 pub enum Input {
     A,
     B,
@@ -10,3 +9,4 @@ pub enum Input {
     START,
     SELECT,
 }
+

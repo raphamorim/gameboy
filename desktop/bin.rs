@@ -6,7 +6,7 @@ use clap::Parser;
 use std::fs::File;
 use std::io::Read;
 
-use lr35902::{ gb, renderer::render };
+use lr35902::{ gameboy, renderer::render };
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -46,7 +46,7 @@ fn main() {
     let args = Args::parse();
     let rom = get_rom_from_filepath(&args.filepath);
 
-    let mut gb = gb::Gb::new();
+    let mut gb = gameboy::Gameboy::new();
 
     println!("> gameboy loading...");
     gb.load(rom.unwrap());

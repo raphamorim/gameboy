@@ -4,16 +4,16 @@ use crate::mmu::mmu::Mmu;
 pub const WIDTH: u32 = 160;
 pub const HEIGHT: u32 = 144;
 
-pub struct Gb {
+pub struct Gameboy {
     cpu: Cpu,
     fps: u32,
     cycles: u32,
     memory: Mmu,
 }
 
-impl Gb {
-    pub fn new() -> Gb {
-        let mut gb = Gb {
+impl Gameboy {
+    pub fn new() -> Gameboy {
+        let mut gb = Gameboy {
             cpu: Cpu::new(),
             fps: 0,
             cycles: 0,
@@ -60,11 +60,6 @@ impl Gb {
 
     // pub fn keyup(&mut self, key: input::Button) {
     //     self.memory.input.keyup(key);
-    // }
-
-    // #[cfg(test)]
-    // pub fn test_done(&self) -> bool {
-    //     !self.mem.sound_on && self.cpu.is_loopback(&self.mem)
     // }
 }
 
