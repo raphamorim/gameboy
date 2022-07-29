@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn test_clock_set() {
-        let clock: Clock = Clock { t: 0, m: 0 };
+        let mut clock: Clock = Clock { t: 0, m: 0 };
         assert_eq!(clock.t, 0);
         assert_eq!(clock.m, 0);
 

@@ -9,16 +9,16 @@ watch:
 	cargo watch -- make run
 
 lint:
-	rustup run nightly cargo fmt --check
+	cargo fmt --check
 
 fix-lint:
-	rustup run nightly cargo fmt
+	cargo fmt
 
 test:
-	rustup run nightly cargo test --release
+	cargo test --release
 
 install:
-	rustup run nightly cargo install
+	cargo install
 
 start: build run
 
@@ -45,7 +45,7 @@ build:
 ######### Server ###########
 ############################
 web-build:
-	cd web && rustup run nightly cargo build --release && ./target/release/web
+	cd web && cargo build --release && ./target/release/web
 
 web:
 	yarn && yarn serve
