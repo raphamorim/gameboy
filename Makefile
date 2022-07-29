@@ -25,11 +25,11 @@ start: build run
 ############################
 ######## Desktop ###########
 ############################
-br:
-	make build-desktop && make run-desktop
+d:
+	make desktop-build && make desktop
 
 desktop-build:
-	cd desktop && rustup run nightly cargo build
+	cd desktop && cargo build
 
 desktop:
 #	Runs with a demo

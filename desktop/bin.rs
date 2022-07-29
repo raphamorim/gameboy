@@ -1,12 +1,12 @@
 #[allow(non_snake_case)]
-extern crate LR35902;
+extern crate lr35902;
 extern crate clap;
 
 use clap::Parser;
 use std::fs::File;
 use std::io::Read;
 
-use LR35902::gb;
+use lr35902::{ gb, renderer::render };
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -50,4 +50,10 @@ fn main() {
 
     println!("> gameboy loading...");
     gb.load(rom.unwrap());
+
+    render(gb);
 }
+
+// mod gl {
+//     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+// }

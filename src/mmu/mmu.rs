@@ -1,7 +1,11 @@
 // Memory Management Unit
 
-const WRAM_SIZE: usize = 0x8000;
-const ZRAM_SIZE: usize = 0x7F;
+use crate::gpu::gpu::Gpu;
+
+use crate::mmu::timer::Timer;
+
+pub const WRAM_SIZE: usize = 0x8000;
+pub const ZRAM_SIZE: usize = 0x7F;
 
 pub struct Mmu {
     // memory: u32,
@@ -13,12 +17,16 @@ pub struct Mmu {
     // _inbios: u16,
 
     // Memory regions (initialised at reset time)
+    // Heap
     wram: Box<[u8; WRAM_SIZE]>,
     zram: Box<[u8; ZRAM_SIZE]>,
     rom: Vec<u8>,
     rombank: u16,
     // _bios: [],
     // _eram: [],
+
+    pub gpu: Box<Gpu>,
+    pub timer: Box<Timer>,
 }
 
 impl Mmu {
@@ -27,6 +35,8 @@ impl Mmu {
             rom: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
             zram: Box::new([0; ZRAM_SIZE]),
+            timer: Box::new(Timer::new()),
+            gpu: Box::new(Gpu::new()),
             rombank: 1,
         }
     }

@@ -13,8 +13,11 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-js-sys = "0.3.59"
-wasm-bindgen = "0.2.82"
+# js-sys = "0.3.59"
+# wasm-bindgen = "0.2.82"
+glutin = "0.28.0"
+libc = "0.2.126"
+gl = "0.14.0"
 
 [dependencies.web-sys]
 version = "0.3.4"

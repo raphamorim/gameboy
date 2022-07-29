@@ -28,23 +28,18 @@ impl Gb {
         self.memory.load_rom(rom);
     }
 
-    // pub fn frame(&mut self) {
-    //     // http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
-    //     // for the timing for this constant
-    //     self.cycles += 70224;
+    pub fn reset() {
+        // TODO: reset memory, cpu
+    }
 
-    //     while self.cycles <= 70224 {
-    //         let time = self.cpu.exec(&mut self.mem);
-    //         self.mem.timer.step(time, &mut self.mem.if_, self.mem.speed);
-    //         self.mem.gpu.step(time, &mut self.mem.if_);
-    //         self.cycles -= time;
-    //     }
-    //     self.fps += 1;
-    // }
+    pub fn frame(&mut self) {
+        self.cpu.exec(&mut self.memory);
+        
+    }
 
-    // pub fn image(&self) -> &[u8] {
-    //     &*self.memory.gpu.image_data
-    // }
+    pub fn image(&self) -> &[u8] {
+        &*self.memory.gpu.image_data
+    }
 
     // pub fn frames(&mut self) -> u32 {
     //     memory::replace(&mut self.fps, 0)

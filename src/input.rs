@@ -1,6 +1,6 @@
 #[derive(PartialEq, Debug)]
 #[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
-pub enum GameboyButton {
+pub enum Input {
     A,
     B,
     LEFT,
