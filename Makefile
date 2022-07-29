@@ -33,7 +33,7 @@ desktop-build:
 
 desktop:
 #	Runs with a demo
-	./desktop/target/debug/desktop ./tests/cpu_instrs/cpu_instrs.gb
+	./desktop/target/debug/desktop
 
 ############################
 ######## LR35902 ###########

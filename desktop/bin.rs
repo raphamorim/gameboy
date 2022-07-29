@@ -42,13 +42,24 @@ fn get_rom_from_filepath(filepath: &String) -> Result<Vec<u8>, String> {
     Ok(rom)
 }
 
+fn add_yellow_color(text: &str) -> String {
+    format!("{}{}{}", "\x1b[93m", text, "\x1b[0m")
+}
+
 fn main() {
     let args = Args::parse();
     let rom = get_rom_from_filepath(&args.filepath);
+    let cmd = add_yellow_color("[LR35902]");
 
     let mut gb = gameboy::Gameboy::new();
 
-    println!("> gameboy loading...");
+    if &args.filepath == "" {
+        println!("{} Please provide a rom file", cmd);        
+        return;
+    }
+
+    println!("{} Gameboy loading... {:?}", cmd, &args.filepath);
+
     gb.load(rom.unwrap());
 
     render(gb);
