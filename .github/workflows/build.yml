@@ -15,18 +15,16 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
 
       - uses: actions-rs/install@v0.1
         with:
           crate: cargo-audit
           version: latest
+          use-tool-cache: true
 
       - name: Make Lint
         run: make lint
 
-      - name: Make build
-        run: make build
-
-      - name: Make test
-        run: make test
+      - name: Make desktop build
+        run: make desktop-build
