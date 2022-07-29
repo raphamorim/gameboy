@@ -33,7 +33,7 @@ desktop-build:
 
 desktop:
 #	Runs with a demo
-	./desktop/target/debug/desktop
+	./desktop/target/debug/desktop ./sample-rom.gb
 
 ############################
 ######## LR35902 ###########
