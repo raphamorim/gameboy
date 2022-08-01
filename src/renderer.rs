@@ -56,7 +56,7 @@ pub fn render(mut gameboy: Gameboy) {
         // }
         // }
 
-        // gameboy.frame();
+        gameboy.frame();
         // cx.draw(gb.image());
         gl_window.swap_buffers().unwrap();
         thread::sleep(Duration::from_millis(10));

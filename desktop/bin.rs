@@ -50,7 +50,7 @@ fn main() {
         return;
     }
 
-    println!("{} Gameboy loading... {:?}", cmd, &args.filepath);
+    println!("{} ROM Path: {:?}", cmd, &args.filepath);
 
     gb.load(rom.unwrap());
     render(gb);

@@ -80,6 +80,11 @@ impl Mmu {
         address as u8
     }
 
+    // Read 8-bit byte to a given u8 address
+    pub fn rr8b(&mut self, address: u8) -> u8 {
+        self.r8b(address as u16)
+    }
+
     // Read 8-bit word from a given address
     pub fn r8b(&mut self, address: u16) -> u8 {
         match address {
@@ -90,15 +95,15 @@ impl Mmu {
                 self.rom[(((self.rombank as u32) << 14) | ((address as u32) & 0x3fff)) as usize]
             }
             // Graphics VRAM (8k)
-            // 0x8000..=0x9FFF => self.gpu.rb(address),
+            0x8000..=0x9FFF => self.r8b(address),
             // // External RAM (8k)
             // 0xA000..=0xBFFF => self.mbc.readram(address),
             // // Working RAM (8k) and RAM shadow
-            // 0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF],
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF],
             // 0xD000..=0xDFFF | 0xF000..=0xFDFF => self.wram[(self.wrambank * 0x1000) | address as usize & 0x0FFF],
 
             // // Graphics: object attribute memory
-            // 0xFE00..=0xFE9F => self.gpu.rb(address),
+            0xFE00..=0xFE9F => self.r8b(address),
             // Zero-page
             // 0xFF00 => self.keypad.rb(),
             // 0xFF01..=0xFF02 => self.nop(address),
@@ -111,7 +116,7 @@ impl Mmu {
             // 0xFF68..=0xFF6B => self.nop(address),
             // 0xFF70 => self.nop(address),
             // 0xFF80..=0xFFFE => self.nop(address),
-            // 0xFFFF => self.inte,
+            0xFFFF => self.f_flag,
             _ => 0,
         }
     }
@@ -119,6 +124,11 @@ impl Mmu {
     // Read 16-bit word from a given address
     pub fn r16b(&mut self, address: u16) -> u16 {
         (self.r8b(address) as u16) | ((self.r8b(address + 1) as u16) << 8)
+    }
+
+    // Write 8-bit byte to a given address
+    pub fn ww8b(&mut self, address: u8, value: u8) {
+        self.w8b(address as u16, value);
     }
 
     // Write 8-bit byte to a given address

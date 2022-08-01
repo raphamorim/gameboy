@@ -33,17 +33,17 @@ impl Gameboy {
     }
 
     pub fn frame(&mut self) {
-        self.cycles += 70224;
+        // self.cycles += 70224;
 
-        while self.cycles <= 70224 {
-            let time = 4;
-            self.memory.timer.step(time);
-            self.memory.gpu.step(time, &mut self.memory.f_flag);
-            self.cycles -= time;
-        }
+        // while self.cycles <= 70224 {
+        //     let time = 4;
+        //     self.memory.timer.step(time);
+        //     self.memory.gpu.step(time, &mut self.memory.f_flag);
+        //     self.cycles -= time;
+        // }
 
-        self.fps += 1;
-        // self.cpu.exec(&mut self.memory);
+        // self.fps += 1;
+        self.cpu.exec(&mut self.memory);
     }
 
     pub fn image(&self) -> &[u8] {
