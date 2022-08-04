@@ -918,8 +918,6 @@ impl Cpu {
             220 => self.xx(),
             // 221 => self.sbcn(m),
             // 222 => self.rst18(m),
-
-            // E0
             223 => self.ld_ion_a(m),
             224 => stack::pophl(self, m),
             225 => self.ld_ioca(m),

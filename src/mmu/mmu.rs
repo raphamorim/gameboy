@@ -21,6 +21,7 @@ pub struct Mmu {
     wram: Box<[u8; WRAM_SIZE]>,
     zram: Box<[u8; ZRAM_SIZE]>,
     hiram: Box<[u8; HIRAM_SIZE]>,
+    ram: Vec<u8>,
     rom: Vec<u8>,
     rombank: u16,
     rambank: u8,
@@ -38,6 +39,7 @@ impl Mmu {
         Mmu {
             f_flag: 0,
             rom: Vec::new(),
+            ram: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
             zram: Box::new([0; ZRAM_SIZE]),
             hiram: Box::new([0; HIRAM_SIZE]),
@@ -107,19 +109,18 @@ impl Mmu {
 
             0x8 | 0x9 => self.gpu.vram()[(addr & 0x1fff) as usize],
 
-            // 0xa | 0xb => {
-            //     // Swappable banks of RAM
-            //     if self.ramon {
-            //         if self.rtc.current & 0x08 != 0 {
-            //             self.rtc.regs[(self.rtc.current & 0x7) as usize]
-            //         } else {
-            //             self.ram[(((self.rambank as u16) << 12) |
-            //                      (addr & 0x1fff)) as usize]
-            //         }
-            //     } else {
-            //         0xff
-            //     }
-            // }
+            0xa | 0xb => {
+                // Swappable banks of RAM
+                if self.ramon {
+                    // if self.rtc.current & 0x08 != 0 {
+                    //     self.rtc.regs[(self.rtc.current & 0x7) as usize]
+                    // } else {
+                    self.ram[(((self.rambank as u16) << 12) | (addr & 0x1fff)) as usize]
+                    // }
+                } else {
+                    0xff
+                }
+            }
 
             // e000-fdff same as c000-ddff
             0xe | 0xc => self.wram[(addr & 0xfff) as usize],
@@ -189,9 +190,9 @@ impl Mmu {
             }
 
             0x8 | 0x9 => {
-                // self.gpu.vram_mut()[(addr & 0x1fff) as usize] = val;
+                self.gpu.vram_mut()[(addr & 0x1fff) as usize] = val;
                 if addr < 0x9800 {
-                    // self.gpu.update_tile(addr);
+                    self.gpu.update_tile(addr);
                 }
             }
 
@@ -218,13 +219,13 @@ impl Mmu {
                 if addr < 0xfe00 {
                     self.w8b(addr & 0xdfff, val); // mirrored RAM
                 } else if addr < 0xfea0 {
-                    // self.gpu.oam[(addr & 0xff) as usize] = val;
+                    self.gpu.oam[(addr & 0xff) as usize] = val;
                 } else if addr < 0xff00 {
                     // unusable ram
                 } else if addr < 0xff80 {
                     // self.ioreg_wb(addr, val);
                 } else if addr < 0xffff {
-                    // self.hiram[(addr & 0x7f) as usize] = val;
+                    self.hiram[(addr & 0x7f) as usize] = val;
                 } else {
                     // self.ie_ = val;
                 }

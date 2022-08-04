@@ -4,7 +4,7 @@ use crate::mmu::mmu::Mmu;
 pub fn addr_b(c: &mut Cpu) {
     c._r.a += c._r.b;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -14,7 +14,7 @@ pub fn addr_b(c: &mut Cpu) {
 pub fn addr_c(c: &mut Cpu) {
     c._r.a += c._r.c;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -24,7 +24,7 @@ pub fn addr_c(c: &mut Cpu) {
 pub fn addr_d(c: &mut Cpu) {
     c._r.a += c._r.d;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -34,7 +34,7 @@ pub fn addr_d(c: &mut Cpu) {
 pub fn addr_e(c: &mut Cpu) {
     c._r.a += c._r.e;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -44,7 +44,7 @@ pub fn addr_e(c: &mut Cpu) {
 pub fn addr_h(c: &mut Cpu) {
     c._r.a += c._r.h;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -54,7 +54,7 @@ pub fn addr_h(c: &mut Cpu) {
 pub fn addr_l(c: &mut Cpu) {
     c._r.a += c._r.l;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -64,7 +64,7 @@ pub fn addr_l(c: &mut Cpu) {
 pub fn addr_a(c: &mut Cpu) {
     c._r.a += c._r.a;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -75,7 +75,7 @@ pub fn addhl(c: &mut Cpu, m: &mut Mmu) {
     let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
     c._r.a += m.r8b(addr);
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -86,7 +86,7 @@ pub fn addn(c: &mut Cpu, m: &mut Mmu) {
     c._r.a += m.r8b(c._r.pc);
     c._r.pc += 1;
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -147,15 +147,24 @@ pub fn addhlsp(c: &mut Cpu) {
     c._r.m = 3;
     c._r.t = 12;
 }
+// pub fn addspn(c: &mut Cpu, m: &mut Mmu) {
+//     let i = m.r8b(c._r.pc);
+//     if i > 127 {
+//         // i=-{ ((~i+1)&255)
+
+//     }
+//     c._r.pc += 1;
+//     c._r.sp += i as u16;
+//     c._r.m = 4;
+//     c._r.t = 16;
+// }
+// https://github.com/alexcrichton/jba/blob/rust/src/cpu/z80/imp.rs#L81
 pub fn addspn(c: &mut Cpu, m: &mut Mmu) {
-    let i = m.r8b(c._r.pc);
-    if i > 127 {
-        // i=-{ ((~i+1)&255)
-    }
-    c._r.pc += 1;
-    c._r.sp += i as u16;
-    c._r.m = 4;
-    c._r.t = 16;
+    let b = m.r8b(c._r.pc) as i8 as i16 as u16;
+    let res = c._r.sp + b;
+    let tmp = b ^ res ^ c._r.sp;
+    c._r.f = if tmp & 0x100 != 0 { 0x10 } else { 0 } | if tmp & 0x010 != 0 { 0x20 } else { 0 };
+    c._r.sp = res;
 }
 pub fn adcr_b(c: &mut Cpu) {
     c._r.a += c._r.b;
@@ -165,7 +174,7 @@ pub fn adcr_b(c: &mut Cpu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -180,7 +189,7 @@ pub fn adcr_c(c: &mut Cpu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -195,7 +204,7 @@ pub fn adcr_d(c: &mut Cpu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -210,7 +219,7 @@ pub fn adcr_e(c: &mut Cpu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -225,7 +234,7 @@ pub fn adcr_h(c: &mut Cpu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -240,7 +249,7 @@ pub fn adcr_l(c: &mut Cpu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -255,7 +264,7 @@ pub fn adcr_a(c: &mut Cpu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -271,7 +280,7 @@ pub fn adchl(c: &mut Cpu, m: &mut Mmu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -287,7 +296,7 @@ pub fn adcn(c: &mut Cpu, m: &mut Mmu) {
         c._r.a += 0
     }
     c.fz(c._r.a, 0);
-    if c._r.a > 255 {
+    if c._r.a > u8::MAX {
         c._r.f |= 0x10;
     }
     c._r.a &= 255;
@@ -619,7 +628,7 @@ pub fn cpn(c: &mut Cpu, m: &mut Mmu) {
     i -= m.r8b(c._r.pc);
     c._r.pc += 1;
     c.fz(i, 1);
-    if i < 0 {
+    if i < u8::MIN {
         c._r.f |= 0x10;
     }
     i &= 255;

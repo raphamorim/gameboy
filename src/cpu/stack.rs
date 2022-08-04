@@ -72,7 +72,11 @@ pub fn jpnn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-pub fn jphl(c: &mut Cpu) { c._r.pc=c._r.h as u16; c._r.m=1; c._r.t=4; }
+pub fn jphl(c: &mut Cpu) {
+    c._r.pc = c._r.h as u16;
+    c._r.m = 1;
+    c._r.t = 4;
+}
 pub fn jpnznn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;

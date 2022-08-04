@@ -84,7 +84,6 @@ pub fn bit1m(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-
 pub fn bit2b(c: &mut Cpu) {
     c.fz(c._r.b & 0x04, 0);
     c._r.m = 2;
@@ -126,7 +125,6 @@ pub fn bit2m(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-
 pub fn bit3b(c: &mut Cpu) {
     c.fz(c._r.b & 0x08, 0);
     c._r.m = 2;
@@ -293,7 +291,6 @@ pub fn bit6m(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-
 pub fn bit7b(c: &mut Cpu) {
     c.fz(c._r.b & 0x80, 0);
     c._r.m = 2;
