@@ -154,7 +154,6 @@ pub fn addspn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 4;
     c._r.t = 16;
 }
-
 pub fn adcr_b(c: &mut Cpu) {
     c._r.a += c._r.b;
     if c._r.f >= 0x10 {
@@ -291,7 +290,6 @@ pub fn adcn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 2;
     c._r.t = 8;
 }
-
 pub fn subr_b(c: &mut Cpu) {
     c._r.a -= c._r.b;
     c.fz(c._r.a, 1);
@@ -686,7 +684,6 @@ pub fn andn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 2;
     c._r.t = 8;
 }
-
 pub fn orr_b(c: &mut Cpu) {
     c._r.a |= c._r.b;
     c._r.a &= 255;
@@ -751,7 +748,6 @@ pub fn orn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 2;
     c._r.t = 8;
 }
-
 pub fn xorr_b(c: &mut Cpu) {
     c._r.a ^= c._r.b;
     c._r.a &= 255;
@@ -959,7 +955,6 @@ pub fn incsp(c: &mut Cpu) {
     c._r.m = 1;
     c._r.t = 4;
 }
-
 pub fn decbc(c: &mut Cpu) {
     c._r.c = (c._r.c - 1) & 255;
     if c._r.c == 255 {
