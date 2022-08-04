@@ -734,7 +734,9 @@ pub fn orr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn orhl(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a |= m.rr8b((c._r.h << 8) + c._r.l);
+    let a = (c._r.h as u16) << 8;
+    let addr: u16 = a + (c._r.l as u16);
+    c._r.a |= m.r8b(addr);
     c._r.a &= 255;
     c.fz(c._r.a, 0);
     c._r.m = 2;
@@ -798,7 +800,8 @@ pub fn xorr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn xorhl(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a ^= m.rr8b((c._r.h << 8) + c._r.l);
+    let addr = (c._r.h as u16) << 8 + (c._r.l as u16);
+    c._r.a ^= m.r8b(addr);
     c._r.a &= 255;
     c.fz(c._r.a, 0);
     c._r.m = 2;
@@ -862,9 +865,11 @@ pub fn incr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn inchlm(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.rr8b((c._r.h << 8) + c._r.l) + 1;
+    let addr = ((c._r.h as u16) << 8) + (c._r.l as u16);
+    let mut i = m.r8b(addr) + 1;
     i &= 255;
-    m.ww8b((c._r.h << 8) + c._r.l, i);
+    let waddr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    m.w8b(waddr, i);
     c.fz(i, 0);
     c._r.m = 3;
     c._r.t = 12;

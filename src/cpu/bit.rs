@@ -37,7 +37,8 @@ pub fn bit0a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit0m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x01, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x01, 0);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -78,7 +79,8 @@ pub fn bit1a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit1m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x02, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x02, 0);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -119,7 +121,8 @@ pub fn bit2a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit2m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x04, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x04, 0);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -160,7 +163,8 @@ pub fn bit3a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit3m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x08, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x08, 0);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -201,7 +205,8 @@ pub fn bit4a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit4m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x10, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x10, 0);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -242,7 +247,8 @@ pub fn bit5a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit5m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x20, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x20, 0);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -283,7 +289,8 @@ pub fn bit6a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit6m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x40, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x40, 0);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -324,7 +331,8 @@ pub fn bit7a(c: &mut Cpu) {
     c._r.t = 8;
 }
 pub fn bit7m(c: &mut Cpu, m: &mut Mmu) {
-    c.fz(m.rr8b((c._r.h << 8) + c._r.l) & 0x80, 0);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c.fz(m.r8b(addr) & 0x80, 0);
     c._r.m = 3;
     c._r.t = 12;
 }

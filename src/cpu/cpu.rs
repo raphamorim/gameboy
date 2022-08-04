@@ -303,73 +303,87 @@ impl Cpu {
     }
 
     fn ldr_hlm_b(&mut self, m: &mut Mmu) {
-        self._r.b = m.rr8b((self._r.h << 8) + self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        self._r.b = m.r8b(addr);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldr_hlm_c(&mut self, m: &mut Mmu) {
-        self._r.c = m.rr8b((self._r.h << 8) + self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        self._r.c = m.r8b(addr);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldr_hlm_d(&mut self, m: &mut Mmu) {
-        self._r.d = m.rr8b((self._r.h << 8) + self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        self._r.d = m.r8b(addr);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldr_hlm_e(&mut self, m: &mut Mmu) {
-        self._r.e = m.rr8b((self._r.h << 8) + self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        self._r.e = m.r8b(addr);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldr_hlm_h(&mut self, m: &mut Mmu) {
-        self._r.h = m.rr8b((self._r.h << 8) + self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        self._r.h = m.r8b(addr);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldr_hlm_l(&mut self, m: &mut Mmu) {
-        self._r.l = m.rr8b((self._r.h << 8) + self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        self._r.l = m.r8b(addr);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldr_hlm_a(&mut self, m: &mut Mmu) {
-        self._r.a = m.rr8b((self._r.h << 8) + self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        self._r.a = m.r8b(addr);
         self._r.m = 2;
         self._r.t = 8;
     }
 
     fn ld_hlmr_b(&mut self, m: &mut Mmu) {
-        m.ww8b((self._r.h << 8) + self._r.l, self._r.b);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        m.w8b(addr, self._r.b);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ld_hlmr_c(&mut self, m: &mut Mmu) {
-        m.ww8b((self._r.h << 8) + self._r.l, self._r.c);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        m.w8b(addr, self._r.c);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ld_hlmr_d(&mut self, m: &mut Mmu) {
-        m.ww8b((self._r.h << 8) + self._r.l, self._r.d);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        m.w8b(addr, self._r.d);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ld_hlmr_e(&mut self, m: &mut Mmu) {
-        m.ww8b((self._r.h << 8) + self._r.l, self._r.e);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        m.w8b(addr, self._r.e);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ld_hlmr_h(&mut self, m: &mut Mmu) {
-        m.ww8b((self._r.h << 8) + self._r.l, self._r.h);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        m.w8b(addr, self._r.h);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ld_hlmr_l(&mut self, m: &mut Mmu) {
-        m.ww8b((self._r.h << 8) + self._r.l, self._r.l);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        m.w8b(addr, self._r.l);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ld_hlmr_a(&mut self, m: &mut Mmu) {
-        m.ww8b((self._r.h << 8) + self._r.l, self._r.a);
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
+        m.w8b(addr, self._r.a);
         self._r.m = 2;
         self._r.t = 8;
     }
