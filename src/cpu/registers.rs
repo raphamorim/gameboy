@@ -25,6 +25,7 @@ pub struct Registers {
     pub h: u8,
     pub l: u8,
     pub r: u8,
+    pub ime: u8,
 
     // The flags register (F)
     // it automatically calculates certain bits, or flags, based on the result of the last operation.
@@ -57,6 +58,7 @@ impl Default for Registers {
             t: 0,
             pc: 0,
             sp: 0,
+            ime: 0,
             r: 0,
             clock: Clock { m: 0, t: 0 },
         }

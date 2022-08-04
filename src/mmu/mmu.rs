@@ -163,6 +163,11 @@ impl Mmu {
         self.w8b(address + 1, (value >> 8) as u8);
     }
 
+    // Write 16-bit byte to a given address
+    pub fn ww16b(&mut self, address: u16, value: u8) {
+        self.w16b(address, value as u16);
+    }
+
     pub fn load_rom(&mut self, rom: Vec<u8>) {
         self.rom = rom;
     }
