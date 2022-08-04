@@ -6,6 +6,7 @@ use crate::mmu::timer::Timer;
 
 pub const WRAM_SIZE: usize = 0x8000;
 pub const ZRAM_SIZE: usize = 0x7F;
+pub const HIRAM_SIZE: usize = 0x7f;
 
 pub struct Mmu {
     // memory: u32,
@@ -19,8 +20,13 @@ pub struct Mmu {
     // Heap
     wram: Box<[u8; WRAM_SIZE]>,
     zram: Box<[u8; ZRAM_SIZE]>,
+    hiram: Box<[u8; HIRAM_SIZE]>,
     rom: Vec<u8>,
     rombank: u16,
+    rambank: u8,
+    wrambank: u8,
+    mode: bool,
+    ramon: bool,
     // _bios: [],
     // _eram: [],
     pub gpu: Box<Gpu>,
@@ -34,9 +40,14 @@ impl Mmu {
             rom: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
             zram: Box::new([0; ZRAM_SIZE]),
+            hiram: Box::new([0; HIRAM_SIZE]),
             timer: Box::new(Timer::new()),
             gpu: Box::new(Gpu::new()),
             rombank: 1,
+            mode: false,
+            rambank: 0,
+            wrambank: 0,
+            ramon: false,
         }
     }
 
@@ -73,6 +84,8 @@ impl Mmu {
         self.w8b(0xFF49, 0xFF);
         self.w8b(0xFF4A, 0);
         self.w8b(0xFF4B, 0);
+
+        self.gpu.white();
     }
 
     // Read 8-bit byte from a given address
@@ -80,43 +93,63 @@ impl Mmu {
         address as u8
     }
 
-    // Read 8-bit byte to a given u8 address
-    pub fn rr8b(&mut self, address: u8) -> u8 {
-        self.r8b(address as u16)
-    }
+    /// Reads a byte at the given address
+    pub fn r8b(&self, addr: u16) -> u8 {
+        // More information about mappings can be found online at
+        //      http://nocash.emubase.de/pandocs.htm#memorymap
+        match addr >> 12 {
+            // Always mapped in as first bank of cartridge
+            0x0 | 0x1 | 0x2 | 0x3 => self.rom[addr as usize],
 
-    // Read 8-bit word from a given address
-    pub fn r8b(&mut self, address: u16) -> u8 {
-        match address {
-            // ROM0
-            0x0000..=0x3FFF => self.rom[address as usize],
-            // ROM1 (unbanked) (16k)
-            0x4000..=0x7FFF => {
-                self.rom[(((self.rombank as u32) << 14) | ((address as u32) & 0x3fff)) as usize]
+            // Swappable banks of ROM, there may be a total of more than 2^16
+            // bytes in the ROM, so we use u32 here.
+            0x4 | 0x5 | 0x6 | 0x7 => {
+                self.rom[(((self.rombank as u32) << 14) | ((addr as u32) & 0x3fff)) as usize]
             }
-            // Graphics VRAM (8k)
-            0x8000..=0x9FFF => self.r8b(address),
-            // // External RAM (8k)
-            // 0xA000..=0xBFFF => self.mbc.readram(address),
-            // // Working RAM (8k) and RAM shadow
-            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF],
-            // 0xD000..=0xDFFF | 0xF000..=0xFDFF => self.wram[(self.wrambank * 0x1000) | address as usize & 0x0FFF],
 
-            // // Graphics: object attribute memory
-            0xFE00..=0xFE9F => self.r8b(address),
-            // Zero-page
-            // 0xFF00 => self.keypad.rb(),
-            // 0xFF01..=0xFF02 => self.nop(address),
-            // 0xFF04..=0xFF07 => self.nop(address),
-            // 0xFF0F => self.nop(address),
-            // 0xFF10..=0xFF3F => self.nop(address),
-            // 0xFF4D => 0,
-            // 0xFF40..=0xFF4F => self.nop(address),
-            // 0xFF51..=0xFF55 => self.nop(address),
-            // 0xFF68..=0xFF6B => self.nop(address),
-            // 0xFF70 => self.nop(address),
-            // 0xFF80..=0xFFFE => self.nop(address),
-            0xFFFF => self.f_flag,
+            0x8 | 0x9 => self.gpu.vram()[(addr & 0x1fff) as usize],
+
+            // 0xa | 0xb => {
+            //     // Swappable banks of RAM
+            //     if self.ramon {
+            //         if self.rtc.current & 0x08 != 0 {
+            //             self.rtc.regs[(self.rtc.current & 0x7) as usize]
+            //         } else {
+            //             self.ram[(((self.rambank as u16) << 12) |
+            //                      (addr & 0x1fff)) as usize]
+            //         }
+            //     } else {
+            //         0xff
+            //     }
+            // }
+
+            // e000-fdff same as c000-ddff
+            0xe | 0xc => self.wram[(addr & 0xfff) as usize],
+            0xd => self.wram[(((self.rombank as u16) << 12) | (addr & 0xfff)) as usize],
+
+            0xf => {
+                if addr < 0xfe00 {
+                    // mirrored RAM
+                    self.r8b(addr & 0xdfff)
+                } else if addr < 0xfea0 {
+                    // sprite attribute table (oam)
+                    self.gpu.oam[(addr & 0xff) as usize]
+                } else if addr < 0xff00 {
+                    // unusable ram
+                    0xff
+                } else if addr < 0xff80 {
+                    // I/O ports
+                    0xff
+                    // self.ioreg_rb(addr)
+                } else if addr < 0xffff {
+                    // High RAM
+                    self.hiram[(addr & 0x7f) as usize]
+                } else {
+                    0xff
+                    // self.ie_
+                }
+            }
+
             _ => 0,
         }
     }
@@ -126,13 +159,85 @@ impl Mmu {
         (self.r8b(address) as u16) | ((self.r8b(address + 1) as u16) << 8)
     }
 
-    // Write 8-bit byte to a given address
-    pub fn ww8b(&mut self, address: u8, value: u8) {
-        self.w8b(address as u16, value);
+    /// Writes a byte at the given address
+    pub fn w8b(&mut self, addr: u16, val: u8) {
+        // More information about mappings can be found online at
+        //      http://nocash.emubase.de/pandocs.htm#memorymap
+        match addr >> 12 {
+            0x0 | 0x1 => {
+                self.ramon = val & 0xf == 0xa;
+            }
+
+            0x2 | 0x3 => {
+                let val = val as u16;
+                self.rombank = (self.rombank & 0x60) | (val & 0x1f);
+                if self.rombank == 0 {
+                    self.rombank = 1;
+                }
+            }
+
+            0x4 | 0x5 => {
+                if !self.mode {
+                    // ROM banking mode
+                    self.rombank = (self.rombank & 0x1f) | (((val as u16) & 0x3) << 5);
+                } else {
+                    // RAM banking mode
+                    self.rambank = val & 0x3;
+                }
+            }
+
+            0x6 | 0x7 => {
+                self.mode = val & 0x1 != 0;
+            }
+
+            0x8 | 0x9 => {
+                // self.gpu.vram_mut()[(addr & 0x1fff) as usize] = val;
+                if addr < 0x9800 {
+                    // self.gpu.update_tile(addr);
+                }
+            }
+
+            0xa | 0xb => {
+                if self.ramon {
+                    // if self.rtc.current & 0x8 != 0 {
+                    //     self.rtc.wb(addr, val);
+                    // } else {
+                    //     let val = if self.mbc == Mbc::Mbc2 {val & 0xf} else {val};
+                    //     self.ram[(((self.rambank as u16) << 12) |
+                    //              (addr & 0x1fff)) as usize] = val;
+                    // }
+                }
+            }
+
+            0xc | 0xe => {
+                self.wram[(addr & 0xfff) as usize] = val;
+            }
+            0xd => {
+                self.wram[(((self.wrambank as u16) << 12) | (addr & 0xfff)) as usize] = val;
+            }
+
+            0xf => {
+                if addr < 0xfe00 {
+                    self.w8b(addr & 0xdfff, val); // mirrored RAM
+                } else if addr < 0xfea0 {
+                    // self.gpu.oam[(addr & 0xff) as usize] = val;
+                } else if addr < 0xff00 {
+                    // unusable ram
+                } else if addr < 0xff80 {
+                    // self.ioreg_wb(addr, val);
+                } else if addr < 0xffff {
+                    // self.hiram[(addr & 0x7f) as usize] = val;
+                } else {
+                    // self.ie_ = val;
+                }
+            }
+
+            _ => {}
+        }
     }
 
     // Write 8-bit byte to a given address
-    pub fn w8b(&mut self, address: u16, value: u8) {
+    pub fn wa8b(&mut self, address: u16, value: u8) {
         match address {
             0x0000..=0x7FFF => self.nop(address),
             0x8000..=0x9FFF => self.nop(address),
@@ -161,11 +266,6 @@ impl Mmu {
     pub fn w16b(&mut self, address: u16, value: u16) {
         self.w8b(address, (value & 0xFF) as u8);
         self.w8b(address + 1, (value >> 8) as u8);
-    }
-
-    // Write 16-bit byte to a given address
-    pub fn ww16b(&mut self, address: u16, value: u8) {
-        self.w16b(address, value as u16);
     }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) {

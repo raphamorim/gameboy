@@ -72,7 +72,8 @@ pub fn addr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn addhl(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a += m.rr8b((c._r.h << 8) + c._r.l);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c._r.a += m.r8b(addr);
     c.fz(c._r.a, 0);
     if c._r.a > 255 {
         c._r.f |= 0x10;
@@ -93,8 +94,8 @@ pub fn addn(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 8;
 }
 pub fn addhlbc(c: &mut Cpu) {
-    let mut hl = ((c._r.h << 8) + c._r.l) as u16;
-    hl += ((c._r.b << 8) + c._r.c) as u16;
+    let mut hl = ((c._r.h as u16) << 8) + c._r.l as u16;
+    hl += ((c._r.b as u16) << 8) + c._r.c as u16;
     if hl > 65535 {
         c._r.f |= 0x10;
     } else {
@@ -106,8 +107,9 @@ pub fn addhlbc(c: &mut Cpu) {
     c._r.t = 12;
 }
 pub fn addhlde(c: &mut Cpu) {
-    let mut hl = ((c._r.h << 8) + c._r.l) as u16;
-    hl += ((c._r.d << 8) + c._r.e) as u16;
+    let mut hl: u16 = ((c._r.h as u16) << 8) + c._r.l as u16;
+    hl += ((c._r.d as u16) << 8) + c._r.e as u16;
+
     if hl > 65535 {
         c._r.f |= 0x10;
     } else {
@@ -119,8 +121,9 @@ pub fn addhlde(c: &mut Cpu) {
     c._r.t = 12;
 }
 pub fn addhlhl(c: &mut Cpu) {
-    let mut hl = ((c._r.h << 8) + c._r.l) as u16;
-    hl += ((c._r.h << 8) + c._r.l) as u16;
+    let mut hl: u16 = ((c._r.h as u16) << 8) + c._r.l as u16;
+    hl += ((c._r.h as u16) << 8) + c._r.l as u16;
+
     if hl > 65535 {
         c._r.f |= 0x10;
     } else {
@@ -132,7 +135,7 @@ pub fn addhlhl(c: &mut Cpu) {
     }
 }
 pub fn addhlsp(c: &mut Cpu) {
-    let mut hl = ((c._r.h << 8) + c._r.l) as u16;
+    let mut hl = ((c._r.h as u16) << 8) + c._r.l as u16;
     hl += c._r.sp;
     if hl > 65535 {
         c._r.f |= 0x10;
@@ -260,7 +263,8 @@ pub fn adcr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn adchl(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a += m.rr8b((c._r.h << 8) + c._r.l);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c._r.a += m.r8b(addr);
     if c._r.f >= 0x10 {
         c._r.a += 1
     } else {
@@ -361,7 +365,8 @@ pub fn subr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn subhl(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a -= m.rr8b((c._r.h << 8) + c._r.l);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c._r.a -= m.r8b(addr);
     c.fz(c._r.a, 1);
     if c._r.a < 0 {
         c._r.f |= 0x10;
@@ -488,7 +493,8 @@ pub fn sbcr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn sbchl(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a -= m.rr8b((c._r.h << 8) + c._r.l);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c._r.a -= m.r8b(addr);
     if c._r.f >= 0x10 {
         c._r.a -= 1
     } else {
@@ -598,7 +604,8 @@ pub fn cpr_a(c: &mut Cpu) {
 }
 pub fn cphl(c: &mut Cpu, m: &mut Mmu) {
     let mut i = c._r.a;
-    i -= m.rr8b((c._r.h << 8) + c._r.l);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    i -= m.r8b(addr);
     c.fz(i, 1);
     if i < 0 {
         c._r.f |= 0x10;
@@ -670,7 +677,8 @@ pub fn andr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn andhl(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a &= m.rr8b((c._r.h << 8) + c._r.l);
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    c._r.a &= m.r8b(addr);
     c._r.a &= 255;
     c.fz(c._r.a, 0);
     c._r.m = 2;
@@ -924,9 +932,10 @@ pub fn decr_a(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn dechlm(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.rr8b((c._r.h << 8) + c._r.l) - 1;
+    let addr = ((c._r.h as u16) << 8) + c._r.l as u16;
+    let mut i = m.r8b(addr) - 1;
     i &= 255;
-    m.ww8b((c._r.h << 8) + c._r.l, i);
+    m.w8b(addr, i);
     c.fz(i, 0);
     c._r.m = 3;
     c._r.t = 12;
@@ -977,7 +986,7 @@ pub fn decde(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn dechl(c: &mut Cpu) {
-    c._r.l = (c._r.l - 1) & 255;
+    // c._r.l = (c._r.l - 1) & 255;
     if c._r.l == 255 {
         c._r.h = (c._r.h - 1) & 255;
     }

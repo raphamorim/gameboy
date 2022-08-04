@@ -19,7 +19,8 @@ test:
 ######## Desktop ###########
 ############################
 d:
-	make desktop-build && make desktop
+#	Debug
+	make desktop-build && RUST_BACKTRACE=1 make desktop
 
 desktop-build:
 	cd desktop && cargo build
