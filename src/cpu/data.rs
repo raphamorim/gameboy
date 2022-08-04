@@ -816,7 +816,6 @@ pub fn xorn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 2;
     c._r.t = 8;
 }
-
 pub fn incr_b(c: &mut Cpu) {
     c._r.b += 1;
     c._r.b &= 255;
@@ -874,7 +873,6 @@ pub fn inchlm(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-
 pub fn decr_b(c: &mut Cpu) {
     c._r.b -= 1;
     c._r.b &= 255;
@@ -932,7 +930,6 @@ pub fn dechlm(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-
 pub fn incbc(c: &mut Cpu) {
     c._r.c = (c._r.c + 1) & 255;
     if c._r.c == 0 {
