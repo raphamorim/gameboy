@@ -626,7 +626,6 @@ pub fn cpn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 2;
     c._r.t = 8;
 }
-
 pub fn andr_b(c: &mut Cpu) {
     c._r.a &= c._r.b;
     c._r.a &= 255;

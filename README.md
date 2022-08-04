@@ -131,7 +131,7 @@ More information: https://rylev.github.io/DMG-01/public/book/memory_map.html
 You can set the map the initial memory struct with something like this:
 
 ```rust
-fn set_initial(&mut self) {
+fn power_on(&mut self) {
     self.write_byte(0xFF05, 0);
     self.write_byte(0xFF06, 0);
     self.write_byte(0xFF07, 0);

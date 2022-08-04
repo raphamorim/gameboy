@@ -84,8 +84,6 @@ impl Mmu {
         self.w8b(0xFF49, 0xFF);
         self.w8b(0xFF4A, 0);
         self.w8b(0xFF4B, 0);
-
-        self.gpu.white();
     }
 
     // Read 8-bit byte from a given address

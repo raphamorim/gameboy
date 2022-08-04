@@ -36,7 +36,7 @@ impl Gameboy {
         // self.cycles += 70224;
 
         // while self.cycles <= 70224 {
-        //     let time = 4;
+        //     let time = self.cpu.exec(&mut self.mem);
         //     self.memory.timer.step(time);
         //     self.memory.gpu.step(time, &mut self.memory.f_flag);
         //     self.cycles -= time;

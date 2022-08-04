@@ -223,7 +223,8 @@ impl Gpu {
         &mut self.vrambanks[self.vrambank as usize]
     }
 
-    fn switch(&mut self, mode: Mode, if_: &mut u8) {
+    // fn switch(&mut self, mode: Mode, if_: &mut u8) {
+    fn switch(&mut self, mode: Mode) {
         self.mode = mode;
         match mode {
             Mode::HBlank => {
@@ -257,7 +258,8 @@ impl Gpu {
     // internal counter of clock cycles that have passed. It's a state machine
     // between a few different states. In one state, however, the rendering of a
     // screen occurs, but that doesn't always happen when calling this function.
-    pub fn step(&mut self, clocks: u32, if_: &mut u8) {
+    // pub fn step(&mut self, clocks: u32, if_: &mut u8) {
+    pub fn step(&mut self, clocks: u32) {
         // Timings located here:
         //      http://nocash.emubase.de/pandocs.htm#lcdstatusregister
         self.clock += clocks;
@@ -269,7 +271,7 @@ impl Gpu {
             self.ly = (self.ly + 1) % 154; // 144 lines tall, 10 for a vblank
 
             if self.ly >= 144 && self.mode != Mode::VBlank {
-                self.switch(Mode::VBlank, if_);
+                self.switch(Mode::VBlank);
             }
 
             if self.ly == self.lyc && self.lycly {
@@ -282,23 +284,24 @@ impl Gpu {
             if self.clock <= 80 {
                 // RDOAM takes 80 cycles
                 if self.mode != Mode::RdOam {
-                    self.switch(Mode::RdOam, if_);
+                    self.switch(Mode::RdOam);
                 }
             } else if self.clock <= 252 {
                 // RDVRAM takes 172 cycles
                 if self.mode != Mode::RdVram {
-                    self.switch(Mode::RdVram, if_);
+                    self.switch(Mode::RdVram);
                 }
             } else {
                 // HBLANK takes rest of time before line rendered
                 if self.mode != Mode::HBlank {
-                    self.switch(Mode::HBlank, if_);
+                    self.switch(Mode::HBlank);
                 }
             }
         }
     }
 
     fn render_line(&mut self) {
+        println!("{:?}", self.lcdon);
         if !self.lcdon {
             return;
         }

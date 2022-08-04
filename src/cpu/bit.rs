@@ -252,7 +252,6 @@ pub fn bit5m(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-
 pub fn bit6b(c: &mut Cpu) {
     c.fz(c._r.b & 0x40, 0);
     c._r.m = 2;

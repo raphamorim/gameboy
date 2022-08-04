@@ -1,5 +1,7 @@
+use crate::cpu::bit;
 use crate::cpu::data;
 use crate::cpu::registers::{Clock, Registers};
+use crate::cpu::stack;
 use crate::mmu::mmu::Mmu;
 
 #[derive(Debug)]
@@ -39,7 +41,7 @@ impl Cpu {
     }
     pub fn fz(&mut self, i: u8, cond: u8) {
         self._r.f = 0;
-        if i == 0 || i > 255 {
+        if i == 0 || i > u8::MAX {
             self._r.f |= 128;
         }
         if cond > 0 {
@@ -430,7 +432,6 @@ impl Cpu {
         self._r.m = 2;
         self._r.t = 8;
     }
-
     fn ld_hlmn(&mut self, m: &mut Mmu) {
         let value = m.r8b(self._r.pc);
         let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
@@ -439,7 +440,6 @@ impl Cpu {
         self._r.m = 3;
         self._r.t = 12;
     }
-
     fn ld_bcm_a(&mut self, m: &mut Mmu) {
         let addr = ((self._r.b as u16) << 8) + self._r.c as u16;
         m.w8b(addr, self._r.a);
@@ -452,7 +452,6 @@ impl Cpu {
         self._r.m = 2;
         self._r.t = 8;
     }
-
     fn ldmm_a(&mut self, m: &mut Mmu) {
         let addr = m.r16b(self._r.pc);
         m.w8b(addr, self._r.a);
@@ -460,7 +459,6 @@ impl Cpu {
         self._r.m = 4;
         self._r.t = 16;
     }
-
     fn ld_abcm(&mut self, m: &mut Mmu) {
         let addr = ((self._r.b as u16) << 8) + self._r.c as u16;
         self._r.a = m.r8b(addr);
@@ -473,7 +471,6 @@ impl Cpu {
         self._r.m = 2;
         self._r.t = 8;
     }
-
     fn ld_amm(&mut self, m: &mut Mmu) {
         let addr = m.r16b(self._r.pc);
         self._r.a = m.r8b(addr);
@@ -481,7 +478,6 @@ impl Cpu {
         self._r.m = 4;
         self._r.t = 16;
     }
-
     fn ld_bcnn(&mut self, m: &mut Mmu) {
         self._r.c = m.r8b(self._r.pc);
         self._r.b = m.r8b(self._r.pc + 1);
@@ -596,13 +592,16 @@ impl Cpu {
         self._r.t = 8;
     }
     fn ld_hlspn(&mut self, m: &mut Mmu) {
-        let i = m.r8b(self._r.pc);
+        let mut i: u8 = m.r8b(self._r.pc);
         if i > 127 {
-            // i=-((!i+1)&255);
+            // i=-(!i+1);
+            // i = (i - (self._r.sp as u8)) + 1;
+            i = 1;
         }
         self._r.pc += 1;
-        // i += self._r.sp.into();
-        self._r.h = (i >> 8) & 255;
+        i += self._r.sp as u8;
+        // self._r.h = ((i >> 8) as u8) & 255;
+        self._r.h = i;
         self._r.l = i & 255;
         self._r.m = 3;
         self._r.t = 12;
@@ -610,62 +609,77 @@ impl Cpu {
 
     fn swapr_b(&mut self, m: &mut Mmu) {
         let tr = self._r.b;
-        let addr = ((self._r.h << 8) + self._r.l) as u16;
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
         self._r.b = m.r8b(addr);
-        let waddr = ((self._r.h << 8) + self._r.l) as u16;
+        let waddr = ((self._r.h as u16) << 8) + self._r.l as u16;
         m.w8b(waddr, tr);
         self._r.m = 4;
         self._r.t = 16;
     }
     fn swapr_c(&mut self, m: &mut Mmu) {
         let tr = self._r.c;
-        let addr = ((self._r.h << 8) + self._r.l) as u16;
+        let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
         self._r.c = m.r8b(addr);
-        let waddr = ((self._r.h << 8) + self._r.l) as u16;
+        let waddr = ((self._r.h as u16) << 8) + self._r.l as u16;
         m.w8b(waddr, tr);
         self._r.m = 4;
         self._r.t = 16;
     }
     fn swapr_d(&mut self, m: &mut Mmu) {
         let tr = self._r.d;
-        self._r.d = m.r8b(((self._r.h << 8) + self._r.l).into());
-        m.w8b(((self._r.h << 8) + self._r.l).into(), tr);
+        self._r.d = m.r8b(((self._r.h as u16) << 8) + self._r.l as u16);
+        m.w8b(((self._r.h as u16) << 8) + self._r.l as u16, tr);
         self._r.m = 4;
         self._r.t = 16;
     }
     fn swapr_e(&mut self, m: &mut Mmu) {
         let tr = self._r.e;
-        self._r.e = m.r8b(((self._r.h << 8) + self._r.l).into());
-        m.w8b(((self._r.h << 8) + self._r.l).into(), tr);
+        self._r.e = m.r8b(((self._r.h as u16) << 8) + self._r.l as u16);
+        m.w8b(((self._r.h as u16) << 8) + self._r.l as u16, tr);
         self._r.m = 4;
         self._r.t = 16;
     }
     fn swapr_h(&mut self, m: &mut Mmu) {
         let tr = self._r.h;
-        self._r.h = m.r8b(((self._r.h << 8) + self._r.l).into());
-        m.w8b(((self._r.h << 8) + self._r.l).into(), tr);
+        self._r.h = m.r8b(((self._r.h as u16) << 8) + self._r.l as u16);
+        m.w8b(((self._r.h as u16) << 8) + self._r.l as u16, tr);
         self._r.m = 4;
         self._r.t = 16;
     }
     fn swapr_l(&mut self, m: &mut Mmu) {
         let tr = self._r.l;
-        self._r.l = m.r8b(((self._r.h << 8) + self._r.l).into());
-        m.w8b(((self._r.h << 8) + self._r.l).into(), tr);
+        self._r.l = m.r8b(((self._r.h as u16) << 8) + self._r.l as u16);
+        m.w8b(((self._r.h as u16) << 8) + self._r.l as u16, tr);
         self._r.m = 4;
         self._r.t = 16;
     }
     fn swapr_a(&mut self, m: &mut Mmu) {
         let tr = self._r.a;
-        self._r.a = m.r8b(((self._r.h << 8) + self._r.l).into());
-        m.w8b(((self._r.h << 8) + self._r.l).into(), tr);
+        self._r.a = m.r8b(((self._r.h as u16) << 8) + self._r.l as u16);
+        m.w8b(((self._r.h as u16) << 8) + self._r.l as u16, tr);
         self._r.m = 4;
         self._r.t = 16;
+    }
+    pub fn mapcb(&mut self, m: &mut Mmu) {
+        let i = m.r8b(self._r.pc);
+        self._r.pc += 1;
+        self._r.pc &= 65535;
+        if i <= u8::MAX {
+            self.cbmap(i, m);
+        } else {
+            println!("{}", i);
+        }
     }
 
     pub fn exec(&mut self, m: &mut Mmu) {
         'outer: loop {
             self._r.r = (self._r.r + 1) & 127;
             let counter = m.r8b(self._r.pc);
+
+            // let time = self.cpu.exec(&mut self.mem);
+            // m.timer.step(self._r.pc.into());
+            m.gpu.step(self._r.pc.into());
+
             println!("{:?}", counter);
             if counter == 255 {
                 break 'outer;
@@ -704,7 +718,7 @@ impl Cpu {
             20 => data::decr_d(self),
             21 => self.ldrn_d(m),
             // 22 => self.rla(m),
-            // 23 => self.jrn(m),
+            23 => stack::jrn(self, m),
             24 => data::addhlde(self),
             25 => self.ld_adem(m),
             26 => data::decde(self),
@@ -712,7 +726,7 @@ impl Cpu {
             28 => data::decr_e(self),
             29 => self.ldrn_e(m),
             // 30 => self.rra(m),
-            // 31 => self.jrnzn(m),
+            31 => stack::jrnzn(self, m),
             32 => self.ld_hlnn(m),
             33 => self.ld_hlia(m),
             34 => data::inchl(self),
@@ -720,7 +734,7 @@ impl Cpu {
             36 => data::decr_h(self),
             37 => self.ldrn_h(m),
             38 => self.xx(),
-            // 39 => self.jrzn(m),
+            39 => stack::jrzn(self, m),
             40 => data::addhlhl(self),
             41 => self.ld_ahli(m),
             42 => data::dechl(self),
@@ -728,7 +742,7 @@ impl Cpu {
             44 => data::decr_l(self),
             45 => self.ldrn_l(m),
             // 46 => self.cpl(m),
-            // 47 => self.jrncn(m),
+            47 => stack::jrncn(self, m),
             48 => self.ld_spnn(m),
             49 => self.ld_hld_a(m),
             50 => data::incsp(self),
@@ -736,7 +750,7 @@ impl Cpu {
             52 => data::dechlm(self, m),
             53 => self.ld_hlmn(m),
             // 54 => self.scf(m),
-            // 55 => self.jrcn(m),
+            55 => stack::jrcn(self, m),
             56 => data::addhlsp(self),
             57 => self.ld_ahld(m),
             58 => data::decsp(self),
@@ -872,77 +886,210 @@ impl Cpu {
             188 => data::cpr_l(self),
             189 => data::cphl(self, m),
             190 => data::cpr_a(self),
-            //           191 => self.retnz(m),
-            //           192 => self.popbc(m),
-            //           193 => self.jpnznn(m),
-            //           194 => self.jpnn(m),
-            //           195 => self.callnznn(m),
-            //           196 => self.pushbc(m),
-            //           197 => self.addn(m),
-            //           198 => self.rst00(m),
-            //           199 => self.retz(m),
-            //           200 => self.ret(m),
-            //           201 => self.jpznn(m),
-            //           202 => self.mapcb(m),
-            //           203 => self.callznn(m),
-            //           204 => self.callnn(m),
-            //           205 => self.adcn(m),
-            //           206 => self.rst08(m),
+            191 => stack::retnz(self, m),
+            192 => stack::popbc(self, m),
+            193 => stack::jpnznn(self, m),
+            194 => stack::jpnn(self, m),
+            195 => stack::callnznn(self, m),
+            196 => stack::pushbc(self, m),
+            197 => data::addn(self, m),
+            198 => stack::rst00(self, m),
+            199 => stack::retz(self, m),
+            200 => stack::ret(self, m),
+            201 => stack::jpznn(self, m),
+            202 => self.mapcb(m),
+            203 => stack::callznn(self, m),
+            204 => stack::callnn(self, m),
+            205 => data::adcn(self, m),
+            206 => stack::rst08(self, m),
+            207 => stack::retnc(self, m),
+            208 => stack::popde(self, m),
+            209 => stack::jpncnn(self, m),
+            210 => self.xx(),
+            211 => stack::callncnn(self, m),
+            212 => stack::pushde(self, m),
+            213 => data::subn(self, m),
+            214 => stack::rst10(self, m),
+            215 => stack::retc(self, m),
+            216 => stack::reti(self, m),
+            217 => stack::jpcnn(self, m),
+            218 => self.xx(),
+            // 219 => self.callcnn(m),
+            220 => self.xx(),
+            // 221 => self.sbcn(m),
+            // 222 => self.rst18(m),
 
-            // // D0
-            //           207 => self.retnc(m),
-            //           208 => self.popde(m),
-            //           209 => self.jpncnn(m),
-            //           210 => self.xx(m),
-            //           211 => self.callncnn(m),
-            //           212 => self.pushde(m),
-            //           213 => self.subn(m),
-            //           214 => self.rst10(m),
-            //           215 => self.retc(m),
-            //           216 => self.reti(m),
-            //           217 => self.jpcnn(m),
-            //           218 => self.xx(m),
-            //           219 => self.callcnn(m),
-            //           220 => self.xx(m),
-            //           221 => self.sbcn(m),
-            //           222 => self.rst18(m),
-
-            // // E0
-            //           223 => self.ldiona(m),
-            //           224 => self.pophl(m),
-            //           225 => self.ldioca(m),
-            //           226 => self.xx(m),
-            //           227 => self.xx(m),
-            //           228 => self.pushhl(m),
-            //           229 => self.andn(m),
-            //           230 => self.rst20(m),
-            //           231 => self.addspn(m),
-            //           232 => self.jphl(m),
-            //           233 => self.ldmma(m),
-            //           234 => self.xx(m),
-            //           235 => self.xx(m),
-            //           236 => self.xx(m),
-            //           237 => self.orn(m),
-            //           238 => self.rst28(m),
-
-            //           // F0
-            //           239 => self.ldaion(m),
-            //           240 => self.popaf(m),
-            //           241 => self.ldaioc(m),
-            //           242 => self.di(m),
-            //           243 => self.xx(m),
-            //           244 => self.pushaf(m),
+            // E0
+            223 => self.ld_ion_a(m),
+            224 => stack::pophl(self, m),
+            225 => self.ld_ioca(m),
+            226 => self.xx(),
+            227 => self.xx(),
+            228 => stack::pushhl(self, m),
+            229 => data::andn(self, m),
+            230 => stack::rst20(self, m),
+            231 => data::addspn(self, m),
+            232 => stack::jphl(self),
+            233 => self.ldmm_a(m),
+            234 => self.xx(),
+            235 => self.xx(),
+            236 => self.xx(),
+            237 => data::orn(self, m),
+            238 => stack::rst28(self, m),
+            239 => self.ld_aion(m),
+            240 => stack::popaf(self, m),
+            241 => self.ld_aioc(m),
+            242 => self.di(),
+            243 => self.xx(),
+            244 => stack::pushaf(self, m),
             245 => data::xorn(self, m),
-            //           246 => self.rst30(m),
-            //           247 => self.ldhlspn(m),
-            //           248 => self.xx(m),
-            //           249 => self.ldamm(m),
-            //           250 => self.ei(m),
-            //           251 => self.xx(m),
-            //           252 => self.xx(m),
-            //           253 => self.cpn(m),
-            //           254 => self.rst38(m),
+            246 => stack::rst30(self, m),
+            247 => self.ld_hlspn(m),
+            248 => self.xx(),
+            249 => self.ld_amm(m),
+            250 => self.ei(),
+            251 => self.xx(),
+            252 => self.xx(),
+            253 => data::cpn(self, m),
+            254 => stack::rst38(self, m),
             _ => self.nop(),
+        }
+    }
+
+    fn cbmap(&mut self, op: u8, m: &mut Mmu) {
+        match op {
+            // CB00
+            // 0 => self.RLCr_b,
+            // 1 => self.RLCr_c,
+            // 2 => self.RLCr_d,
+            // 3 => self.RLCr_e,
+            // 4 => self.RLCr_h,
+            // 5 => self.RLCr_l,
+            // 6 => self.RLCHL,
+            // 7 => self.RLCr_a,
+            // 8 => self.RRCr_b,
+            // 9 => self.RRCr_c,
+            // 10 => self.RRCr_d,
+            // 11 => self.RRCr_e,
+            // 12 => self.RRCr_h,
+            // 13 => self.RRCr_l,
+            // 14 => self.RRCHL,
+            // 15 => self.RRCr_a,
+            // 16 => self.RLr_b,
+            // 17 => self.RLr_c,
+            // 18 => self.RLr_d,
+            // 19 => self.RLr_e,
+            // 20 => self.RLr_h,
+            // 21 => self.RLr_l,
+            // 22 => self.RLHL,
+            // 23 => self.RLr_a,
+            // 24 => self.RRr_b,
+            // 25 => self.RRr_c,
+            // 26 => self.RRr_d,
+            // 27 => self.RRr_e,
+            // 28 => self.RRr_h,
+            // 29 => self.RRr_l,
+            // 30 => self.RRHL,
+            // 31 => self.RRr_a,
+            // 32 => self.SLAr_b,
+            // 33 => self.SLAr_c,
+            // 34 => self.SLAr_d,
+            // 35 => self.SLAr_e,
+            // 36 => self.SLAr_h,
+            // 37 => self.SLAr_l,
+            // 38 => self.xx(),
+            // 39 => self.SLAr_a,
+            // 40 => self.SRAr_b,
+            // 41 => self.SRAr_c,
+            // 42 => self.SRAr_d,
+            // 43 => self.SRAr_e,
+            // 44 => self.SRAr_h,
+            // 45 => self.SRAr_l,
+            // 46 => self.xx(),
+            // 47 => self.SRAr_a,
+            48 => self.swapr_b(m),
+            49 => self.swapr_c(m),
+            50 => self.swapr_d(m),
+            51 => self.swapr_e(m),
+            52 => self.swapr_h(m),
+            53 => self.swapr_l(m),
+            // 54 => self.xx(),
+            55 => self.swapr_a(m),
+            // 56 => self.SRLr_b,
+            // 57 => self.SRLr_c,
+            // 58 => self.SRLr_d,
+            // 59 => self.SRLr_e,
+            // 60 => self.SRLr_h,
+            // 61 => self.SRLr_l,
+            // 62 => self.xx(),
+            // 63 => self.SRLr_a,
+            64 => bit::bit0b(self),
+            65 => bit::bit0c(self),
+            66 => bit::bit0d(self),
+            67 => bit::bit0e(self),
+            68 => bit::bit0h(self),
+            69 => bit::bit0l(self),
+            70 => bit::bit0m(self, m),
+            71 => bit::bit0a(self),
+            72 => bit::bit1b(self),
+            73 => bit::bit1c(self),
+            74 => bit::bit1d(self),
+            75 => bit::bit1e(self),
+            76 => bit::bit1h(self),
+            77 => bit::bit1l(self),
+            78 => bit::bit1m(self, m),
+            79 => bit::bit1a(self),
+            80 => bit::bit2b(self),
+            81 => bit::bit2c(self),
+            82 => bit::bit2d(self),
+            83 => bit::bit2e(self),
+            84 => bit::bit2h(self),
+            85 => bit::bit2l(self),
+            86 => bit::bit2m(self, m),
+            87 => bit::bit2a(self),
+            88 => bit::bit3b(self),
+            89 => bit::bit3c(self),
+            90 => bit::bit3d(self),
+            91 => bit::bit3e(self),
+            92 => bit::bit3h(self),
+            93 => bit::bit3l(self),
+            94 => bit::bit3m(self, m),
+            95 => bit::bit3a(self),
+
+            // CB60
+            96 => bit::bit4b(self),
+            97 => bit::bit4c(self),
+            98 => bit::bit4d(self),
+            99 => bit::bit4e(self),
+            100 => bit::bit4h(self),
+            101 => bit::bit4l(self),
+            102 => bit::bit4m(self, m),
+            103 => bit::bit4a(self),
+            104 => bit::bit5b(self),
+            105 => bit::bit5c(self),
+            106 => bit::bit5d(self),
+            107 => bit::bit5e(self),
+            108 => bit::bit5h(self),
+            109 => bit::bit5l(self),
+            110 => bit::bit5m(self, m),
+            111 => bit::bit5a(self),
+            112 => bit::bit6b(self),
+            113 => bit::bit6c(self),
+            114 => bit::bit6d(self),
+            115 => bit::bit6e(self),
+            116 => bit::bit6h(self),
+            117 => bit::bit6l(self),
+            118 => bit::bit6m(self, m),
+            119 => bit::bit6a(self),
+            120 => bit::bit7b(self),
+            121 => bit::bit7c(self),
+            122 => bit::bit7d(self),
+            123 => bit::bit7e(self),
+            124 => bit::bit7h(self),
+            125 => bit::bit7l(self),
+            126 => bit::bit7m(self, m),
+            127 => bit::bit7a(self),
+            _ => self.xx(),
         }
     }
 }
