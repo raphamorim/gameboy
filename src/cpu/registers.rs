@@ -24,12 +24,11 @@ pub struct Registers {
     pub e: u8,
     pub h: u8,
     pub l: u8,
-    pub r: u8,
     pub ime: u8,
 
     // The flags register (F)
     // it automatically calculates certain bits, or flags, based on the result of the last operation.
-    pub f: u16,
+    pub f: u8,
 
     // Clock for last instruction
     pub m: u16,
@@ -46,20 +45,19 @@ pub struct Registers {
 impl Default for Registers {
     fn default() -> Self {
         Registers {
-            a: 0,
-            b: 0,
-            c: 0,
-            d: 0,
-            e: 0,
-            h: 0,
-            l: 0,
-            f: 0,
+            a: 0x01,    // 1
+            f: 0xB0,    // 176
+            b: 0x00,    // 0
+            c: 0x13,    // 19
+            d: 0x00,    // 0
+            e: 0xD8,    // 216
+            h: 0x01,    // 1
+            l: 0x4D,    // 77
+            pc: 0x0100, // Starts with 256
+            sp: 0xFFFE, // 65534
             m: 0,
             t: 0,
-            pc: 0,
-            sp: 0,
             ime: 0,
-            r: 0,
             clock: Clock { m: 0, t: 0 },
         }
     }

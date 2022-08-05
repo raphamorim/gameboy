@@ -1,6 +1,8 @@
 use crate::cpu::cpu::Cpu;
 use crate::mmu::mmu::Mmu;
 
+const ZFLAG: i32 = 0b10000000;
+
 pub fn pushbc(c: &mut Cpu, m: &mut Mmu) {
     c._r.sp -= 1;
     m.w8b(c._r.sp, c._r.b);
@@ -26,10 +28,14 @@ pub fn pushhl(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 12;
 }
 pub fn pushaf(c: &mut Cpu, m: &mut Mmu) {
-    c._r.sp -= 1;
+    if c._r.sp > 0 {
+        c._r.sp -= 1;
+    }
     m.w8b(c._r.sp, c._r.a);
-    c._r.sp -= 1;
-    m.w16b(c._r.sp, c._r.f);
+    if c._r.sp > 0 {
+        c._r.sp -= 1;
+    }
+    m.w8b(c._r.sp, c._r.f);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -59,7 +65,7 @@ pub fn pophl(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 12;
 }
 pub fn popaf(c: &mut Cpu, m: &mut Mmu) {
-    c._r.f = m.r16b(c._r.sp);
+    c._r.f = m.r8b(c._r.sp);
     c._r.sp += 1;
     c._r.a = m.r8b(c._r.sp);
     c._r.sp += 1;
@@ -68,7 +74,8 @@ pub fn popaf(c: &mut Cpu, m: &mut Mmu) {
 }
 
 pub fn jpnn(c: &mut Cpu, m: &mut Mmu) {
-    c._r.pc = m.r16b(c._r.pc);
+    // c._r.pc = m.r16b(c._r.pc);
+    c._r.pc = c.get_word(m);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -80,7 +87,10 @@ pub fn jphl(c: &mut Cpu) {
 pub fn jpnznn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
-    if (c._r.f & 0x80) == 0x00 {
+    let mask = ZFLAG as u8;
+    let is = c._r.f & mask > 0;
+    // if (c._r.f & 0x80) == 0x00 {
+    if is {
         c._r.pc = m.r16b(c._r.pc);
         c._r.m += 1;
         c._r.t += 4;
@@ -165,20 +175,32 @@ pub fn jrzn(c: &mut Cpu, m: &mut Mmu) {
         c._r.t += 4;
     }
 }
+
+// 0x38 => { if self.reg.getflag(C) { self.cpu_jr(); 3 } else { self.reg.pc += 1; 2  } },
 pub fn jrncn(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.r8b(c._r.pc);
-    if i > 127 {
-        // i=-((~i+1)&255);
-        i = 1;
-    }
-    c._r.pc += 1;
-    c._r.m = 2;
-    c._r.t = 8;
-    if (c._r.f & 0x10) == 0x00 {
-        c._r.pc += i as u16;
+    // let c = m.r8b(c._r.c);
+    if c._r.c > 0 {
+        let n = c.get_byte(m) as i8;
+        c._r.pc = ((c._r.pc as u32 as i32) + (n as i32)) as u16;
         c._r.m += 1;
         c._r.t += 4;
+    } else {
+        c._r.pc += 1;
+        c._r.m = 2;
+        c._r.t = 8;
     }
+
+    // let mut i = m.r8b(c._r.pc);
+    // if i > 127 {
+    //     // i=-((~i+1)&255);
+    //     i = (i - 1) & 255;
+    // }
+
+    // if (c._r.f & 0x10) == 0x00 {
+    // c._r.pc += i as u16;
+    // c._r.m += 1;
+    // c._r.t += 4;
+    // }
 }
 pub fn jrcn(c: &mut Cpu, m: &mut Mmu) {
     let mut i = m.r8b(c._r.pc);
@@ -272,9 +294,8 @@ pub fn callcnn(c: &mut Cpu, m: &mut Mmu) {
         c._r.pc += 2;
     }
 }
-
 pub fn ret(c: &mut Cpu, m: &mut Mmu) {
-    c._r.pc = m.r16b(c._r.sp);
+    c._r.pc = m.r16b(c._r.sp) as u16;
     c._r.sp += 2;
     c._r.m = 3;
     c._r.t = 12;
@@ -377,9 +398,10 @@ pub fn rst30(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 12;
 }
 pub fn rst38(c: &mut Cpu, m: &mut Mmu) {
-    c._r.sp -= 2;
-    m.w16b(c._r.sp, c._r.pc);
-    c._r.pc = 0x38;
+    // c._r.sp -= 2;
+    // m.w16b(c._r.sp, c._r.pc);
+    // c._r.pc = 0x38;
+    c._r.a = c._r.a | (1 << 7);
     c._r.m = 3;
     c._r.t = 12;
 }

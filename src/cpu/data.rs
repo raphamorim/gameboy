@@ -364,12 +364,7 @@ pub fn subr_l(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn subr_a(c: &mut Cpu) {
-    c._r.a -= c._r.a;
-    c.fz(c._r.a, 1);
-    if c._r.a < 0 {
-        c._r.f |= 0x10;
-    }
-    c._r.a &= 255;
+    c._r.a = c._r.a & !(1 << 2);
     c._r.m = 1;
     c._r.t = 4;
 }
@@ -624,11 +619,11 @@ pub fn cphl(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 8;
 }
 pub fn cpn(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = c._r.a;
-    i -= m.r8b(c._r.pc);
+    let mut i = c._r.a as u16;
+    i = m.r16b(c._r.pc) - i;
     c._r.pc += 1;
-    c.fz(i, 1);
-    if i < u8::MIN {
+    c.fz(i as u8, 1);
+    if i < 255 {
         c._r.f |= 0x10;
     }
     i &= 255;
@@ -891,7 +886,9 @@ pub fn inchlm(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 12;
 }
 pub fn decr_b(c: &mut Cpu) {
-    c._r.b -= 1;
+    if c._r.b > 0 {
+        c._r.b -= 1;
+    }
     c._r.b &= 255;
     c.fz(c._r.b, 0);
     c._r.m = 1;
@@ -949,10 +946,13 @@ pub fn dechlm(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 12;
 }
 pub fn incbc(c: &mut Cpu) {
-    c._r.c = (c._r.c + 1) & 255;
-    if c._r.c == 0 {
-        c._r.b = (c._r.b + 1) & 255;
-    }
+    // c._r.c = (c._r.c + 1) & 255;
+    // if c._r.c == 0 {
+    // c._r.b = (c._r.b + 1) & 255;
+    let cr_val = (c._r.c as u16).wrapping_add(1);
+    let br_val = ((c._r.b as u16) << 8).wrapping_add(1);
+    c._r.b = (br_val >> 8) as u8;
+    c._r.c = (cr_val & 0x00FF) as u8;
     c._r.m = 1;
     c._r.t = 4;
 }
