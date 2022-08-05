@@ -205,6 +205,12 @@ make start
 - [ ] Support `.cgb` rom (Game Boy Color)
 - [ ] Support `.sgb` rom (Super Game Boy)
 
+# Personal records
+
+### Sat 6 August 2022
+
+<img src="resources/6-august-2022.png" width="400" />
+
 # Resources & References
 
 - https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
