@@ -1,4 +1,5 @@
 use crate::cpu::cpu::Cpu;
+use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 use crate::mmu::mmu::Mmu;
 
 pub fn addr_b(c: &mut Cpu) {
@@ -364,7 +365,18 @@ pub fn subr_l(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn subr_a(c: &mut Cpu) {
-    c._r.a = c._r.a & !(1 << 2);
+
+    // let c = if usec && self.reg.getflag(C) { 1 } else { 0 };
+    let b = c._r.a;
+    let a = c._r.a;
+    let r = a.wrapping_sub(b).wrapping_sub(0);
+    c._r.flag(Z, r == 0);
+    c._r.flag(H, (a & 0x0F) < (b & 0x0F));
+    c._r.flag(N, true);
+    c._r.flag(C, (a as u16) < (b as u16));
+    c._r.a = r;
+
+
     c._r.m = 1;
     c._r.t = 4;
 }
@@ -688,10 +700,18 @@ pub fn andhl(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 8;
 }
 pub fn andn(c: &mut Cpu, m: &mut Mmu) {
-    c._r.a &= m.r8b(c._r.pc);
-    c._r.pc += 1;
-    c._r.a &= 255;
-    c.fz(c._r.a, 0);
+    let v = c.get_byte(m);
+    let r = c._r.a & v;
+    c._r.flag(Z, r == 0);
+    c._r.flag(H, true);
+    c._r.flag(C, false);
+    c._r.flag(N, false);
+    c._r.a = r;
+
+    // c._r.a &= m.r8b(c._r.pc);
+    // c._r.pc += 1;
+    // c._r.a &= 255;
+    // c.fz(c._r.a, 0);
     c._r.m = 2;
     c._r.t = 8;
 }
@@ -902,9 +922,14 @@ pub fn decr_c(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn decr_d(c: &mut Cpu) {
-    c._r.d -= 1;
-    c._r.d &= 255;
-    c.fz(c._r.d, 0);
+    let d = c._r.d;
+    let r = d.wrapping_sub(1);
+    // c._r.d &= 255;
+    // c.fz(c._r.d, 0);
+    c._r.flag(Z, r == 0);
+    c._r.flag(H, (d & 0x0F) == 0);
+    c._r.flag(N, true);
+    c._r.d = d;
     c._r.m = 1;
     c._r.t = 4;
 }

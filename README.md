@@ -38,6 +38,25 @@ The Z80 is an 8-bit microprocessor introduced by Zilog as the startup company's 
 
 That means manipulating a lot of individual bytes, especially while navigating through huge banks of ROM and RAM. The Game Boy is a pretty simple architecture — getting button input requires reading specific memory addresses, writing pixels to the screen involves pushing bytes to specific places in VRAM.
 
+```
+CPU          - 8-bit (Similar to the Z80 processor)
+Clock Speed  - 4.194304MHz (4.295454MHz for SGB, max. 8.4MHz for CGB)
+Work RAM     - 8K Byte (32K Byte for CGB)
+Video RAM    - 8K Byte (16K Byte for CGB)
+Screen Size  - 2.6"
+Resolution   - 160x144 (20x18 tiles)
+Max sprites  - Max 40 per screen, 10 per line
+Sprite sizes - 8x8 or 8x16
+Palettes     - 1x4 BG, 2x3 OBJ (for CGB: 8x4 BG, 8x3 OBJ)
+Colors       - 4 grayshades (32768 colors for CGB)
+Horiz Sync   - 9198 KHz (9420 KHz for SGB)
+Vert Sync    - 59.73 Hz (61.17 Hz for SGB)
+Sound        - 4 channels with stereo sound
+Power        - DC6V 0.7W (DC3V 0.7W for GB Pocket, DC3V 0.6W for CGB)
+```
+
+* Retired from http://bgb.bircd.org/pandocs.htm
+
 The Game Boy has four operation buttons labeled _"A"_, _"B"_, _"SELECT"_, and _"START"_, and a _directional pad (d-pad)_. There is a volume control dial on the right side of the device and a similar dial on the left side to adjust the contrast. At the top of the Game Boy, a sliding on-off switch and the slot for the Game Boy cartridges are located. The on-off switch includes a physical lockout to prevent users from either inserting or removing a cartridge while the unit is switched on. Nintendo recommends users leave a cartridge in the slot to prevent dust and dirt from entering the system.
 
 ```rust
@@ -207,14 +226,15 @@ make start
 
 # Development Diary
 
-#### Sat 6 August 2022 - 73c5aded94e466f93c3312633f67097972401f5f
+Tthis section is for personal purposes.
 
-247c872
+#### Sat 6 August 2022 - 73c5aded94e466f93c3312633f67097972401f5f
 
 <img src="resources/6-august-2022.png" width="400" />
 
 # Resources & References
 
+- http://bgb.bircd.org/pandocs.htm
 - https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 - http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
 - http://emubook.emulation64.com/

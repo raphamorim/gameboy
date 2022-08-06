@@ -150,9 +150,9 @@ impl Gpu {
             vrambanks: Box::new([[0; VRAM_SIZE]; 2]),
             vrambank: 0,
             oam: [0; OAM_SIZE],
-            is_cgb: false,
+            is_cgb: true,
             is_sgb: false,
-            image_data: Box::new([255; HEIGHT * WIDTH * 4]),
+            image_data: Box::new([0; HEIGHT * WIDTH * 4]),
 
             mode: Mode::RdOam,
             wx: 0,
@@ -165,7 +165,8 @@ impl Gpu {
             scx: 0,
             scy: 0,
             mode0int: false,
-            mode1int: false,
+            // Enable by default
+            mode1int: true,
             mode2int: false,
             lycly: false,
             bgon: false,
@@ -301,7 +302,6 @@ impl Gpu {
     }
 
     fn render_line(&mut self) {
-        println!("{:?}", self.lcdon);
         if !self.lcdon {
             return;
         }
@@ -744,12 +744,13 @@ impl Gpu {
             }
 
             0x41 => {
-                ((self.lycly as u8) << 6)
-                    | ((self.mode2int as u8) << 5)
-                    | ((self.mode1int as u8) << 4)
-                    | ((self.mode0int as u8) << 3)
-                    | ((if self.lycly as u8 == self.ly { 1 } else { 0 } as u8) << 2)
-                    | ((self.mode as u8) << 0)
+                4
+                // ((self.lycly as u8) << 6)
+                //     | ((self.mode2int as u8) << 5)
+                //     | ((self.mode1int as u8) << 4)
+                //     | ((self.mode0int as u8) << 3)
+                //     | ((if self.lycly as u8 == self.ly { 1 } else { 0 } as u8) << 2)
+                //     | ((self.mode as u8) << 0)
             }
 
             0x42 => self.scy,

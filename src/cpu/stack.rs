@@ -1,7 +1,6 @@
 use crate::cpu::cpu::Cpu;
+use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 use crate::mmu::mmu::Mmu;
-
-const ZFLAG: i32 = 0b10000000;
 
 pub fn pushbc(c: &mut Cpu, m: &mut Mmu) {
     c._r.sp -= 1;
@@ -72,7 +71,6 @@ pub fn popaf(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
 }
-
 pub fn jpnn(c: &mut Cpu, m: &mut Mmu) {
     // c._r.pc = m.r16b(c._r.pc);
     c._r.pc = c.get_word(m);
@@ -87,15 +85,12 @@ pub fn jphl(c: &mut Cpu) {
 pub fn jpnznn(c: &mut Cpu, m: &mut Mmu) {
     c._r.m = 3;
     c._r.t = 12;
-    let mask = ZFLAG as u8;
-    let is = c._r.f & mask > 0;
-    // if (c._r.f & 0x80) == 0x00 {
-    if is {
-        c._r.pc = m.r16b(c._r.pc);
-        c._r.m += 1;
-        c._r.t += 4;
+    if !c._r.getflag(Z) {
+        c._r.pc = c.get_word(m);
     } else {
         c._r.pc += 2;
+        c._r.m += 1;
+        c._r.t += 4;
     }
 }
 pub fn jpznn(c: &mut Cpu, m: &mut Mmu) {
@@ -146,19 +141,26 @@ pub fn jrn(c: &mut Cpu, m: &mut Mmu) {
     c._r.t += 4;
 }
 pub fn jrnzn(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.r8b(c._r.pc);
-    if i > 127 {
-        // i=-((~i+1)&255);
-        i = 1;
+    if !c._r.getflag(Z) {
+        let n = c.get_byte(m) as i8;
+        c._r.pc = ((c._r.pc as u32 as i32) + (n as i32)) as u16;
+    } else {
+        c._r.pc += 1;
     }
-    c._r.pc += 1;
-    c._r.m = 2;
-    c._r.t = 8;
-    if (c._r.f & 0x80) == 0x00 {
-        c._r.pc += i as u16;
-        c._r.m += 1;
-        c._r.t += 4;
-    }
+
+    // let mut i = m.r8b(c._r.pc);
+    // if i > 127 {
+    //     // i=-((~i+1)&255);
+    //     i = 1;
+    // }
+    // c._r.pc += 1;
+    // c._r.m = 2;
+    // c._r.t = 8;
+    // if (c._r.f & 0x80) == 0x00 {
+    //     c._r.pc += i as u16;
+    //     c._r.m += 1;
+    //     c._r.t += 4;
+    // }
 }
 pub fn jrzn(c: &mut Cpu, m: &mut Mmu) {
     let mut i = m.r8b(c._r.pc);

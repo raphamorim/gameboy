@@ -10,6 +10,7 @@ pub const HIRAM_SIZE: usize = 0x7f;
 
 pub struct Mmu {
     // memory: u32,
+    pub ie_: u8,
     pub f_flag: u8,
     // pub inte: u8,
     // Flag indicating BIOS is mapped in
@@ -28,6 +29,8 @@ pub struct Mmu {
     wrambank: u8,
     mode: bool,
     ramon: bool,
+    speedswitch: bool,
+    sound_on: bool,
     // _bios: [],
     // _eram: [],
     pub gpu: Box<Gpu>,
@@ -47,6 +50,9 @@ impl Mmu {
             gpu: Box::new(Gpu::new()),
             rombank: 1,
             mode: false,
+            speedswitch: false,
+            sound_on: false,
+            ie_: 0,
             rambank: 0,
             wrambank: 0,
             ramon: false,
@@ -95,8 +101,8 @@ impl Mmu {
 
     /// Reads a byte at the given address
     pub fn r8b(&self, addr: u16) -> u8 {
-        // More information about mappings can be found online at
-        //      http://nocash.emubase.de/pandocs.htm#memorymap
+        println!("-> getting... {:#06x}", addr);
+
         match addr >> 12 {
             // Always mapped in as first bank of cartridge
             0x0 | 0x1 | 0x2 | 0x3 => self.rom[addr as usize],
@@ -138,18 +144,63 @@ impl Mmu {
                     0xff
                 } else if addr < 0xff80 {
                     // I/O ports
-                    0xff
-                    // self.ioreg_rb(addr)
+                    self.ioreg_rb(addr)
                 } else if addr < 0xffff {
                     // High RAM
                     self.hiram[(addr & 0x7f) as usize]
                 } else {
-                    0xff
-                    // self.ie_
+                    // 0xff
+                    self.ie_
                 }
             }
 
             _ => 0,
+        }
+    }
+
+    /// Reads a value from a known IO type register
+    fn ioreg_rb(&self, addr: u16) -> u8 {
+        match (addr >> 4) & 0xf {
+            // joypad data, http://nocash.emubase.de/pandocs.htm#joypadinput
+            // interrupts, http://nocash.emubase.de/pandocs.htm#interrupts
+            // timer, http://nocash.emubase.de/pandocs.htm#timeranddividerregisters
+            //
+            // TODO: serial data transfer
+            // http://nocash.emubase.de/pandocs.htm#serialdatatransferlinkcable
+            0x0 => {
+                match addr & 0xf {
+                    // 0x0 => self.input.r8b(addr),
+                    0x4 => self.timer.div,
+                    0x5 => self.timer.tima,
+                    0x6 => self.timer.tma,
+                    0x7 => self.timer.tac,
+                    // 0xf => self.if_,
+
+                    _ => 0xff,
+                }
+            }
+
+            // Sound info: http://nocash.emubase.de/pandocs.htm#soundcontroller
+            0x1 | 0x2 | 0x3 => 0xff,
+
+            0x4 => {
+                if addr == 0xff4d {
+                    0x00 | (self.speedswitch as u8)
+                } else {
+                    self.gpu.rb(addr)
+                }
+            }
+            0x5 | 0x6 => self.gpu.rb(addr),
+
+            0x7 => {
+                if addr == 0xff70 {
+                    self.wrambank as u8
+                } else {
+                    0xff
+                }
+            }
+
+            _ => { 0xff }
         }
     }
 
@@ -162,6 +213,7 @@ impl Mmu {
     pub fn w8b(&mut self, addr: u16, val: u8) {
         // More information about mappings can be found online at
         //      http://nocash.emubase.de/pandocs.htm#memorymap
+        println!("<- saving... {:#06x} {}" ,addr, val);
         match addr >> 12 {
             0x0 | 0x1 => {
                 self.ramon = val & 0xf == 0xa;
@@ -202,8 +254,8 @@ impl Mmu {
                     //     self.rtc.wb(addr, val);
                     // } else {
                     //     let val = if self.mbc == Mbc::Mbc2 {val & 0xf} else {val};
-                    //     self.ram[(((self.rambank as u16) << 12) |
-                    //              (addr & 0x1fff)) as usize] = val;
+                        self.ram[(((self.rambank as u16) << 12) |
+                                 (addr & 0x1fff)) as usize] = val;
                     // }
                 }
             }
@@ -223,11 +275,11 @@ impl Mmu {
                 } else if addr < 0xff00 {
                     // unusable ram
                 } else if addr < 0xff80 {
-                    // self.ioreg_wb(addr, val);
+                    self.ioreg_wb(addr, val);
                 } else if addr < 0xffff {
                     self.hiram[(addr & 0x7f) as usize] = val;
                 } else {
-                    // self.ie_ = val;
+                    self.ie_ = val;
                 }
             }
 
@@ -235,30 +287,67 @@ impl Mmu {
         }
     }
 
-    // Write 8-bit byte to a given address
-    pub fn wa8b(&mut self, address: u16, value: u8) {
-        match address {
-            0x0000..=0x7FFF => self.nop(address),
-            0x8000..=0x9FFF => self.nop(address),
-            0xA000..=0xBFFF => self.nop(address),
-            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.nop(address),
-            0xD000..=0xDFFF | 0xF000..=0xFDFF => self.nop(address),
-            0xFE00..=0xFE9F => self.nop(address),
-            0xFF00 => self.nop(address),
-            0xFF01..=0xFF02 => self.nop(address),
-            0xFF04..=0xFF07 => self.nop(address),
-            0xFF10..=0xFF3F => self.nop(address),
-            0xFF46 => self.nop(address),
-            0xFF4D => 0,
-            0xFF40..=0xFF4F => self.nop(address),
-            0xFF51..=0xFF55 => self.nop(address),
-            0xFF68..=0xFF6B => self.nop(address),
-            0xFF0F => self.nop(address),
-            0xFF70 => 0,
-            0xFF80..=0xFFFE => self.nop(address),
-            0xFFFF => self.nop(address),
-            _ => 0,
-        };
+    fn ioreg_wb(&mut self, addr: u16, val: u8) {
+        // debug!("ioreg_wb {:x} {:x}", addr, val);
+        match (addr >> 4) & 0xf {
+            // TODO: serial data transfer
+            // http://nocash.emubase.de/pandocs.htm#serialdatatransferlinkcable
+            0x0 => {
+                match addr & 0xf {
+                    0x0 => {
+                        // self.input.wb(addr, val);
+                    }
+                    0x4 => { self.timer.div = 0; }
+                    0x5 => { self.timer.tima = val; }
+                    0x6 => { self.timer.tma = val; }
+                    0x7 => {
+                        self.timer.tac = val;
+                        self.timer.update();
+                    }
+                    // 0xf => { self.if_ = val; }
+                    _ => {}
+                }
+            }
+
+            // Sound info: http://nocash.emubase.de/pandocs.htm#soundcontroller
+            // TODO: sound registers
+            0x1 | 0x2 | 0x3 => {
+                if addr == 0xff26 {
+                    self.sound_on = val != 0;
+                }
+            }
+
+            0x4 | 0x5 | 0x6 => {
+                // See http://nocash.emubase.de/pandocs.htm#cgbregisters
+                match addr {
+                    // 0xff46 => gpu::Gpu::oam_dma_transfer(self, val),
+                    // 0xff55 => gpu::Gpu::hdma_dma_transfer(self, val),
+                    0xff4d => {
+                        // if self.is_cgb {
+                            if val & 0x01 != 0 {
+                                self.speedswitch = true;
+                            } else {
+                                self.speedswitch = false;
+                            }
+                        // }
+                    }
+                    _ => self.gpu.wb(addr, val),
+                }
+            }
+
+            // WRAM banks only for CGB mode, see
+            //      http://nocash.emubase.de/pandocs.htm#cgbregisters
+            0x7 => {
+                if addr == 0xff70 {
+                    let val = val & 0x7; /* only bits 0-2 are used */
+                    self.wrambank = if val != 0 {val} else {1};
+                }
+            }
+
+            _ => { 
+                // dpanic!("unimplemented address {:x}", addr); 
+            }
+        }
     }
 
     // Write 16-bit byte to a given address

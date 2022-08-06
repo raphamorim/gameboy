@@ -39,13 +39,13 @@ pub struct Registers {
     pub sp: u16,
 
     // Internal state
-    pub clock: Clock,
+    // pub clock: Clock,
 }
 
-impl Default for Registers {
-    fn default() -> Self {
+impl Registers {
+    pub fn new() -> Registers {
         Registers {
-            a: 0x01,    // 1
+            a: 0x11,    // 17
             f: 0xB0,    // 176
             b: 0x00,    // 0
             c: 0x13,    // 19
@@ -58,9 +58,30 @@ impl Default for Registers {
             m: 0,
             t: 0,
             ime: 0,
-            clock: Clock { m: 0, t: 0 },
+            // clock: Clock { m: 0, t: 0 },
         }
     }
+    pub fn flag(&mut self, flags: CpuFlag, set: bool) {
+        let mask = flags as u8;
+        match set {
+            true => self.f |= mask,
+            false => self.f &= !mask,
+        }
+        self.f &= 0xF0;
+    }
+
+    pub fn getflag(&self, flags: CpuFlag) -> bool {
+        let mask = flags as u8;
+        self.f & mask > 0
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum CpuFlag {
+    C = 0b00010000,
+    H = 0b00100000,
+    N = 0b01000000,
+    Z = 0b10000000,
 }
 
 #[cfg(test)]

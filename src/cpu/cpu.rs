@@ -10,18 +10,19 @@ pub struct Cpu {
     pub clock: Clock,
     stop_loop: bool,
     _halt: u8,
+    cycles: u32
 }
 
 impl Cpu {
     pub fn new() -> Self {
         Cpu {
-            _r: Registers::default(),
+            _r: Registers::new(),
             _halt: 0,
             stop_loop: false,
+            cycles: 0,
             clock: Clock { m: 0, t: 0 },
         }
     }
-
     pub fn get_byte(&mut self, m: &mut Mmu) -> u8 {
         let pc = m.r8b(self._r.pc);
         self._r.pc = self._r.pc.wrapping_add(1);
@@ -63,7 +64,6 @@ impl Cpu {
             self._r.f |= 0;
         }
     }
-
     fn xx(&mut self) {
         /*Undefined map entry*/
         let opc = self._r.pc - 1;
@@ -73,7 +73,6 @@ impl Cpu {
         );
         self.stop_loop = true;
     }
-
     fn ldrr_bb(&mut self) {
         self._r.b = self._r.b;
         self._r.m = 1;
@@ -319,6 +318,22 @@ impl Cpu {
         self._r.m = 1;
         self._r.t = 4;
     }
+    fn sbcn(&mut self, m: &mut Mmu) {
+        // self._r.a = self._r.a;
+        self._r.a -= m.r8b(self._r.pc);
+        self._r.pc += 1;
+        // self._r.a-=(self._r.f&0x10)?1:0;
+        if (self._r.f & 0x10) > 0 {
+            self._r.a -= 1;
+        }
+        self.fz(self._r.a, 1);
+        // if self._r.a < 0 {
+        //     self._r.f|=0x10;
+        // }
+        self._r.a &= 255;
+        self._r.m = 2;
+        self._r.t = 8;
+    }
 
     fn ldr_hlm_b(&mut self, m: &mut Mmu) {
         let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
@@ -405,40 +420,33 @@ impl Cpu {
         self._r.m = 2;
         self._r.t = 8;
     }
-
     fn ldrn_b(&mut self, m: &mut Mmu) {
-        self._r.b = m.r8b(self._r.pc);
-        self._r.pc += 1;
+        self._r.b = self.get_byte(m);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldrn_c(&mut self, m: &mut Mmu) {
-        self._r.c = m.r8b(self._r.pc);
-        self._r.pc += 1;
+        self._r.c = self.get_byte(m);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldrn_d(&mut self, m: &mut Mmu) {
-        self._r.d = m.r8b(self._r.pc);
-        self._r.pc += 1;
+        self._r.d = self.get_byte(m);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldrn_e(&mut self, m: &mut Mmu) {
-        self._r.e = m.r8b(self._r.pc);
-        self._r.pc += 1;
+        self._r.e = self.get_byte(m);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldrn_h(&mut self, m: &mut Mmu) {
-        self._r.h = m.r8b(self._r.pc);
-        self._r.pc += 1;
+        self._r.h = self.get_byte(m);
         self._r.m = 2;
         self._r.t = 8;
     }
     fn ldrn_l(&mut self, m: &mut Mmu) {
-        self._r.l = m.r8b(self._r.pc);
-        self._r.pc += 1;
+        self._r.l = self.get_byte(m);
         self._r.m = 2;
         self._r.t = 8;
     }
@@ -537,18 +545,25 @@ impl Cpu {
         self._r.m = 5;
         self._r.t = 20;
     }
-    fn ld_hlia(&mut self, _m: &mut Mmu) {
+    fn ld_hlia(&mut self, m: &mut Mmu) {
         // let addr = (((self._r.h as u32 as i32) << 8) + self._r.l as i32) as u16;
         // m.w8b(addr, self._r.a);
         // println!("{:?}", self._r);
-        let mut l = self._r.l as u16;
-        l += 1;
-        // if self._r.l == 0 {
-        let mut h = (self._r.h as u16) << 8;
-        h += 1;
-        // }
-        self._r.h = (h >> 8) as u8;
-        self._r.l = (l & 0x00FF) as u8;
+        let mut hl = ((self._r.h as u16) << 8) | (self._r.l as u16);
+        m.w8b(hl, self._r.a);
+        hl += 1;
+        self._r.h = (hl >> 8) as u8;
+        self._r.l = (hl & 0x00FF) as u8;
+
+        // let mut l = self._r.l as u16;
+        // l += 1;
+        // // if self._r.l == 0 {
+        // let mut h = (self._r.h as u16) << 8;
+        // h += 1;
+        // // }
+        // self._r.h = (h >> 8) as u8;
+        // self._r.l = (l & 0x00FF) as u8;
+
         self._r.m = 2;
         self._r.t = 8;
     }
@@ -583,11 +598,9 @@ impl Cpu {
         self._r.m = 2;
         self._r.t = 8;
     }
-
     fn ld_aion(&mut self, m: &mut Mmu) {
-        let addr = ((0xFF00 as u32 as i32) + (m.r16b(self._r.pc) as i32)) as u16;
+        let addr = 0xFF00 | self.get_byte(m) as u16;
         self._r.a = m.r8b(addr);
-        self._r.pc += 1;
         self._r.m = 3;
         self._r.t = 12;
     }
@@ -626,7 +639,10 @@ impl Cpu {
         self._r.m = 3;
         self._r.t = 12;
     }
-
+    fn ldmmsp(&mut self, m: &mut Mmu) {
+        let addr = self.get_word(m);
+        m.w16b(addr, self._r.sp);
+    }
     fn swapr_b(&mut self, m: &mut Mmu) {
         let tr = self._r.b;
         let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
@@ -680,6 +696,67 @@ impl Cpu {
         self._r.m = 4;
         self._r.t = 16;
     }
+    fn rla(&mut self) {
+        // let ci=self._r.f&0x10?1:0;
+        let mut ci = 0;
+        let mut co = 0;
+        if (self._r.f & 0x10) > 0 {
+            ci = 1;
+        }
+        if (self._r.a & 0x80) > 0 {
+            co = 0x10;
+        }
+        self._r.a = (self._r.a << 1) + ci;
+        self._r.a &= 255;
+        self._r.f = (self._r.f & 0xEF) + co;
+        self._r.m = 1;
+        self._r.t = 4;
+    }
+    fn rlca(&mut self) {
+        let mut ci = 0;
+        let mut co = 0;
+        if (self._r.a & 0x80) > 0 {
+            ci = 1;
+            co = 0x10;
+        }
+
+        self._r.a = (self._r.a << 1) + ci;
+        self._r.a &= 255;
+        self._r.f = (self._r.f & 0xEF) + co;
+        self._r.m = 1;
+        self._r.t = 4;
+    }
+    fn rra(&mut self) {
+        let mut ci = 0;
+        let mut co = 0;
+        if (self._r.f & 0x10) > 0 {
+            ci = 0x80;
+        }
+        if (self._r.a & 1) > 0 {
+            co = 0x10;
+        }
+
+        self._r.a = (self._r.a >> 1) + ci;
+        self._r.a &= 255;
+        self._r.f = (self._r.f & 0xEF) + co;
+        self._r.m = 1;
+        self._r.t = 4;
+    }
+    fn rrca(&mut self) {
+        let mut ci = 0;
+        let mut co = 0;
+        if (self._r.a & 1) > 0 {
+            ci = 0x80;
+            co = 0x10;
+        }
+
+        self._r.a = (self._r.a >> 1) + ci;
+        self._r.a &= 255;
+        self._r.f = (self._r.f & 0xEF) + co;
+        self._r.m = 1;
+        self._r.t = 4;
+    }
+
     pub fn mapcb(&mut self, m: &mut Mmu) {
         let i = m.r8b(self._r.pc);
         self._r.pc += 1;
@@ -692,61 +769,60 @@ impl Cpu {
     }
 
     pub fn exec(&mut self, m: &mut Mmu) {
-        'outer: loop {
-            if self.stop_loop {
-                break 'outer;
-            }
-
-            // self._r.r = (self._r.r + 1) & 127;
-            // let counter = m.r8b(self._r.pc);
-
-            // let time = self.cpu.exec(&mut self.mem);
-            // m.timer.step(self._r.pc.into());
-
+        // self.cycles += 70224;
+        // while self.cycles <= 70224 {
             let counter = self.get_byte(m);
-            println!("{:?}", counter);
+            // println!("{:?} | {:#01x} | {:?}", counter, counter, self._r);
+            println!("{:?} {:?}", counter, self._r);
             self.program_counter_call(counter, m);
-            // m.gpu.step(1);
-            // self._r.pc += 1;
-            // self._r.pc &= 65535;
-            self.clock.m += self._r.m; // Add time to CPU clock
-            self.clock.t += self._r.t;
-        }
+            let time = self._r.t as u32;
+            // m.timer.step(time);
+            m.gpu.step(time);
+            // println!("{} {}", self.cycles, time);
+            // if time > self.cycles {
+            //     self.cycles = 0;
+            //     break;
+            // } else {
+            //     self.cycles -= time;
+            // }
+            // self.clock.m += self._r.m;
+            // self.clock.t += self._r.t;
+        // }
     }
 
     fn program_counter_call(&mut self, op: u8, m: &mut Mmu) {
-        println!("Instruction at {:#01x} | {:#06x} | {}", op, op, op);
-        println!("{:?}", self._r);
         match op {
-            0x00 => {
-                println!("{:?} bateu zero", 0);
-                self.nop();
-                // self.xx();
-            }
-            0x01 => self.ld_bcnn(m),
+            0x00 => self.nop(), // ok
+            0xc2 => stack::jpnznn(self, m), // ok
+            0xc3 => stack::jpnn(self, m), // ok
+            0x31 => self.ld_spnn(m), // ok
+            0x3e => self.ldrn_a(m), // ok
+            0xe0 => self.ld_ion_a(m), // ok
+            0x97 => data::subr_a(self), // ok
+            0x01 => self.ld_bcnn(m), // ok
+            0xcd => stack::callnn(self, m), // ok
             0x02 => self.ld_bcm_a(m),
             0x03 => data::incbc(self),
-            4 => data::incr_b(self),
-            5 => data::decr_b(self),
-            6 => self.ldrn_b(m),
-            // 7 => self.rlca(m),
-            // 8 => self.ldmmsp(m),
-            9 => data::addhlbc(self),
-            10 => self.ld_abcm(m),
+            0x04 => data::incr_b(self),
+            0x05 => data::decr_b(self),
+            0x06 => self.ldrn_b(m),
+            0x07 => self.rlca(),
+            0x08 => self.ldmmsp(m),
+            0x09 => data::addhlbc(self),
+            0x0A => self.ld_abcm(m),
             11 => data::decbc(self),
             12 => data::incr_c(self),
             13 => data::decr_c(self),
             14 => self.ldrn_c(m),
-            // 15 => self.rrca(m),
-            // 0x10 => stack::djnzn(self, m),
-            0x10 => {}
+            15 => self.rrca(),
+            0x10 => stack::djnzn(self, m),
             17 => self.ld_denn(m),
             18 => self.ld_dem_a(m),
             19 => data::incde(self),
             20 => data::incr_d(self),
-            21 => data::decr_d(self),
+            0x15 => data::decr_d(self), // ok
             22 => self.ldrn_d(m),
-            // 23 => self.rla(m),
+            23 => self.rla(),
             24 => stack::jrn(self, m),
             25 => data::addhlde(self),
             26 => self.ld_adem(m),
@@ -754,10 +830,10 @@ impl Cpu {
             28 => data::incr_e(self),
             29 => data::decr_e(self),
             30 => self.ldrn_e(m),
-            // 31 => self.rra(m),
-            0x20 => stack::jrnzn(self, m),
+            31 => self.rra(),
+            0x20 => stack::jrnzn(self, m), // ok
             33 => self.ld_hlnn(m),
-            34 => self.ld_hlia(m),
+            0x22 => self.ld_hlia(m),
             35 => data::inchl(self),
             36 => data::incr_h(self),
             37 => data::decr_h(self),
@@ -772,7 +848,7 @@ impl Cpu {
             46 => self.ldrn_l(m),
             // 47 => self.cpl(m),
             48 => stack::jrncn(self, m),
-            0x31 => self.ld_spnn(m),
+            // 0x31 => self.ld_spnn(m), // ok
             50 => self.ld_hld_a(m),
             51 => data::incsp(self),
             52 => data::inchlm(self, m),
@@ -785,7 +861,7 @@ impl Cpu {
             59 => data::decsp(self),
             60 => data::incr_a(self),
             61 => data::decr_a(self),
-            0x3e => self.ldrn_a(m),
+            // 0x3e => self.ldrn_a(m), // ok
             // 63 => self.ccf(m),
             64 => self.ldrr_bb(),
             65 => self.ldrr_bc(),
@@ -874,7 +950,7 @@ impl Cpu {
             148 => data::subr_h(self),
             149 => data::subr_l(self),
             150 => data::subhl(self, m),
-            0x97 => data::subr_a(self),
+            // 0x97 => data::subr_a(self), // ok
             152 => data::sbcr_b(self),
             153 => data::sbcr_c(self),
             154 => data::sbcr_d(self),
@@ -917,18 +993,18 @@ impl Cpu {
             191 => data::cpr_a(self),
             192 => stack::retnz(self, m),
             193 => stack::popbc(self, m),
-            0xc2 => stack::jpnznn(self, m),
-            195 => stack::jpnn(self, m),
+            // 0xc2 => stack::jpnznn(self, m), // ok
+            // 0xc3 => stack::jpnn(self, m), // ok
             196 => stack::callnznn(self, m),
             197 => stack::pushbc(self, m),
             198 => data::addn(self, m),
             199 => stack::rst00(self, m),
             200 => stack::retz(self, m),
-            201 => stack::ret(self, m),
+            201 => stack::ret(self, m), // ok
             202 => stack::jpznn(self, m),
             203 => self.mapcb(m),
             204 => stack::callznn(self, m),
-            205 => stack::callnn(self, m),
+            // 0xcd => stack::callnn(self, m),
             206 => data::adcn(self, m),
             207 => stack::rst08(self, m),
             208 => stack::retnc(self, m),
@@ -945,15 +1021,15 @@ impl Cpu {
             219 => self.xx(),
             220 => stack::callcnn(self, m),
             221 => self.xx(),
-            // 222 => self.sbcn(m),
+            0xDE => self.sbcn(m),
             223 => stack::rst18(self, m),
-            0xe0 => self.ld_ion_a(m),
+            // 0xe0 => self.ld_ion_a(m), // ok
             225 => stack::pophl(self, m),
             226 => self.ld_ioca(m),
             227 => self.xx(),
             228 => self.xx(),
             229 => stack::pushhl(self, m),
-            230 => data::andn(self, m),
+            0xe6 => data::andn(self, m),
             231 => stack::rst20(self, m),
             232 => data::addspn(self, m),
             233 => stack::jphl(self),
@@ -963,7 +1039,7 @@ impl Cpu {
             237 => self.xx(),
             238 => data::orn(self, m),
             239 => stack::rst28(self, m),
-            240 => self.ld_aion(m),
+            0xf0 => self.ld_aion(m), // ok
             241 => stack::popaf(self, m),
             242 => self.ld_aioc(m),
             243 => self.di(),
