@@ -166,7 +166,7 @@ impl Gpu {
             scy: 0,
             mode0int: false,
             // Enable by default
-            mode1int: true,
+            mode1int: false,
             mode2int: false,
             lycly: false,
             bgon: false,
@@ -744,13 +744,13 @@ impl Gpu {
             }
 
             0x41 => {
-                4
-                // ((self.lycly as u8) << 6)
-                //     | ((self.mode2int as u8) << 5)
-                //     | ((self.mode1int as u8) << 4)
-                //     | ((self.mode0int as u8) << 3)
-                //     | ((if self.lycly as u8 == self.ly { 1 } else { 0 } as u8) << 2)
-                //     | ((self.mode as u8) << 0)
+                // 4
+                ((self.lycly as u8) << 6)
+                    | ((self.mode2int as u8) << 5)
+                    | ((self.mode1int as u8) << 4)
+                    | ((self.mode0int as u8) << 3)
+                    | ((if self.lycly as u8 == self.ly { 1 } else { 0 } as u8) << 2)
+                    | ((self.mode as u8) << 0)
             }
 
             0x42 => self.scy,
@@ -839,9 +839,9 @@ impl Gpu {
                 self.wx = val;
             }
             0x4f => {
-                if self.is_cgb {
-                    self.vrambank = val & 1;
-                }
+                // if self.is_cgb {
+                self.vrambank = val & 1;
+                // }
             }
 
             // http://nocash.emubase.de/pandocs.htm#lcdvramdmatransferscgbonly

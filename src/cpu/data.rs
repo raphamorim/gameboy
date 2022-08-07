@@ -108,16 +108,18 @@ pub fn addhlbc(c: &mut Cpu) {
     c._r.t = 12;
 }
 pub fn addhlde(c: &mut Cpu) {
-    let mut hl: u16 = ((c._r.h as u16) << 8) + c._r.l as u16;
-    hl += ((c._r.d as u16) << 8) + c._r.e as u16;
+    // let mut hl: u16 = ((c._r.h as u16) << 8) + c._r.l as u16;
+    // hl += ((c._r.d as u16) << 8) + c._r.e as u16;
 
-    if hl > 65535 {
-        c._r.f |= 0x10;
-    } else {
-        c._r.f &= 0xEF;
-    }
-    c._r.h = ((hl >> 8) & 255) as u8;
-    c._r.l = (hl & 255) as u8;
+    let de = ((c._r.d as u16) << 8) | (c._r.e as u16);
+    let a = ((c._r.h as u16) << 8) | (c._r.l as u16);
+    let r = a.wrapping_add(de);
+    c._r.flag(H, (a & 0x07FF) + (de & 0x07FF) > 0x07FF);
+    c._r.flag(N, false);
+    c._r.flag(C, a > 0xFFFF - de);
+    c._r.h = (r >> 8) as u8;
+    c._r.l = (r & 0x00FF) as u8;
+
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -315,12 +317,14 @@ pub fn subr_b(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn subr_c(c: &mut Cpu) {
-    c._r.a -= c._r.c;
-    c.fz(c._r.a, 1);
-    if c._r.a < 0 {
-        c._r.f |= 0x10;
-    }
-    c._r.a &= 255;
+    let b = c._r.c;
+    let a = c._r.a;
+    let r = a.wrapping_sub(b).wrapping_sub(0);
+    c._r.flag(Z, r == 0);
+    c._r.flag(H, (a & 0x0F) < (b & 0x0F));
+    c._r.flag(N, true);
+    c._r.flag(C, (a as u16) < (b as u16));
+    c._r.a = r;
     c._r.m = 1;
     c._r.t = 4;
 }
@@ -365,7 +369,6 @@ pub fn subr_l(c: &mut Cpu) {
     c._r.t = 4;
 }
 pub fn subr_a(c: &mut Cpu) {
-
     // let c = if usec && self.reg.getflag(C) { 1 } else { 0 };
     let b = c._r.a;
     let a = c._r.a;
@@ -375,7 +378,6 @@ pub fn subr_a(c: &mut Cpu) {
     c._r.flag(N, true);
     c._r.flag(C, (a as u16) < (b as u16));
     c._r.a = r;
-
 
     c._r.m = 1;
     c._r.t = 4;
@@ -929,7 +931,7 @@ pub fn decr_d(c: &mut Cpu) {
     c._r.flag(Z, r == 0);
     c._r.flag(H, (d & 0x0F) == 0);
     c._r.flag(N, true);
-    c._r.d = d;
+    c._r.d = r;
     c._r.m = 1;
     c._r.t = 4;
 }
@@ -1030,4 +1032,23 @@ pub fn decsp(c: &mut Cpu) {
     c._r.sp = (c._r.sp - 1) & 65535;
     c._r.m = 1;
     c._r.t = 4;
+}
+
+pub fn cpl(c: &mut Cpu) {
+    c._r.a = !c._r.a;
+    c._r.flag(H, true);
+    c._r.flag(N, true);
+    c._r.m = 1;
+    c._r.t = 4;
+}
+pub fn scf(c: &mut Cpu) {
+    c._r.flag(C, true);
+    c._r.flag(H, false);
+    c._r.flag(N, false);
+}
+pub fn ccf(c: &mut Cpu) {
+    let v = !c._r.getflag(C);
+    c._r.flag(C, v);
+    c._r.flag(H, false);
+    c._r.flag(N, false);
 }

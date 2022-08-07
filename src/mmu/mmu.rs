@@ -1,6 +1,7 @@
 // Memory Management Unit
 
 use crate::gpu::gpu::Gpu;
+use std::iter::repeat;
 
 use crate::mmu::timer::Timer;
 
@@ -83,7 +84,7 @@ impl Mmu {
         self.w8b(0xFF24, 0x77);
         self.w8b(0xFF25, 0xF3);
         self.w8b(0xFF26, 0xF1);
-        self.w8b(0xFF40, 0x91);
+        self.w8b(0xFF40, 0xb1);
         self.w8b(0xFF42, 0);
         self.w8b(0xFF43, 0);
         self.w8b(0xFF45, 0);
@@ -101,7 +102,7 @@ impl Mmu {
 
     /// Reads a byte at the given address
     pub fn r8b(&self, addr: u16) -> u8 {
-        println!("-> getting... {:#06x}", addr);
+        // println!("-> getting... {:#06x}", addr);
 
         match addr >> 12 {
             // Always mapped in as first bank of cartridge
@@ -129,7 +130,10 @@ impl Mmu {
             }
 
             // e000-fdff same as c000-ddff
-            0xe | 0xc => self.wram[(addr & 0xfff) as usize],
+            0xe | 0xc => {
+                println!("vem {:?}", addr);
+                self.wram[(addr & 0xfff) as usize]
+            } // aki
             0xd => self.wram[(((self.rombank as u16) << 12) | (addr & 0xfff)) as usize],
 
             0xf => {
@@ -175,7 +179,6 @@ impl Mmu {
                     0x6 => self.timer.tma,
                     0x7 => self.timer.tac,
                     // 0xf => self.if_,
-
                     _ => 0xff,
                 }
             }
@@ -200,7 +203,7 @@ impl Mmu {
                 }
             }
 
-            _ => { 0xff }
+            _ => 0xff,
         }
     }
 
@@ -213,7 +216,7 @@ impl Mmu {
     pub fn w8b(&mut self, addr: u16, val: u8) {
         // More information about mappings can be found online at
         //      http://nocash.emubase.de/pandocs.htm#memorymap
-        println!("<- saving... {:#06x} {}" ,addr, val);
+        // println!("<- saving... {:#06x} {}" ,addr, val);
         match addr >> 12 {
             0x0 | 0x1 => {
                 self.ramon = val & 0xf == 0xa;
@@ -254,13 +257,13 @@ impl Mmu {
                     //     self.rtc.wb(addr, val);
                     // } else {
                     //     let val = if self.mbc == Mbc::Mbc2 {val & 0xf} else {val};
-                        self.ram[(((self.rambank as u16) << 12) |
-                                 (addr & 0x1fff)) as usize] = val;
+                    self.ram[(((self.rambank as u16) << 12) | (addr & 0x1fff)) as usize] = val;
                     // }
                 }
             }
 
             0xc | 0xe => {
+                println!("salvavem {:?} {:?}", addr, val);
                 self.wram[(addr & 0xfff) as usize] = val;
             }
             0xd => {
@@ -297,9 +300,15 @@ impl Mmu {
                     0x0 => {
                         // self.input.wb(addr, val);
                     }
-                    0x4 => { self.timer.div = 0; }
-                    0x5 => { self.timer.tima = val; }
-                    0x6 => { self.timer.tma = val; }
+                    0x4 => {
+                        self.timer.div = 0;
+                    }
+                    0x5 => {
+                        self.timer.tima = val;
+                    }
+                    0x6 => {
+                        self.timer.tma = val;
+                    }
                     0x7 => {
                         self.timer.tac = val;
                         self.timer.update();
@@ -320,15 +329,15 @@ impl Mmu {
             0x4 | 0x5 | 0x6 => {
                 // See http://nocash.emubase.de/pandocs.htm#cgbregisters
                 match addr {
-                    // 0xff46 => gpu::Gpu::oam_dma_transfer(self, val),
-                    // 0xff55 => gpu::Gpu::hdma_dma_transfer(self, val),
+                    0xff46 => Gpu::oam_dma_transfer(self, val),
+                    0xff55 => Gpu::hdma_dma_transfer(self, val),
                     0xff4d => {
                         // if self.is_cgb {
-                            if val & 0x01 != 0 {
-                                self.speedswitch = true;
-                            } else {
-                                self.speedswitch = false;
-                            }
+                        if val & 0x01 != 0 {
+                            self.speedswitch = true;
+                        } else {
+                            self.speedswitch = false;
+                        }
                         // }
                     }
                     _ => self.gpu.wb(addr, val),
@@ -340,12 +349,12 @@ impl Mmu {
             0x7 => {
                 if addr == 0xff70 {
                     let val = val & 0x7; /* only bits 0-2 are used */
-                    self.wrambank = if val != 0 {val} else {1};
+                    self.wrambank = if val != 0 { val } else { 1 };
                 }
             }
 
-            _ => { 
-                // dpanic!("unimplemented address {:x}", addr); 
+            _ => {
+                // dpanic!("unimplemented address {:x}", addr);
             }
         }
     }
@@ -356,7 +365,24 @@ impl Mmu {
         self.w8b(address + 1, (value >> 8) as u8);
     }
 
+    pub fn ram_size(&self) -> usize {
+        // See http://nocash.emubase.de/pandocs.htm#thecartridgeheader
+        match self.rom[0x0149] {
+            0x00 => 0,
+            0x01 => 2 << 10,  // 2KB
+            0x02 => 8 << 10,  // 8KB
+            0x03 => 32 << 10, // 32KB
+            _ => {
+                panic!("Unknown ram size");
+                #[allow(unreachable_code)]
+                0
+            }
+        }
+    }
+
     pub fn load_rom(&mut self, rom: Vec<u8>) {
         self.rom = rom;
+        self.ram = repeat(0u8).take(self.ram_size()).collect();
+        self.gpu.is_cgb = true;
     }
 }

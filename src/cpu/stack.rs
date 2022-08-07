@@ -128,17 +128,13 @@ pub fn jpcnn(c: &mut Cpu, m: &mut Mmu) {
 }
 
 pub fn jrn(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.r8b(c._r.pc);
-    if i > 127 {
-        // i=-((!i+1)&255);
-        i = 1;
-    }
-    c._r.pc += 1;
-    c._r.m = 2;
-    c._r.t = 8;
-    c._r.pc += i as u16;
-    c._r.m += 1;
-    c._r.t += 4;
+    let n = c.get_byte(m) as i8;
+    c._r.pc = ((c._r.pc as u32 as i32) + (n as i32)) as u16;
+    // c._r.m = 2;
+    // c._r.t = 8;
+    // c._r.pc += i as u16;
+    // c._r.m += 1;
+    // c._r.t += 4;
 }
 pub fn jrnzn(c: &mut Cpu, m: &mut Mmu) {
     if !c._r.getflag(Z) {
@@ -147,32 +143,15 @@ pub fn jrnzn(c: &mut Cpu, m: &mut Mmu) {
     } else {
         c._r.pc += 1;
     }
-
-    // let mut i = m.r8b(c._r.pc);
-    // if i > 127 {
-    //     // i=-((~i+1)&255);
-    //     i = 1;
-    // }
-    // c._r.pc += 1;
-    // c._r.m = 2;
-    // c._r.t = 8;
-    // if (c._r.f & 0x80) == 0x00 {
-    //     c._r.pc += i as u16;
-    //     c._r.m += 1;
-    //     c._r.t += 4;
-    // }
 }
 pub fn jrzn(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.r8b(c._r.pc);
-    if i > 127 {
-        // i=-((~i+1)&255);
-        i = 1;
-    }
-    c._r.pc += 1;
     c._r.m = 2;
     c._r.t = 8;
-    if (c._r.f & 0x80) == 0x80 {
-        c._r.pc += i as u16;
+    if c._r.getflag(Z) {
+        let n = c.get_byte(m) as i8;
+        c._r.pc = ((c._r.pc as u32 as i32) + (n as i32)) as u16;
+    } else {
+        c._r.pc += 1;
         c._r.m += 1;
         c._r.t += 4;
     }
@@ -191,56 +170,43 @@ pub fn jrncn(c: &mut Cpu, m: &mut Mmu) {
         c._r.m = 2;
         c._r.t = 8;
     }
-
-    // let mut i = m.r8b(c._r.pc);
-    // if i > 127 {
-    //     // i=-((~i+1)&255);
-    //     i = (i - 1) & 255;
-    // }
-
-    // if (c._r.f & 0x10) == 0x00 {
-    // c._r.pc += i as u16;
-    // c._r.m += 1;
-    // c._r.t += 4;
-    // }
 }
 pub fn jrcn(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.r8b(c._r.pc);
-    if i > 127 {
-        // i=-((~i+1)&255);
-        i = 1;
-    }
-    c._r.pc += 1;
     c._r.m = 2;
     c._r.t = 8;
-    if (c._r.f & 0x10) == 0x10 {
-        c._r.pc += i as u16;
+    if c._r.getflag(C) {
+        let n = c.get_byte(m) as i8;
+        c._r.pc = ((c._r.pc as u32 as i32) + (n as i32)) as u16;
+    } else {
+        c._r.pc += 1;
         c._r.m += 1;
         c._r.t += 4;
     }
 }
 
+// Switch speed
 pub fn djnzn(c: &mut Cpu, m: &mut Mmu) {
-    let mut i = m.r8b(c._r.pc);
-    if i > 127 {
-        // i=-((~i+1)&255)
-        i = 1;
-    };
-    c._r.pc += 1;
+    // let mut i = m.r8b(c._r.pc);
+    // if i > 127 {
+    //     // i=-((~i+1)&255)
+    //     i = 1;
+    // };
+    // c._r.pc += 1;
     c._r.m = 2;
     c._r.t = 8;
-    c._r.b -= 1;
-    if c._r.b > 0 {
-        c._r.pc += i as u16;
-        c._r.m += 1;
-        c._r.t += 4;
-    }
+    // c._r.b -= 1;
+    // if c._r.b > 0 {
+    //     c._r.pc += i as u16;
+    //     c._r.m += 1;
+    //     c._r.t += 4;
+    // }
 }
 
 pub fn callnn(c: &mut Cpu, m: &mut Mmu) {
     c._r.sp -= 2;
     m.w16b(c._r.sp, c._r.pc + 2);
-    c._r.pc = m.r16b(c._r.pc);
+    c._r.pc = c.get_word(m);
+
     c._r.m = 5;
     c._r.t = 20;
 }

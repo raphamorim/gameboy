@@ -1,16 +1,26 @@
 #[derive(Debug)]
 pub struct Clock {
-    pub m: u16,
-    pub t: u16,
+    pub m: u32,
+    pub t: u32,
 }
 
 impl Clock {
-    fn set_t(&mut self, t: u16) {
+    fn set_t(&mut self, t: u32) {
         self.t = t;
     }
 
-    fn set_m(&mut self, m: u16) {
+    fn set_m(&mut self, m: u32) {
         self.m = m;
+    }
+
+    pub fn inc_t(&mut self, t: u16) {
+        let at = t as u32;
+        self.t += at;
+    }
+
+    pub fn inc_m(&mut self, m: u16) {
+        let am = m as u32;
+        self.t += am;
     }
 }
 
@@ -37,7 +47,6 @@ pub struct Registers {
     // 16-bit registers
     pub pc: u16,
     pub sp: u16,
-
     // Internal state
     // pub clock: Clock,
 }

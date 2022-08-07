@@ -144,31 +144,32 @@ impl Glcx {
             gl::GenBuffers(1, &mut vbo);
 
             const VERTICES: &'static [f32] = &[
-            //  Position   Color             Texcoords
-                -1.0,  1.0, 1.0, 0.0, 0.0, 0.0, 0.0, // Top-left
-                 1.0,  1.0, 0.0, 1.0, 0.0, 1.0, 0.0, // Top-right
-                 1.0, -1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // Bottom-right
-                -1.0, -1.0, 1.0, 1.0, 1.0, 0.0, 1.0  // Bottom-left
+                //  Position   Color             Texcoords
+                -1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, // Top-left
+                1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, // Top-right
+                1.0, -1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // Bottom-right
+                -1.0, -1.0, 1.0, 1.0, 1.0, 0.0, 1.0, // Bottom-left
             ];
             gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(gl::ARRAY_BUFFER,
-                           (VERTICES.len() * 4) as libc::ssize_t,
-                           VERTICES.as_ptr() as *const _,
-                           gl::STATIC_DRAW);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (VERTICES.len() * 4) as libc::ssize_t,
+                VERTICES.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
 
             let mut ebo = 0;
             gl::GenBuffers(1, &mut ebo);
 
-            const ELEMENTS: &'static [GLuint] = &[
-                0, 1, 2,
-                2, 3, 0
-            ];
+            const ELEMENTS: &'static [GLuint] = &[0, 1, 2, 2, 3, 0];
 
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-            gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
-                        (ELEMENTS.len() * mem::size_of::<GLuint>()) as libc::ssize_t,
-                        ELEMENTS.as_ptr() as *const _,
-                        gl::STATIC_DRAW);
+            gl::BufferData(
+                gl::ELEMENT_ARRAY_BUFFER,
+                (ELEMENTS.len() * mem::size_of::<GLuint>()) as libc::ssize_t,
+                ELEMENTS.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
 
             // Create and compile the vertex shader
             let vert = gl::CreateShader(gl::VERTEX_SHADER);
@@ -199,23 +200,38 @@ impl Glcx {
             let buf = CString::new("position").unwrap();
             let pos_attrib = gl::GetAttribLocation(program, buf.as_ptr());
             gl::EnableVertexAttribArray(pos_attrib as u32);
-            gl::VertexAttribPointer(pos_attrib as u32, 2, gl::FLOAT, gl::FALSE,
-                        (7 * mem::size_of::<GLfloat>()) as i32,
-                        0 as *const _);
+            gl::VertexAttribPointer(
+                pos_attrib as u32,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                (7 * mem::size_of::<GLfloat>()) as i32,
+                0 as *const _,
+            );
 
             let buf = CString::new("color").unwrap();
             let col_attrib = gl::GetAttribLocation(program, buf.as_ptr());
             gl::EnableVertexAttribArray(col_attrib as u32);
-            gl::VertexAttribPointer(col_attrib as u32, 3, gl::FLOAT, gl::FALSE,
-                        (7 * mem::size_of::<GLfloat>()) as i32,
-                        (2 * mem::size_of::<GLfloat>()) as *const _);
+            gl::VertexAttribPointer(
+                col_attrib as u32,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                (7 * mem::size_of::<GLfloat>()) as i32,
+                (2 * mem::size_of::<GLfloat>()) as *const _,
+            );
 
             let buf = CString::new("texcoord").unwrap();
             let tex_attrib = gl::GetAttribLocation(program, buf.as_ptr());
             gl::EnableVertexAttribArray(tex_attrib as u32);
-            gl::VertexAttribPointer(tex_attrib as u32, 2, gl::FLOAT, gl::FALSE,
-                        (7 * mem::size_of::<GLfloat>()) as i32,
-                        (5 * mem::size_of::<GLfloat>()) as *const _);
+            gl::VertexAttribPointer(
+                tex_attrib as u32,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                (7 * mem::size_of::<GLfloat>()) as i32,
+                (5 * mem::size_of::<GLfloat>()) as *const _,
+            );
 
             // Load textures
             let mut tex = 0;
@@ -226,14 +242,10 @@ impl Glcx {
             let buf = CString::new("tex").unwrap();
             gl::Uniform1i(gl::GetUniformLocation(program, buf.as_ptr()), 0);
 
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S,
-                             gl::CLAMP_TO_EDGE as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T,
-                             gl::CLAMP_TO_EDGE as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER,
-                             gl::LINEAR as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER,
-                             gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             Glcx {
                 // gl: gl,
@@ -264,13 +276,19 @@ impl Glcx {
     unsafe fn check_program_link(gl: &Glcx, program: GLuint) {
         let mut status = gl::FALSE as GLint;
         gl::GetProgramiv(program, gl::LINK_STATUS, &mut status);
-        if status == (gl::TRUE as GLint) { return }
+        if status == (gl::TRUE as GLint) {
+            return;
+        }
 
         let mut len: GLint = 0;
         gl::GetProgramiv(program, gl::INFO_LOG_LENGTH, &mut len);
         let mut buf = repeat(0u8).take(len as usize).collect::<Vec<_>>();
-        gl::GetProgramInfoLog(program, len, ptr::null_mut(),
-                            buf.as_mut_ptr() as *mut GLchar);
+        gl::GetProgramInfoLog(
+            program,
+            len,
+            ptr::null_mut(),
+            buf.as_mut_ptr() as *mut GLchar,
+        );
         panic!("{}", str::from_utf8(&buf).unwrap());
     }
 
@@ -279,16 +297,22 @@ impl Glcx {
             gl::ClearColor(0.0, 0.0, 1.0, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
-            gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB as i32,
-                               WIDTH as i32, HEIGHT as i32,
-                               0, gl::RGBA, gl::UNSIGNED_BYTE,
-                               data.as_ptr() as *const _);
+            gl::TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGB as i32,
+                WIDTH as i32,
+                HEIGHT as i32,
+                0,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                data.as_ptr() as *const _,
+            );
             assert_eq!(gl::GetError(), 0);
 
             // Draw a rectangle from the 2 triangles using 6
             // indices
-            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT,
-                                 0 as *const _);
+            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const _);
         }
     }
 }
