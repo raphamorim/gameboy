@@ -1,5 +1,6 @@
 use crate::cpu::bit;
 use crate::cpu::data;
+use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 use crate::cpu::registers::{Clock, Registers};
 use crate::cpu::stack;
 use crate::mmu::mmu::Mmu;
@@ -11,6 +12,7 @@ pub struct Cpu {
     stop_loop: bool,
     _halt: u8,
     cycles: u32,
+    instructions: Vec<u8>,
 }
 
 impl Cpu {
@@ -21,6 +23,7 @@ impl Cpu {
             stop_loop: false,
             cycles: 0,
             clock: Clock { m: 0, t: 0 },
+            instructions: Vec::new(),
         }
     }
     pub fn get_byte(&mut self, m: &mut Mmu) -> u8 {
@@ -102,7 +105,14 @@ impl Cpu {
         self._r.t = 4;
     }
     fn ldrr_bh(&mut self) {
-        self._r.b = self._r.h;
+        let a = self._r.h;
+        let b = 0;
+        let r = a & (1 << (b as u32)) == 0;
+        self._r.flag(N, false);
+        self._r.flag(H, true);
+        self._r.flag(Z, r);
+
+        // self._r.b = self._r.h;
         self._r.m = 1;
         self._r.t = 4;
     }
@@ -112,7 +122,14 @@ impl Cpu {
         self._r.t = 4;
     }
     fn ldrr_ba(&mut self) {
-        self._r.b = self._r.a;
+        let a = self._r.a;
+        let b = 0;
+        let r = a & (1 << (b as u32)) == 0;
+        self._r.flag(N, false);
+        self._r.flag(H, true);
+        self._r.flag(Z, r);
+
+        // self._r.b = self._r.a;
         self._r.m = 1;
         self._r.t = 4;
     }
@@ -438,7 +455,17 @@ impl Cpu {
         self._r.t = 8;
     }
     fn ldrn_d(&mut self, m: &mut Mmu) {
-        self._r.d = self.get_byte(m);
+        let a = ((self._r.h as u16) << 8) | (self._r.l as u16);
+        let v = m.r8b(a);
+        let c = v & 0x80 == 0x80;
+        let r = (v << 1) | (if c { 1 } else { 0 });
+
+        self._r.flag(H, false);
+        self._r.flag(N, false);
+        self._r.flag(Z, r == 0);
+        self._r.flag(C, c);
+
+        m.w8b(a, r);
         self._r.m = 2;
         self._r.t = 8;
     }
@@ -504,9 +531,12 @@ impl Cpu {
         self._r.t = 8;
     }
     fn ld_amm(&mut self, m: &mut Mmu) {
-        let addr = m.r16b(self._r.pc);
-        self._r.a = m.r8b(addr);
-        self._r.pc += 2;
+        let a = self.get_word(m);
+        self._r.a = m.r8b(a);
+
+        // let addr = m.r16b(self._r.pc);
+        // self._r.a = m.r8b(addr);
+        // self._r.pc += 2;
         self._r.m = 4;
         self._r.t = 16;
     }
@@ -525,9 +555,9 @@ impl Cpu {
         self._r.t = 12;
     }
     fn ld_hlnn(&mut self, m: &mut Mmu) {
-        self._r.l = m.r8b(self._r.pc);
-        self._r.h = m.r8b(self._r.pc + 1);
-        self._r.pc += 2;
+        let v = self.get_word(m);
+        self._r.h = (v >> 8) as u8;
+        self._r.l = (v & 0x00FF) as u8;
         self._r.m = 3;
         self._r.t = 12;
     }
@@ -571,7 +601,6 @@ impl Cpu {
         self._r.m = 2;
         self._r.t = 8;
     }
-
     fn ld_hld_a(&mut self, m: &mut Mmu) {
         let addr = ((self._r.h as u16) << 8) + self._r.l as u16;
         m.w8b(addr, self._r.a);
@@ -751,9 +780,23 @@ impl Cpu {
         self.cbmap(i, m);
     }
 
+    fn mut_find_or_insert<T: PartialEq>(vec: &mut Vec<T>, val: T) -> &mut T {
+        if let Some(i) = vec.iter().position(|each| *each == val) {
+            &mut vec[i]
+        } else {
+            vec.push(val);
+            vec.last_mut().unwrap()
+        }
+    }
+
+    pub fn debug_instructions(&mut self, ins: u8) {
+        Cpu::mut_find_or_insert(&mut self.instructions, ins);
+    }
+
     pub fn exec(&mut self, m: &mut Mmu) {
         self.clock.t = 0;
         self.clock.m = 0;
+
         while self.clock.t <= 70224 {
             // in case self.xx is called
             if self.stop_loop {
@@ -763,6 +806,8 @@ impl Cpu {
             let counter = self.get_byte(m);
             // println!("{:?} | {:#01x} | {:?}", counter, counter, self._r);
             println!("{:?} {:?}", counter, self._r);
+            self.debug_instructions(counter);
+
             self.program_counter_call(counter, m);
             let time = self._r.t as u32;
             // m.timer.step(time);
@@ -770,6 +815,8 @@ impl Cpu {
             self.clock.inc_m(self._r.m);
             self.clock.inc_t(self._r.t);
         }
+
+        println!("Instructions used: {:?}", self.instructions);
     }
 
     fn program_counter_call(&mut self, op: u8, m: &mut Mmu) {
@@ -784,12 +831,12 @@ impl Cpu {
             0x06 => self.ldrn_b(m),
             0x07 => self.rlca(),
             0x08 => self.ldmmsp(m),
-            0x09 => data::addhlbc(self),
+            0x09 => data::addhlbc(self), // ok
             0x0A => self.ld_abcm(m),
             11 => data::decbc(self),
             12 => data::incr_c(self),
             13 => data::decr_c(self),
-            14 => self.ldrn_c(m),
+            0x0E => self.ldrn_c(m),
             15 => self.rrca(),
             0x10 => stack::djnzn(self, m), // Switch speed
             0x11 => self.ld_denn(m),
@@ -797,20 +844,20 @@ impl Cpu {
             19 => data::incde(self),
             20 => data::incr_d(self),
             0x15 => data::decr_d(self), // ok
-            22 => self.ldrn_d(m),
+            0x16 => self.ldrn_d(m),     // ok
             23 => self.rla(),
             0x18 => stack::jrn(self, m),
             0x19 => data::addhlde(self),
             26 => self.ld_adem(m),
             27 => data::decde(self),
             28 => data::incr_e(self),
-            29 => data::decr_e(self),
-            30 => self.ldrn_e(m),
+            0x1D => data::decr_e(self),
+            0x1E => self.ldrn_e(m),
             31 => self.rra(),
             0x20 => stack::jrnzn(self, m), // ok
-            33 => self.ld_hlnn(m),
+            0x21 => self.ld_hlnn(m),       // ok
             0x22 => self.ld_hlia(m),
-            35 => data::inchl(self),
+            0x23 => data::inchl(self),
             36 => data::incr_h(self),
             37 => data::decr_h(self),
             38 => self.ldrn_h(m),
@@ -843,16 +890,16 @@ impl Cpu {
             65 => self.ldrr_bc(),
             66 => self.ldrr_bd(),
             67 => self.ldrr_be(),
-            68 => self.ldrr_bh(),
+            0x44 => self.ldrr_bh(),
             69 => self.ldrr_bl(),
             70 => self.ldr_hlm_b(m),
-            71 => self.ldrr_ba(),
+            0x47 => self.ldrr_ba(),
             72 => self.ldrr_cb(),
             73 => self.ldrr_cc(),
             74 => self.ldrr_cd(),
             75 => self.ldrr_ce(),
             76 => self.ldrr_ch(),
-            77 => self.ldrr_cl(),
+            0x4D => self.ldrr_cl(),
             78 => self.ldr_hlm_c(m),
             79 => self.ldrr_ca(),
             80 => self.ldrr_db(),
@@ -968,15 +1015,15 @@ impl Cpu {
             190 => data::cphl(self, m),
             191 => data::cpr_a(self),
             192 => stack::retnz(self, m),
-            193 => stack::popbc(self, m),
-            0xc2 => stack::jpnznn(self, m), // ok
-            0xc3 => stack::jpnn(self, m),   // ok
+            0xC1 => stack::popbc(self, m),  // ok
+            0xC2 => stack::jpnznn(self, m), // ok
+            0xC3 => stack::jpnn(self, m),   // ok
             196 => stack::callnznn(self, m),
-            197 => stack::pushbc(self, m),
+            0xC5 => stack::pushbc(self, m), // ok
             198 => data::addn(self, m),
             199 => stack::rst00(self, m),
             200 => stack::retz(self, m),
-            201 => stack::ret(self, m), // ok
+            0xC9 => stack::ret(self, m), // ok
             202 => stack::jpznn(self, m),
             0xcb => self.mapcb(m),
             204 => stack::callznn(self, m),
@@ -984,11 +1031,11 @@ impl Cpu {
             206 => data::adcn(self, m),
             207 => stack::rst08(self, m),
             208 => stack::retnc(self, m),
-            209 => stack::popde(self, m),
+            0xD1 => stack::popde(self, m),
             210 => stack::jpncnn(self, m),
             211 => self.xx(),
             212 => stack::callncnn(self, m),
-            213 => stack::pushde(self, m),
+            0xD5 => stack::pushde(self, m),
             214 => data::subn(self, m),
             215 => stack::rst10(self, m),
             216 => stack::retc(self, m),
@@ -1025,11 +1072,11 @@ impl Cpu {
             247 => stack::rst30(self, m),
             248 => self.ld_hlspn(m),
             249 => self.xx(),
-            250 => self.ld_amm(m),
-            251 => self.ei(),
+            0xFA => self.ld_amm(m),
+            0xFB => self.ei(), // set ime
             252 => self.xx(),
             253 => self.xx(),
-            254 => data::cpn(self, m),
+            0xFE => data::cpn(self, m),
             0xff => stack::rst38(self, m),
             // _ => self.xx(),
         }

@@ -3,18 +3,26 @@ use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 use crate::mmu::mmu::Mmu;
 
 pub fn pushbc(c: &mut Cpu, m: &mut Mmu) {
-    c._r.sp -= 1;
-    m.w8b(c._r.sp, c._r.b);
-    c._r.sp -= 1;
-    m.w8b(c._r.sp, c._r.c);
+    let value = ((c._r.b as u16) << 8) | (c._r.c as u16);
+    c._r.sp -= 2;
+    m.w16b(c._r.sp, value);
+
+    // c._r.sp -= 1;
+    // m.w8b(c._r.sp, c._r.b);
+    // c._r.sp -= 1;
+    // m.w8b(c._r.sp, c._r.c);
     c._r.m = 3;
     c._r.t = 12;
 }
 pub fn pushde(c: &mut Cpu, m: &mut Mmu) {
-    c._r.sp -= 1;
-    m.w8b(c._r.sp, c._r.d);
-    c._r.sp -= 1;
-    m.w8b(c._r.sp, c._r.e);
+    let value = ((c._r.d as u16) << 8) | (c._r.e as u16);
+    c._r.sp -= 2;
+    m.w16b(c._r.sp, value);
+
+    // c._r.sp -= 1;
+    // m.w8b(c._r.sp, c._r.d);
+    // c._r.sp -= 1;
+    // m.w8b(c._r.sp, c._r.e);
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -40,18 +48,28 @@ pub fn pushaf(c: &mut Cpu, m: &mut Mmu) {
 }
 
 pub fn popbc(c: &mut Cpu, m: &mut Mmu) {
-    c._r.c = m.r8b(c._r.sp);
-    c._r.sp += 1;
-    c._r.b = m.r8b(c._r.sp);
-    c._r.sp += 1;
+    let val = m.r16b(c._r.sp);
+    c._r.sp += 2;
+    c._r.b = (val >> 8) as u8;
+    c._r.c = (val & 0x00FF) as u8;
+
+    // c._r.c = m.r8b(c._r.sp);
+    // c._r.sp += 1;
+    // c._r.b = m.r8b(c._r.sp);
+    // c._r.sp += 1;
     c._r.m = 3;
     c._r.t = 12;
 }
 pub fn popde(c: &mut Cpu, m: &mut Mmu) {
-    c._r.e = m.r8b(c._r.sp);
-    c._r.sp += 1;
-    c._r.d = m.r8b(c._r.sp);
-    c._r.sp += 1;
+    let val = m.r16b(c._r.sp);
+    c._r.sp += 2;
+    c._r.d = (val >> 8) as u8;
+    c._r.e = (val & 0x00FF) as u8;
+
+    // c._r.e = m.r8b(c._r.sp);
+    // c._r.sp += 1;
+    // c._r.d = m.r8b(c._r.sp);
+    // c._r.sp += 1;
     c._r.m = 3;
     c._r.t = 12;
 }
@@ -263,8 +281,13 @@ pub fn callcnn(c: &mut Cpu, m: &mut Mmu) {
     }
 }
 pub fn ret(c: &mut Cpu, m: &mut Mmu) {
-    c._r.pc = m.r16b(c._r.sp) as u16;
+    // c._r.pc = m.r16b(c._r.sp) as u16;
+    // c._r.sp += 2;
+
+    let res = m.r16b(c._r.sp);
     c._r.sp += 2;
+    c._r.pc = res;
+
     c._r.m = 3;
     c._r.t = 12;
 }
