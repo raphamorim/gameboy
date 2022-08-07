@@ -5,14 +5,13 @@ use std::iter::repeat;
 
 use crate::mmu::timer::Timer;
 
-pub const WRAM_SIZE: usize = 0x8000;
-pub const ZRAM_SIZE: usize = 0x7F;
+pub const WRAM_SIZE: usize = 32 << 10; // CGB has 32K (8 banks * 4 KB/bank), GB has 8K
 pub const HIRAM_SIZE: usize = 0x7f;
 
 pub struct Mmu {
     // memory: u32,
+    pub if_: u8,
     pub ie_: u8,
-    pub f_flag: u8,
     // pub inte: u8,
     // Flag indicating BIOS is mapped in
     // BIOS is unmapped with the first instruction above 0x00FF
@@ -21,7 +20,6 @@ pub struct Mmu {
     // Memory regions (initialised at reset time)
     // Heap
     wram: Box<[u8; WRAM_SIZE]>,
-    zram: Box<[u8; ZRAM_SIZE]>,
     hiram: Box<[u8; HIRAM_SIZE]>,
     ram: Vec<u8>,
     rom: Vec<u8>,
@@ -41,11 +39,9 @@ pub struct Mmu {
 impl Mmu {
     pub fn new() -> Mmu {
         Mmu {
-            f_flag: 0,
             rom: Vec::new(),
             ram: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
-            zram: Box::new([0; ZRAM_SIZE]),
             hiram: Box::new([0; HIRAM_SIZE]),
             timer: Box::new(Timer::new()),
             gpu: Box::new(Gpu::new()),
@@ -54,6 +50,7 @@ impl Mmu {
             speedswitch: false,
             sound_on: false,
             ie_: 0,
+            if_: 0,
             rambank: 0,
             wrambank: 0,
             ramon: false,
@@ -130,10 +127,7 @@ impl Mmu {
             }
 
             // e000-fdff same as c000-ddff
-            0xe | 0xc => {
-                println!("vem {:?}", addr);
-                self.wram[(addr & 0xfff) as usize]
-            } // aki
+            0xe | 0xc => self.wram[(addr & 0xfff) as usize],
             0xd => self.wram[(((self.rombank as u16) << 12) | (addr & 0xfff)) as usize],
 
             0xf => {
@@ -178,7 +172,7 @@ impl Mmu {
                     0x5 => self.timer.tima,
                     0x6 => self.timer.tma,
                     0x7 => self.timer.tac,
-                    // 0xf => self.if_,
+                    0xf => self.if_,
                     _ => 0xff,
                 }
             }
@@ -313,7 +307,7 @@ impl Mmu {
                         self.timer.tac = val;
                         self.timer.update();
                     }
-                    // 0xf => { self.if_ = val; }
+                    0xf => { self.if_ = val; }
                     _ => {}
                 }
             }
