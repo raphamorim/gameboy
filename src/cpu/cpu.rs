@@ -11,7 +11,6 @@ pub struct Cpu {
     pub clock: Clock,
     stop_loop: bool,
     _halt: u8,
-    cycles: u32,
     instructions: Vec<u8>,
 }
 
@@ -21,7 +20,6 @@ impl Cpu {
             _r: Registers::new(),
             _halt: 0,
             stop_loop: false,
-            cycles: 0,
             clock: Clock { m: 0, t: 0 },
             instructions: Vec::new(),
         }
@@ -84,6 +82,13 @@ impl Cpu {
         );
         self.stop_loop = true;
     }
+    fn not_found(&mut self, ins: u8) {
+        println!(
+            "Not found - {:#01x} | {:#06x} | {} not implemented, stopping.",
+            ins, ins, ins
+        );
+        self.stop_loop = true;
+    }
     fn ldrr_bb(&mut self) {
         self._r.b = self._r.b;
         self._r.m = 1;
@@ -105,14 +110,7 @@ impl Cpu {
         self._r.t = 4;
     }
     fn ldrr_bh(&mut self) {
-        let a = self._r.h;
-        let b = 0;
-        let r = a & (1 << (b as u32)) == 0;
-        self._r.flag(N, false);
-        self._r.flag(H, true);
-        self._r.flag(Z, r);
-
-        // self._r.b = self._r.h;
+        self._r.b = self._r.h;
         self._r.m = 1;
         self._r.t = 4;
     }
@@ -121,7 +119,6 @@ impl Cpu {
         self._r.m = 1;
         self._r.t = 4;
     }
-    // to change
     fn ldrr_ba(&mut self) {
         self._r.b = self._r.a;
         self._r.m = 1;
@@ -338,17 +335,28 @@ impl Cpu {
         self._r.t = 4;
     }
     fn sbcn(&mut self, m: &mut Mmu) {
-        // self._r.a = self._r.a;
-        self._r.a -= m.r8b(self._r.pc);
-        self._r.pc += 1;
-        // self._r.a-=(self._r.f&0x10)?1:0;
-        if (self._r.f & 0x10) > 0 {
-            self._r.a -= 1;
-        }
-        self.fz(self._r.a, 1);
-        // if self._r.a < 0 {
-        //     self._r.f|=0x10;
+        // // self._r.a = self._r.a;
+        // self._r.a -= m.r8b(self._r.pc);
+        // self._r.pc += 1;
+        // // self._r.a-=(self._r.f&0x10)?1:0;
+        // if (self._r.f & 0x10) > 0 {
+        //     self._r.a -= 1;
         // }
+        // self.fz(self._r.a, 1);
+        // // if self._r.a < 0 {
+        // //     self._r.f|=0x10;
+        // // }
+
+        let b = self.get_byte(m);
+        let c = if self._r.getflag(C) { 1 } else { 0 };
+        let a = self._r.a;
+        let r = a.wrapping_sub(b).wrapping_sub(c);
+        self._r.flag(Z, r == 0);
+        self._r.flag(H, (a & 0x0F) < (b & 0x0F) + c);
+        self._r.flag(N, true);
+        self._r.flag(C, (a as u16) < (b as u16) + (c as u16));
+        self._r.a = r;
+
         self._r.m = 2;
         self._r.t = 8;
     }
@@ -551,22 +559,22 @@ impl Cpu {
         self._r.m = 3;
         self._r.t = 12;
     }
-    fn ld_hlmm(&mut self, m: &mut Mmu) {
-        let i = m.r16b(self._r.pc);
-        self._r.pc += 2;
-        self._r.l = m.r8b(i);
-        self._r.h = m.r8b(i + 1);
-        self._r.m = 5;
-        self._r.t = 20;
-    }
-    fn ldmm_hl(&mut self, m: &mut Mmu) {
-        let addr = m.r16b(self._r.pc);
-        self._r.pc += 2;
-        let value = ((self._r.h as u16) << 8) + self._r.l as u16;
-        m.w16b(addr, value);
-        self._r.m = 5;
-        self._r.t = 20;
-    }
+    // fn ld_hlmm(&mut self, m: &mut Mmu) {
+    //     let i = m.r16b(self._r.pc);
+    //     self._r.pc += 2;
+    //     self._r.l = m.r8b(i);
+    //     self._r.h = m.r8b(i + 1);
+    //     self._r.m = 5;
+    //     self._r.t = 20;
+    // }
+    // fn ldmm_hl(&mut self, m: &mut Mmu) {
+    //     let addr = m.r16b(self._r.pc);
+    //     self._r.pc += 2;
+    //     let value = ((self._r.h as u16) << 8) + self._r.l as u16;
+    //     m.w16b(addr, value);
+    //     self._r.m = 5;
+    //     self._r.t = 20;
+    // }
     fn ld_hlia(&mut self, m: &mut Mmu) {
         let mut hl = ((self._r.h as u16) << 8) | (self._r.l as u16);
         hl += 1;
@@ -761,10 +769,6 @@ impl Cpu {
         self._r.m = 1;
         self._r.t = 4;
     }
-    pub fn mapcb(&mut self, m: &mut Mmu) {
-        let i = self.get_byte(m);
-        self.cbmap(i, m);
-    }
 
     fn mut_find_or_insert<T: PartialEq>(vec: &mut Vec<T>, val: T) -> &mut T {
         if let Some(i) = vec.iter().position(|each| *each == val) {
@@ -790,283 +794,284 @@ impl Cpu {
 
             let counter = self.get_byte(m);
             // println!("{:?} | {:#01x} | {:?}", counter, counter, self._r);
-            println!("{:?} {:?}", counter, self._r);
-            self.debug_instructions(counter);
+            // println!("{:?} {:?}", counter, self._r);
+            // self.debug_instructions(counter);
             self.program_counter_call(counter, m);
-            let time = self._r.t as u32;
+            let _time = self._r.t as u32;
             // m.timer.step(time);
-            m.gpu.step(time);
+            m.gpu.step(1);
             self.clock.inc_m(self._r.m);
             self.clock.inc_t(self._r.t);
         }
 
-        println!("Instructions used: {:?}", self.instructions);
+        // println!("Instructions used: {:?}", self.instructions);
     }
 
     fn program_counter_call(&mut self, op: u8, m: &mut Mmu) {
         // println!("{:#01x} op", op);
         match op {
-            0x00 => self.nop(),      // ok
-            0x01 => self.ld_bcnn(m), // ok
-            0x02 => self.ld_bcm_a(m),
-            0x03 => data::incbc(self),
-            0x04 => data::incr_b(self),
-            0x05 => data::decr_b(self),
-            0x06 => self.ldrn_b(m),
-            0x07 => self.rlca(),
-            0x08 => self.ldmmsp(m),
-            0x09 => data::addhlbc(self),
-            0x0A => self.ld_abcm(m),
-            11 => data::decbc(self),
-            12 => data::incr_c(self),
-            13 => data::decr_c(self),
-            14 => self.ldrn_c(m),
-            15 => self.rrca(),
-            0x10 => stack::djnzn(self, m), // Switch speed
-            0x11 => self.ld_denn(m),
-            18 => self.ld_dem_a(m),
-            19 => data::incde(self),
-            20 => data::incr_d(self),
-            0x15 => data::decr_d(self), // ok
-            22 => self.ldrn_d(m),
-            23 => self.rla(),
-            0x18 => stack::jrn(self, m),
-            0x19 => data::addhlde(self),
-            26 => self.ld_adem(m),
-            27 => data::decde(self),
-            28 => data::incr_e(self),
-            29 => data::decr_e(self),
-            30 => self.ldrn_e(m),
-            31 => self.rra(),
-            0x20 => stack::jrnzn(self, m), // ok
-            33 => self.ld_hlnn(m),
-            0x22 => self.ld_hlia(m),
-            35 => data::inchl(self),
-            36 => data::incr_h(self),
-            37 => data::decr_h(self),
-            38 => self.ldrn_h(m),
-            39 => self.xx(),
-            0x28 => stack::jrzn(self, m),
-            41 => data::addhlhl(self),
-            42 => self.ld_ahli(m),
-            43 => data::dechl(self),
-            44 => data::incr_l(self),
-            45 => data::decr_l(self),
-            46 => self.ldrn_l(m),
-            0x2f => data::cpl(self),
-            48 => stack::jrncn(self, m),
+            0x00 => self.nop(),      // 0
+            0x01 => self.ld_bcnn(m), // 1
+            0x02 => self.ld_bcm_a(m), // 2
+            0x03 => data::incbc(self), // 3
+            0x04 => data::incr_b(self), // 4
+            0x05 => data::decr_b(self), // 5
+            0x06 => self.ldrn_b(m), // 6
+            // 0x07 => self.rlca(),
+            // 0x08 => self.ldmmsp(m),
+            0x09 => data::addhlbc(self), // 9
+            0x0A => self.ld_abcm(m), // 10
+            // 11 => data::decbc(self),
+            // 12 => data::incr_c(self),
+            // 13 => data::decr_c(self),
+            14 => self.ldrn_c(m), // 14
+            // 15 => self.rrca(),
+            0x10 => stack::djnzn(self, m), // 16
+            0x11 => self.ld_denn(m), // 17
+            // 18 => self.ld_dem_a(m),
+            // 19 => data::incde(self),
+            // 20 => data::incr_d(self),
+            0x15 => data::decr_d(self), // 21
+            0x16 => self.ldrn_d(m), // 22
+            // 23 => self.rla(),
+            0x18 => stack::jrn(self, m), // 24
+            0x19 => data::addhlde(self), // 25
+            // 26 => self.ld_adem(m),
+            // 27 => data::decde(self),
+            // 28 => data::incr_e(self),
+            29 => data::decr_e(self), // 29
+            30 => self.ldrn_e(m), // 30
+            // 31 => self.rra(),
+            0x20 => stack::jrnzn(self, m), // 32
+            0x21 => self.ld_hlnn(m), // 33
+            0x22 => self.ld_hlia(m), // 34
+            35 => data::inchl(self), // 35
+            // 36 => data::incr_h(self),
+            // 37 => data::decr_h(self),
+            // 38 => self.ldrn_h(m),
+            // 39 => self.xx(),
+            0x28 => stack::jrzn(self, m), // 40
+            // 41 => data::addhlhl(self),
+            // 42 => self.ld_ahli(m),
+            // 43 => data::dechl(self),
+            // 44 => data::incr_l(self),
+            // 45 => data::decr_l(self),
+            // 46 => self.ldrn_l(m),
+            0x2f => data::cpl(self), // 47
+            // 48 => stack::jrncn(self, m),
             0x31 => self.ld_spnn(m), // ok
-            50 => self.ld_hld_a(m),
-            51 => data::incsp(self),
-            52 => data::inchlm(self, m),
-            53 => data::dechlm(self, m),
-            54 => self.ld_hlmn(m),
-            0x37 => data::scf(self),
-            0x38 => stack::jrcn(self, m),
-            57 => data::addhlsp(self),
-            58 => self.ld_ahld(m),
-            59 => data::decsp(self),
-            60 => data::incr_a(self),
-            61 => data::decr_a(self),
-            0x3e => self.ldrn_a(m), // ok
-            0x3F => data::ccf(self),
-            64 => self.ldrr_bb(),
-            65 => self.ldrr_bc(),
-            66 => self.ldrr_bd(),
-            67 => self.ldrr_be(),
-            68 => self.ldrr_bh(),
-            69 => self.ldrr_bl(),
-            70 => self.ldr_hlm_b(m),
-            71 => self.ldrr_ba(),
-            72 => self.ldrr_cb(),
-            73 => self.ldrr_cc(),
-            74 => self.ldrr_cd(),
-            75 => self.ldrr_ce(),
-            76 => self.ldrr_ch(),
-            77 => self.ldrr_cl(),
-            78 => self.ldr_hlm_c(m),
-            79 => self.ldrr_ca(),
-            80 => self.ldrr_db(),
-            81 => self.ldrr_dc(),
-            82 => self.ldrr_dd(),
-            83 => self.ldrr_de(),
-            84 => self.ldrr_dh(),
-            85 => self.ldrr_dl(),
-            86 => self.ldr_hlm_d(m),
-            87 => self.ldrr_da(),
-            88 => self.ldrr_eb(),
-            89 => self.ldrr_ec(),
-            90 => self.ldrr_ed(),
-            91 => self.ldrr_ee(),
-            92 => self.ldrr_eh(),
-            93 => self.ldrr_el(),
-            94 => self.ldr_hlm_e(m),
-            95 => self.ldrr_ea(),
-            96 => self.ldrr_hb(),
-            97 => self.ldrr_hc(),
-            98 => self.ldrr_hd(),
-            99 => self.ldrr_he(),
-            100 => self.ldrr_hh(),
-            101 => self.ldrr_hl(),
-            102 => self.ldr_hlm_h(m),
-            103 => self.ldrr_ha(),
-            104 => self.ldrr_lb(),
-            105 => self.ldrr_lc(),
-            106 => self.ldrr_ld(),
-            107 => self.ldrr_le(),
-            108 => self.ldrr_lh(),
-            109 => self.ldrr_ll(),
-            110 => self.ldr_hlm_l(m),
-            111 => self.ldrr_la(),
-            112 => self.ld_hlmr_b(m),
-            113 => self.ld_hlmr_c(m),
-            114 => self.ld_hlmr_d(m),
-            115 => self.ld_hlmr_e(m),
-            116 => self.ld_hlmr_h(m),
-            117 => self.ld_hlmr_l(m),
-            118 => self.halt(),
-            119 => self.ld_hlmr_a(m),
-            120 => self.ldrr_ab(),
-            121 => self.ldrr_ac(),
-            122 => self.ldrr_ad(),
-            123 => self.ldrr_ae(),
-            124 => self.ldrr_ah(),
-            125 => self.ldrr_al(),
-            126 => self.ldr_hlm_a(m),
-            127 => self.ldrr_aa(),
-            128 => data::addr_b(self),
-            129 => data::addr_c(self),
-            130 => data::addr_d(self),
-            131 => data::addr_e(self),
-            132 => data::addr_h(self),
-            133 => data::addr_l(self),
-            134 => data::addhl(self, m),
-            135 => data::addr_a(self),
-            136 => data::adcr_b(self),
-            137 => data::adcr_c(self),
-            138 => data::adcr_d(self),
-            139 => data::adcr_e(self),
-            140 => data::adcr_h(self),
-            141 => data::adcr_l(self),
-            142 => data::adchl(self, m),
-            143 => data::adcr_a(self),
-            144 => data::subr_b(self),
-            0x91 => data::subr_c(self),
-            146 => data::subr_d(self),
-            147 => data::subr_e(self),
-            148 => data::subr_h(self),
-            149 => data::subr_l(self),
-            150 => data::subhl(self, m),
-            0x97 => data::subr_a(self), // ok
-            152 => data::sbcr_b(self),
-            153 => data::sbcr_c(self),
-            154 => data::sbcr_d(self),
-            155 => data::sbcr_e(self),
-            156 => data::sbcr_h(self),
-            157 => data::sbcr_l(self),
-            158 => data::sbchl(self, m),
-            159 => data::sbcr_a(self),
-            160 => data::andr_b(self),
-            161 => data::andr_c(self),
-            162 => data::andr_d(self),
-            163 => data::andr_e(self),
-            164 => data::andr_h(self),
-            165 => data::andr_l(self),
-            166 => data::andhl(self, m),
-            167 => data::andr_a(self),
-            168 => data::xorr_b(self),
-            169 => data::xorr_c(self),
-            170 => data::xorr_d(self),
-            171 => data::xorr_e(self),
-            172 => data::xorr_h(self),
-            173 => data::xorr_l(self),
-            174 => data::xorhl(self, m),
-            175 => data::xorr_a(self),
-            176 => data::orr_b(self),
-            177 => data::orr_c(self),
-            178 => data::orr_d(self),
-            179 => data::orr_e(self),
-            180 => data::orr_h(self),
-            181 => data::orr_l(self),
-            182 => data::orhl(self, m),
-            183 => data::orr_a(self),
-            184 => data::cpr_b(self),
-            185 => data::cpr_c(self),
-            186 => data::cpr_d(self),
-            187 => data::cpr_e(self),
-            188 => data::cpr_h(self),
-            189 => data::cpr_l(self),
-            190 => data::cphl(self, m),
-            191 => data::cpr_a(self),
-            192 => stack::retnz(self, m),
-            193 => stack::popbc(self, m),
-            0xc2 => stack::jpnznn(self, m), // ok
-            0xc3 => stack::jpnn(self, m),   // ok
-            196 => stack::callnznn(self, m),
-            197 => stack::pushbc(self, m),
-            198 => data::addn(self, m),
-            199 => stack::rst00(self, m),
-            200 => stack::retz(self, m),
-            201 => stack::ret(self, m), // ok
-            202 => stack::jpznn(self, m),
-            0xcb => self.mapcb(m),
-            204 => stack::callznn(self, m),
-            0xcd => stack::callnn(self, m),
-            206 => data::adcn(self, m),
-            207 => stack::rst08(self, m),
-            208 => stack::retnc(self, m),
-            209 => stack::popde(self, m),
-            210 => stack::jpncnn(self, m),
-            211 => self.xx(),
-            212 => stack::callncnn(self, m),
-            213 => stack::pushde(self, m),
-            214 => data::subn(self, m),
-            215 => stack::rst10(self, m),
-            216 => stack::retc(self, m),
-            217 => stack::reti(self, m),
-            218 => stack::jpcnn(self, m),
-            219 => self.xx(),
-            220 => stack::callcnn(self, m),
-            221 => self.xx(),
-            0xDE => self.sbcn(m),
-            223 => stack::rst18(self, m),
-            0xe0 => self.ld_ion_a(m), // ok
-            225 => stack::pophl(self, m),
-            226 => self.ld_ioca(m),
-            227 => self.xx(),
-            228 => self.xx(),
-            229 => stack::pushhl(self, m),
-            0xe6 => data::andn(self, m),
-            231 => stack::rst20(self, m),
-            232 => data::addspn(self, m),
-            233 => stack::jphl(self),
-            0xea => self.ldmm_a(m),
-            235 => self.xx(),
-            236 => self.xx(),
-            237 => self.xx(),
-            238 => data::orn(self, m),
-            239 => stack::rst28(self, m),
-            0xf0 => self.ld_aion(m), // ok
-            241 => stack::popaf(self, m),
-            242 => self.ld_aioc(m),
-            243 => self.di(),
-            244 => self.xx(),
-            245 => stack::pushaf(self, m),
-            246 => data::xorn(self, m),
-            247 => stack::rst30(self, m),
-            248 => self.ld_hlspn(m),
-            249 => self.xx(),
-            250 => self.ld_amm(m),
-            251 => self.ei(),
-            252 => self.xx(),
-            253 => self.xx(),
-            254 => data::cpn(self, m),
-            0xff => stack::rst38(self, m),
-            // _ => self.xx(),
+            // 50 => self.ld_hld_a(m),
+            // 51 => data::incsp(self),
+            // 52 => data::inchlm(self, m),
+            // 53 => data::dechlm(self, m),
+            // 54 => self.ld_hlmn(m),
+            0x37 => data::scf(self), // 55
+            0x38 => stack::jrcn(self, m), // 56
+            // 57 => data::addhlsp(self),
+            // 58 => self.ld_ahld(m),
+            // 59 => data::decsp(self),
+            // 60 => data::incr_a(self),
+            // 61 => data::decr_a(self),
+            0x3e => self.ldrn_a(m), // 62
+            0x3F => data::ccf(self), // 63
+            // 64 => self.ldrr_bb(),
+            // 65 => self.ldrr_bc(),
+            // 66 => self.ldrr_bd(),
+            // 67 => self.ldrr_be(),
+            0x44 => self.ldrr_bh(), // 68
+            // 69 => self.ldrr_bl(),
+            // 70 => self.ldr_hlm_b(m),
+            0x47 => self.ldrr_ba(), // 71
+            // 72 => self.ldrr_cb(),
+            // 73 => self.ldrr_cc(),
+            // 74 => self.ldrr_cd(),
+            // 75 => self.ldrr_ce(),
+            // 76 => self.ldrr_ch(),
+            77 => self.ldrr_cl(), // 77
+            // 78 => self.ldr_hlm_c(m),
+            // 79 => self.ldrr_ca(),
+            // 80 => self.ldrr_db(),
+            // 81 => self.ldrr_dc(),
+            // 82 => self.ldrr_dd(),
+            // 83 => self.ldrr_de(),
+            // 84 => self.ldrr_dh(),
+            // 85 => self.ldrr_dl(),
+            // 86 => self.ldr_hlm_d(m),
+            // 87 => self.ldrr_da(),
+            // 88 => self.ldrr_eb(),
+            // 89 => self.ldrr_ec(),
+            // 90 => self.ldrr_ed(),
+            // 91 => self.ldrr_ee(),
+            // 92 => self.ldrr_eh(),
+            // 93 => self.ldrr_el(),
+            // 94 => self.ldr_hlm_e(m),
+            // 95 => self.ldrr_ea(),
+            // 96 => self.ldrr_hb(),
+            // 97 => self.ldrr_hc(),
+            // 98 => self.ldrr_hd(),
+            // 99 => self.ldrr_he(),
+            // 100 => self.ldrr_hh(),
+            // 101 => self.ldrr_hl(),
+            // 102 => self.ldr_hlm_h(m),
+            // 103 => self.ldrr_ha(),
+            // 104 => self.ldrr_lb(),
+            // 105 => self.ldrr_lc(),
+            // 106 => self.ldrr_ld(),
+            // 107 => self.ldrr_le(),
+            // 108 => self.ldrr_lh(),
+            // 109 => self.ldrr_ll(),
+            // 110 => self.ldr_hlm_l(m),
+            // 111 => self.ldrr_la(),
+            // 112 => self.ld_hlmr_b(m),
+            // 113 => self.ld_hlmr_c(m),
+            // 114 => self.ld_hlmr_d(m),
+            // 115 => self.ld_hlmr_e(m),
+            // 116 => self.ld_hlmr_h(m),
+            // 117 => self.ld_hlmr_l(m),
+            // 118 => self.halt(),
+            // 119 => self.ld_hlmr_a(m),
+            // 120 => self.ldrr_ab(),
+            // 121 => self.ldrr_ac(),
+            // 122 => self.ldrr_ad(),
+            // 123 => self.ldrr_ae(),
+            // 124 => self.ldrr_ah(),
+            // 125 => self.ldrr_al(),
+            // 126 => self.ldr_hlm_a(m),
+            // 127 => self.ldrr_aa(),
+            // 128 => data::addr_b(self),
+            // 129 => data::addr_c(self),
+            // 130 => data::addr_d(self),
+            // 131 => data::addr_e(self),
+            // 132 => data::addr_h(self),
+            // 133 => data::addr_l(self),
+            // 134 => data::addhl(self, m),
+            // 135 => data::addr_a(self),
+            // 136 => data::adcr_b(self),
+            // 137 => data::adcr_c(self),
+            // 138 => data::adcr_d(self),
+            // 139 => data::adcr_e(self),
+            // 140 => data::adcr_h(self),
+            // 141 => data::adcr_l(self),
+            // 142 => data::adchl(self, m),
+            // 143 => data::adcr_a(self),
+            // 144 => data::subr_b(self),
+            0x91 => data::subr_c(self), // 145
+            // 146 => data::subr_d(self),
+            // 147 => data::subr_e(self),
+            // 148 => data::subr_h(self),
+            // 149 => data::subr_l(self),
+            // 150 => data::subhl(self, m),
+            0x97 => data::subr_a(self), // 151
+            // 152 => data::sbcr_b(self),
+            // 153 => data::sbcr_c(self),
+            // 154 => data::sbcr_d(self),
+            // 155 => data::sbcr_e(self),
+            // 156 => data::sbcr_h(self),
+            // 157 => data::sbcr_l(self),
+            // 158 => data::sbchl(self, m),
+            // 159 => data::sbcr_a(self),
+            // 160 => data::andr_b(self),
+            // 161 => data::andr_c(self),
+            // 162 => data::andr_d(self),
+            // 163 => data::andr_e(self),
+            // 164 => data::andr_h(self),
+            // 165 => data::andr_l(self),
+            // 166 => data::andhl(self, m),
+            // 167 => data::andr_a(self),
+            // 168 => data::xorr_b(self),
+            // 169 => data::xorr_c(self),
+            // 170 => data::xorr_d(self),
+            // 171 => data::xorr_e(self),
+            // 172 => data::xorr_h(self),
+            // 173 => data::xorr_l(self),
+            // 174 => data::xorhl(self, m),
+            // 175 => data::xorr_a(self),
+            // 176 => data::orr_b(self),
+            // 177 => data::orr_c(self),
+            // 178 => data::orr_d(self),
+            // 179 => data::orr_e(self),
+            // 180 => data::orr_h(self),
+            // 181 => data::orr_l(self),
+            // 182 => data::orhl(self, m),
+            // 183 => data::orr_a(self),
+            // 184 => data::cpr_b(self),
+            // 185 => data::cpr_c(self),
+            // 186 => data::cpr_d(self),
+            // 187 => data::cpr_e(self),
+            // 188 => data::cpr_h(self),
+            // 189 => data::cpr_l(self),
+            // 190 => data::cphl(self, m),
+            // 191 => data::cpr_a(self),
+            // 192 => stack::retnz(self, m),
+            193 => stack::popbc(self, m), // 193
+            0xc2 => stack::jpnznn(self, m), // 194
+            0xc3 => stack::jpnn(self, m),   // 195
+            // 196 => stack::callnznn(self, m),
+            197 => stack::pushbc(self, m), // 197
+            // 198 => data::addn(self, m),
+            // 199 => stack::rst00(self, m),
+            // 200 => stack::retz(self, m),
+            201 => stack::ret(self, m), // 201
+            // 202 => stack::jpznn(self, m),
+            0xcb => self.cbmap(m), // 203
+            // 204 => stack::callznn(self, m),
+            0xcd => stack::callnn(self, m), // 205
+            // 206 => data::adcn(self, m),
+            // 207 => stack::rst08(self, m),
+            // 208 => stack::retnc(self, m),
+            209 => stack::popde(self, m), // 209
+            // 210 => stack::jpncnn(self, m),
+            // 211 => self.xx(),
+            // 212 => stack::callncnn(self, m),
+            213 => stack::pushde(self, m), // 213
+            // 214 => data::subn(self, m),
+            // 215 => stack::rst10(self, m),
+            // 216 => stack::retc(self, m),
+            // 217 => stack::reti(self, m),
+            // 218 => stack::jpcnn(self, m),
+            // 219 => self.xx(),
+            // 220 => stack::callcnn(self, m),
+            // 221 => self.xx(),
+            0xDE => self.sbcn(m), // 222
+            // 223 => stack::rst18(self, m),
+            0xe0 => self.ld_ion_a(m), // 224
+            // 225 => stack::pophl(self, m),
+            // 226 => self.ld_ioca(m),
+            // 227 => self.xx(),
+            // 228 => self.xx(),
+            // 229 => stack::pushhl(self, m),
+            0xe6 => data::andn(self, m), // 230
+            // 231 => stack::rst20(self, m),
+            // 232 => data::addspn(self, m),
+            // 233 => stack::jphl(self),
+            0xea => self.ldmm_a(m), // 234
+            // 235 => self.xx(),
+            // 236 => self.xx(),
+            // 237 => self.xx(),
+            // 238 => data::orn(self, m),
+            // 239 => stack::rst28(self, m),
+            0xf0 => self.ld_aion(m), // 240
+            241 => stack::popaf(self, m), // 241
+            // 242 => self.ld_aioc(m),
+            // 243 => self.di(),
+            // 244 => self.xx(),
+            // 245 => stack::pushaf(self, m),
+            // 246 => data::xorn(self, m),
+            // 247 => stack::rst30(self, m),
+            // 248 => self.ld_hlspn(m),
+            // 249 => self.xx(),
+            250 => self.ld_amm(m), // 250
+            251 => self.ei(), // 251
+            // 252 => self.xx(),
+            // 253 => self.xx(),
+            254 => data::cpn(self, m), // 254
+            0xff => stack::rst38(self, m), // 255
+            _ => self.not_found(op),
         }
     }
 
-    fn cbmap(&mut self, op: u8, m: &mut Mmu) {
+    fn cbmap(&mut self, m: &mut Mmu) {
+        let op = self.get_byte(m);
         println!("cbmap {:?}", op);
         match op {
             // CB00

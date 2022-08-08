@@ -57,6 +57,19 @@ impl Mmu {
         }
     }
 
+    fn fill_random(slice: &mut [u8], start: u32) {
+        // Simple LCG to generate (non-cryptographic) random values
+        // Each distinct invocation should use a different start value
+        const A : u32 = 1103515245;
+        const C : u32 = 12345;
+
+        let mut x = start;
+        for v in slice.iter_mut() {
+            x = x.wrapping_mul(A).wrapping_add(C);
+            *v = ((x >> 23) & 0xFF) as u8;
+        }
+    }
+
     pub fn power_on(&mut self) {
         // See http://nocash.emubase.de/pandocs.htm#powerupsequence
         self.w8b(0xFF05, 0);
@@ -210,7 +223,7 @@ impl Mmu {
     pub fn w8b(&mut self, addr: u16, val: u8) {
         // More information about mappings can be found online at
         //      http://nocash.emubase.de/pandocs.htm#memorymap
-        // println!("<- saving... {:#06x} {}" ,addr, val);
+        println!("<- saving... {:#06x} {}" ,addr, val);
         match addr >> 12 {
             0x0 | 0x1 => {
                 self.ramon = val & 0xf == 0xa;
@@ -257,7 +270,7 @@ impl Mmu {
             }
 
             0xc | 0xe => {
-                println!("salvavem {:?} {:?}", addr, val);
+                // println!("salvavem {:?} {:?}", addr, val);
                 self.wram[(addr & 0xfff) as usize] = val;
             }
             0xd => {
