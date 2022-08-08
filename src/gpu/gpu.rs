@@ -23,6 +23,7 @@ const PALETTE: [Color; 4] = [
 
 pub type Color = [u8; 4];
 
+#[derive(Debug)]
 pub struct Gpu {
     pub oam: [u8; OAM_SIZE],
 
@@ -109,18 +110,21 @@ enum Mode {
     RdVram = 0x03, // mode 3
 }
 
+#[derive(Debug)]
 struct Palette {
     bg: [Color; 4],
     obp0: [Color; 4],
     obp1: [Color; 4],
 }
 
+#[derive(Debug)]
 struct Tiles {
     data: [[[u8; 8]; 8]; NUM_TILES * 2],
     need_update: bool,
     to_update: [bool; NUM_TILES * 2],
 }
 
+#[derive(Debug)]
 struct CgbData {
     // Raw memory
     bgp: [u8; CGB_BP_SIZE],
@@ -133,6 +137,7 @@ struct CgbData {
     cobp: [[Color; 4]; 8],
 }
 
+#[derive(Debug)]
 pub struct SgbData {
     // This is a 20x18 array which maps palettes to locations on the screen.
     // Each element defines an 8x8 block on the GB screen which should be mapped
@@ -918,7 +923,7 @@ impl Gpu {
         }
 
         for i in 0..OAM_SIZE as u16 {
-            mem.gpu.oam[i as usize] = mem.r8b(orval | i);
+            mem.gpu.oam[i as usize] = mem.rb(orval | i);
         }
     }
 

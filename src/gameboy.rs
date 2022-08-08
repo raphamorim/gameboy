@@ -8,24 +8,24 @@ pub struct Gameboy {
     cpu: Cpu,
     fps: u32,
     cycles: u32,
-    memory: Mmu,
+    // memory: Mmu,
 }
 
 impl Gameboy {
     pub fn new() -> Gameboy {
+        let memory = Mmu::new();
         let mut gb = Gameboy {
-            cpu: Cpu::new(),
+            cpu: Cpu::new(memory),
             fps: 0,
             cycles: 0,
-            memory: Mmu::new(),
         };
 
-        gb.memory.power_on();
+        gb.cpu.mmu.power_on();
         gb
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
-        self.memory.load_rom(rom);
+        self.cpu.mmu.load_rom(rom);
     }
 
     pub fn reset() {
@@ -43,11 +43,11 @@ impl Gameboy {
         // }
 
         // self.fps += 1;
-        self.cpu.exec(&mut self.memory);
+        self.cpu.exec();
     }
 
     pub fn image(&self) -> &[u8] {
-        &*self.memory.gpu.image_data
+        &*self.cpu.mmu.gpu.image_data
     }
 
     // pub fn frames(&mut self) -> u32 {

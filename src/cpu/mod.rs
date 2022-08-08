@@ -1,6 +1,7 @@
-pub mod bit;
+// pub mod bit;
 pub mod cpu;
-pub mod data;
-pub mod ops;
+// pub mod data;
+pub mod reg;
+// pub mod ops;
 pub mod registers;
-pub mod stack;
+// pub mod stack;

@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Timer {
     clock: Clock,
 
@@ -10,6 +11,7 @@ pub struct Timer {
     tima_speed: u32,
 }
 
+#[derive(Debug)]
 struct Clock {
     tima: u32,
     div: u32,

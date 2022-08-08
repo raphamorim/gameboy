@@ -8,6 +8,7 @@ use crate::mmu::timer::Timer;
 pub const WRAM_SIZE: usize = 32 << 10; // CGB has 32K (8 banks * 4 KB/bank), GB has 8K
 pub const HIRAM_SIZE: usize = 0x7f;
 
+#[derive(Debug)]
 pub struct Mmu {
     // memory: u32,
     pub if_: u8,
@@ -29,7 +30,7 @@ pub struct Mmu {
     mode: bool,
     ramon: bool,
     speedswitch: bool,
-    sound_on: bool,
+    sound: bool,
     // _bios: [],
     // _eram: [],
     pub gpu: Box<Gpu>,
@@ -48,7 +49,7 @@ impl Mmu {
             rombank: 1,
             mode: false,
             speedswitch: false,
-            sound_on: false,
+            sound: false,
             ie_: 0,
             if_: 0,
             rambank: 0,
@@ -57,52 +58,39 @@ impl Mmu {
         }
     }
 
-    fn fill_random(slice: &mut [u8], start: u32) {
-        // Simple LCG to generate (non-cryptographic) random values
-        // Each distinct invocation should use a different start value
-        const A : u32 = 1103515245;
-        const C : u32 = 12345;
-
-        let mut x = start;
-        for v in slice.iter_mut() {
-            x = x.wrapping_mul(A).wrapping_add(C);
-            *v = ((x >> 23) & 0xFF) as u8;
-        }
-    }
-
     pub fn power_on(&mut self) {
         // See http://nocash.emubase.de/pandocs.htm#powerupsequence
-        self.w8b(0xFF05, 0);
-        self.w8b(0xFF06, 0);
-        self.w8b(0xFF07, 0);
-        self.w8b(0xFF10, 0x80);
-        self.w8b(0xFF11, 0xBF);
-        self.w8b(0xFF12, 0xF3);
-        self.w8b(0xFF14, 0xBF);
-        self.w8b(0xFF16, 0x3F);
-        self.w8b(0xFF16, 0x3F);
-        self.w8b(0xFF17, 0);
-        self.w8b(0xFF19, 0xBF);
-        self.w8b(0xFF1A, 0x7F);
-        self.w8b(0xFF1B, 0xFF);
-        self.w8b(0xFF1C, 0x9F);
-        self.w8b(0xFF1E, 0xFF);
-        self.w8b(0xFF20, 0xFF);
-        self.w8b(0xFF21, 0);
-        self.w8b(0xFF22, 0);
-        self.w8b(0xFF23, 0xBF);
-        self.w8b(0xFF24, 0x77);
-        self.w8b(0xFF25, 0xF3);
-        self.w8b(0xFF26, 0xF1);
-        self.w8b(0xFF40, 0xb1);
-        self.w8b(0xFF42, 0);
-        self.w8b(0xFF43, 0);
-        self.w8b(0xFF45, 0);
-        self.w8b(0xFF47, 0xFC);
-        self.w8b(0xFF48, 0xFF);
-        self.w8b(0xFF49, 0xFF);
-        self.w8b(0xFF4A, 0);
-        self.w8b(0xFF4B, 0);
+        self.wb(0xFF05, 0);
+        self.wb(0xFF06, 0);
+        self.wb(0xFF07, 0);
+        self.wb(0xFF10, 0x80);
+        self.wb(0xFF11, 0xBF);
+        self.wb(0xFF12, 0xF3);
+        self.wb(0xFF14, 0xBF);
+        self.wb(0xFF16, 0x3F);
+        self.wb(0xFF16, 0x3F);
+        self.wb(0xFF17, 0);
+        self.wb(0xFF19, 0xBF);
+        self.wb(0xFF1A, 0x7F);
+        self.wb(0xFF1B, 0xFF);
+        self.wb(0xFF1C, 0x9F);
+        self.wb(0xFF1E, 0xFF);
+        self.wb(0xFF20, 0xFF);
+        self.wb(0xFF21, 0);
+        self.wb(0xFF22, 0);
+        self.wb(0xFF23, 0xBF);
+        self.wb(0xFF24, 0x77);
+        self.wb(0xFF25, 0xF3);
+        self.wb(0xFF26, 0xF1);
+        self.wb(0xFF40, 0x91);
+        self.wb(0xFF42, 0);
+        self.wb(0xFF43, 0);
+        self.wb(0xFF45, 0);
+        self.wb(0xFF47, 0xFC);
+        self.wb(0xFF48, 0xFF);
+        self.wb(0xFF49, 0xFF);
+        self.wb(0xFF4A, 0);
+        self.wb(0xFF4B, 0);
     }
 
     // Read 8-bit byte from a given address
@@ -111,7 +99,7 @@ impl Mmu {
     }
 
     /// Reads a byte at the given address
-    pub fn r8b(&self, addr: u16) -> u8 {
+    pub fn rb(&self, addr: u16) -> u8 {
         // println!("-> getting... {:#06x}", addr);
 
         match addr >> 12 {
@@ -146,7 +134,7 @@ impl Mmu {
             0xf => {
                 if addr < 0xfe00 {
                     // mirrored RAM
-                    self.r8b(addr & 0xdfff)
+                    self.rb(addr & 0xdfff)
                 } else if addr < 0xfea0 {
                     // sprite attribute table (oam)
                     self.gpu.oam[(addr & 0xff) as usize]
@@ -215,15 +203,15 @@ impl Mmu {
     }
 
     // Read 16-bit word from a given address
-    pub fn r16b(&mut self, address: u16) -> u16 {
-        (self.r8b(address) as u16) | ((self.r8b(address + 1) as u16) << 8)
+    pub fn rw(&mut self, address: u16) -> u16 {
+        (self.rb(address) as u16) | ((self.rb(address + 1) as u16) << 8)
     }
 
     /// Writes a byte at the given address
-    pub fn w8b(&mut self, addr: u16, val: u8) {
+    pub fn wb(&mut self, addr: u16, val: u8) {
         // More information about mappings can be found online at
         //      http://nocash.emubase.de/pandocs.htm#memorymap
-        println!("<- saving... {:#06x} {}" ,addr, val);
+        // println!("<- saving... {:#06x} {}" ,addr, val);
         match addr >> 12 {
             0x0 | 0x1 => {
                 self.ramon = val & 0xf == 0xa;
@@ -279,7 +267,7 @@ impl Mmu {
 
             0xf => {
                 if addr < 0xfe00 {
-                    self.w8b(addr & 0xdfff, val); // mirrored RAM
+                    self.wb(addr & 0xdfff, val); // mirrored RAM
                 } else if addr < 0xfea0 {
                     self.gpu.oam[(addr & 0xff) as usize] = val;
                 } else if addr < 0xff00 {
@@ -329,7 +317,7 @@ impl Mmu {
             // TODO: sound registers
             0x1 | 0x2 | 0x3 => {
                 if addr == 0xff26 {
-                    self.sound_on = val != 0;
+                    self.sound = val != 0;
                 }
             }
 
@@ -366,10 +354,14 @@ impl Mmu {
         }
     }
 
+    pub fn switch_speed(&mut self) {
+        self.speedswitch = !self.speedswitch;
+    }
+
     // Write 16-bit byte to a given address
-    pub fn w16b(&mut self, address: u16, value: u16) {
-        self.w8b(address, (value & 0xFF) as u8);
-        self.w8b(address + 1, (value >> 8) as u8);
+    pub fn ww(&mut self, address: u16, value: u16) {
+        self.wb(address, (value & 0xFF) as u8);
+        self.wb(address + 1, (value >> 8) as u8);
     }
 
     pub fn ram_size(&self) -> usize {
