@@ -61,15 +61,15 @@ pub fn popbc(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 12;
 }
 pub fn popde(c: &mut Cpu, m: &mut Mmu) {
+    // c._r.e = m.r8b(c._r.sp);
+    // c._r.sp += 1;
+    // c._r.d = m.r8b(c._r.sp);
+    // c._r.sp += 1;
     let val = m.r16b(c._r.sp);
     c._r.sp += 2;
     c._r.d = (val >> 8) as u8;
     c._r.e = (val & 0x00FF) as u8;
 
-    // c._r.e = m.r8b(c._r.sp);
-    // c._r.sp += 1;
-    // c._r.d = m.r8b(c._r.sp);
-    // c._r.sp += 1;
     c._r.m = 3;
     c._r.t = 12;
 }

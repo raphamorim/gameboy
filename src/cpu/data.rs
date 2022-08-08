@@ -934,12 +934,6 @@ pub fn inchlm(c: &mut Cpu, m: &mut Mmu) {
     c._r.t = 12;
 }
 pub fn decr_b(c: &mut Cpu) {
-    // if c._r.b > 0 {
-    //     c._r.b -= 1;
-    // }
-    // c._r.b &= 255;
-    // c.fz(c._r.b, 0);
-
     let a = c._r.b;
     let r = a.wrapping_sub(1);
     c._r.flag(Z, r == 0);
