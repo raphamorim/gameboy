@@ -29,7 +29,8 @@ struct Glcx {
 
 pub fn render(mut gameboy: Gameboy) {
     let mut ratio = 1 + (WIDTH / 10);
-    let event_loop: glutin::event_loop::EventLoop<()> = glutin::event_loop::EventLoop::with_user_event();
+    let event_loop: glutin::event_loop::EventLoop<()> =
+        glutin::event_loop::EventLoop::with_user_event();
     let inner_size = glutin::dpi::LogicalSize {
         width: WIDTH,
         height: HEIGHT,

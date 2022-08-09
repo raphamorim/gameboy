@@ -16,16 +16,17 @@ pub struct Registers {
 
 impl fmt::Display for Registers {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "a:{:2x} b:{:2x} c:{:2x} d:{:2x} e:{:2x} \
+        write!(
+            f,
+            "a:{:2x} b:{:2x} c:{:2x} d:{:2x} e:{:2x} \
                    f:{:2x} h:{:2x} l:{:2x} pc:{:4x} sp:{:4x}",
-               self.a, self.b, self.c, self.d, self.e, self.f, self.h, self.l,
-               self.pc, self.sp)
+            self.a, self.b, self.c, self.d, self.e, self.f, self.h, self.l, self.pc, self.sp
+        )
     }
 }
 
 #[derive(Copy, Clone)]
-pub enum CpuFlag
-{
+pub enum CpuFlag {
     C = 0b00010000,
     H = 0b00100000,
     N = 0b01000000,
@@ -98,7 +99,7 @@ impl Registers {
     pub fn flag(&mut self, flags: CpuFlag, set: bool) {
         let mask = flags as u8;
         match set {
-            true  => self.f |=  mask,
+            true => self.f |= mask,
             false => self.f &= !mask,
         }
         self.f &= 0xF0;
@@ -110,21 +111,18 @@ impl Registers {
     }
 
     #[cfg(test)]
-    fn setf(&mut self, flags: u8)
-    {
+    fn setf(&mut self, flags: u8) {
         self.f = flags & 0xF0;
     }
 }
 
 #[cfg(test)]
-mod test
-{
-    use super::Registers;
+mod test {
     use super::CpuFlag::{C, H, N, Z};
+    use super::Registers;
 
     #[test]
-    fn wide_registers()
-    {
+    fn wide_registers() {
         let mut reg = Registers::new();
         reg.a = 0x12;
         reg.setf(0x23);
@@ -150,8 +148,7 @@ mod test
     }
 
     #[test]
-    fn flags()
-    {
+    fn flags() {
         let mut reg = Registers::new();
         let flags = [C, H, N, Z];
 
@@ -159,8 +156,7 @@ mod test
         assert_eq!(reg.f & 0x0F, 0);
 
         reg.setf(0x00);
-        for i in 0 .. 4
-        {
+        for i in 0..4 {
             let mask = flags[i];
             assert_eq!(reg.getflag(mask), false);
             reg.flag(mask, true);
@@ -171,8 +167,7 @@ mod test
     }
 
     #[test]
-    fn hl_special()
-    {
+    fn hl_special() {
         let mut reg = Registers::new();
         reg.sethl(0x1234);
         assert_eq!(reg.hl(), 0x1234);

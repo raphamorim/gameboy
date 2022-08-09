@@ -27,12 +27,12 @@ impl Gameboy {
             cycles: 0,
         };
 
-        gb.cpu.mmu.power_on();
+        gb.cpu.memory.power_on();
         gb
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
-        self.cpu.mmu.load_rom(rom);
+        self.cpu.memory.load_rom(rom);
     }
 
     pub fn reset() {
@@ -45,8 +45,11 @@ impl Gameboy {
         while self.cycles <= 70224 {
             let time = self.cpu.exec();
             println!("{:?} {:?}", self.cycles, time);
-            self.cpu.mmu.timer.step(time, &mut self.cpu.mmu.if_, self.cpu.mmu.speed);
-            self.cpu.mmu.gpu.step(time, &mut self.cpu.mmu.if_);
+            self.cpu
+                .memory
+                .timer
+                .step(time, &mut self.cpu.memory.if_, self.cpu.memory.speed);
+            self.cpu.memory.gpu.step(time, &mut self.cpu.memory.if_);
             if time > self.cycles {
                 break;
             } else {
@@ -56,7 +59,7 @@ impl Gameboy {
     }
 
     pub fn image(&self) -> &[u8] {
-        &*self.cpu.mmu.gpu.image_data
+        &*self.cpu.memory.gpu.image_data
     }
 
     // pub fn keydown(&mut self, key: input::Button) {

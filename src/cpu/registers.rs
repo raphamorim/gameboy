@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug)]
 pub struct Clock {
     pub m: u32,
@@ -40,10 +42,6 @@ pub struct Registers {
     // it automatically calculates certain bits, or flags, based on the result of the last operation.
     pub f: u8,
 
-    // Clock for last instruction
-    pub m: u16,
-    pub t: u16,
-
     // 16-bit registers
     pub pc: u16,
     pub sp: u16,
@@ -51,21 +49,30 @@ pub struct Registers {
     // pub clock: Clock,
 }
 
+impl fmt::Display for Registers {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "a:{:2x} b:{:2x} c:{:2x} d:{:2x} e:{:2x} \
+                   f:{:2x} h:{:2x} l:{:2x} pc:{:4x} sp:{:4x}",
+            self.a, self.b, self.c, self.d, self.e, self.f, self.h, self.l, self.pc, self.sp
+        )
+    }
+}
+
 impl Registers {
     pub fn new() -> Registers {
         Registers {
-            a: 0x11,    // 17
-            f: 0xB0,    // 176
-            b: 0x00,    // 0
-            c: 0x13,    // 19
-            d: 0x00,    // 0
-            e: 0xD8,    // 216
-            h: 0x01,    // 1
-            l: 0x4D,    // 77
-            pc: 0x0100, // Starts with 256
-            sp: 0xFFFE, // 65534
-            m: 0,
-            t: 0,
+            a: 0x01,
+            f: 0xb0,
+            b: 0x00,
+            c: 0x13,
+            d: 0x00,
+            e: 0xd8,
+            h: 0x01,
+            l: 0x4d,
+            pc: 0x0100,
+            sp: 0xFFFE,
             ime: 0,
             // clock: Clock { m: 0, t: 0 },
         }

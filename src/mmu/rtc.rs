@@ -16,8 +16,16 @@ pub struct Rtc {
 impl Rtc {
     pub fn new() -> Rtc {
         Rtc {
-            s: 0, m: 0, h: 0, d: 0, t: 0, carry: 0, current: 0,
-            regs: [0; 8], stop: 0, readylatch: false,
+            s: 0,
+            m: 0,
+            h: 0,
+            d: 0,
+            t: 0,
+            carry: 0,
+            current: 0,
+            regs: [0; 8],
+            stop: 0,
+            readylatch: false,
         }
     }
 
@@ -28,23 +36,31 @@ impl Rtc {
                 self.regs[1] = self.m;
                 self.regs[2] = self.h;
                 self.regs[3] = self.d as u8;
-                self.regs[4] = ((self.d >> 8) as u8) | (self.stop << 6) |
-                               (self.carry << 7);
+                self.regs[4] = ((self.d >> 8) as u8) | (self.stop << 6) | (self.carry << 7);
                 self.regs[5] = 0xff;
                 self.regs[6] = 0xff;
                 self.regs[7] = 0xff;
             }
             self.readylatch = false;
         } else {
-            self.readylatch = if value == 0 {true} else {false};
+            self.readylatch = if value == 0 { true } else { false };
         }
     }
 
     pub fn wb(&mut self, _addr: u16, value: u8) {
         match self.current & 0x7 {
-            0 => { self.s = value % 60; self.regs[0] = self.s; }
-            1 => { self.m = value % 60; self.regs[1] = self.m; }
-            2 => { self.h = value % 24; self.regs[2] = self.h; }
+            0 => {
+                self.s = value % 60;
+                self.regs[0] = self.s;
+            }
+            1 => {
+                self.m = value % 60;
+                self.regs[1] = self.m;
+            }
+            2 => {
+                self.h = value % 24;
+                self.regs[2] = self.h;
+            }
             3 => {
                 self.regs[3] = value;
                 self.d = (self.d & 0x100) | (value as u16);
@@ -61,7 +77,9 @@ impl Rtc {
 
     #[allow(dead_code)]
     pub fn step(&mut self) {
-        if self.stop != 0 { return }
+        if self.stop != 0 {
+            return;
+        }
 
         self.t += 1;
         if self.t >= 60 {

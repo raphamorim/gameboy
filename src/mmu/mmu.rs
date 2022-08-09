@@ -1,8 +1,8 @@
 // Memory Management Unit
 
-use crate::mmu::rtc::Rtc;
-use crate::gpu::gpu::Gpu;
 use crate::gameboy;
+use crate::gpu::gpu::Gpu;
+use crate::mmu::rtc::Rtc;
 use std::iter::repeat;
 
 use crate::mmu::timer::Timer;
@@ -78,11 +78,13 @@ impl Mmu {
             rtc: Box::new(Rtc::new()),
             timer: Box::new(Timer::new()),
             gpu: Box::new(Gpu::new()),
-            is_cgb: false, is_sgb: false,
+            is_cgb: false,
+            is_sgb: false,
             rombank: 1,
             battery: false,
             mode: false,
-            speed: Speed::Normal, speedswitch: false,
+            speed: Speed::Normal,
+            speedswitch: false,
             sound: false,
             ie_: 0,
             if_: 0,
@@ -254,22 +256,20 @@ impl Mmu {
         //      http://nocash.emubase.de/pandocs.htm#memorymap
         // println!("<- saving... {:#06x} {}" ,addr, val);
         match addr >> 12 {
-            0x0 | 0x1 => {
-                match self.mbc {
-                    Mbc::Mbc1 | Mbc::Mbc3 | Mbc::Mbc5 => {
-                        self.ramon = val & 0xf == 0xa;
-                    }
-                    Mbc::Mbc2 => {
-                        if addr & 0x100 == 0 {
-                            self.ramon = !self.ramon;
-                        }
-                    }
-                    Mbc::Unknown | Mbc::Omitted => {}
+            0x0 | 0x1 => match self.mbc {
+                Mbc::Mbc1 | Mbc::Mbc3 | Mbc::Mbc5 => {
+                    self.ramon = val & 0xf == 0xa;
                 }
-            }
+                Mbc::Mbc2 => {
+                    if addr & 0x100 == 0 {
+                        self.ramon = !self.ramon;
+                    }
+                }
+                Mbc::Unknown | Mbc::Omitted => {}
+            },
 
             0x2 | 0x3 => {
-                 let val = val as u16;
+                let val = val as u16;
                 match self.mbc {
                     Mbc::Mbc1 => {
                         self.rombank = (self.rombank & 0x60) | (val & 0x1f);
@@ -284,7 +284,7 @@ impl Mmu {
                     }
                     Mbc::Mbc3 => {
                         let val = val & 0x7f;
-                        self.rombank = val + if val != 0 {0} else {1};
+                        self.rombank = val + if val != 0 { 0 } else { 1 };
                     }
                     Mbc::Mbc5 => {
                         if addr >> 12 == 0x2 {
@@ -301,10 +301,11 @@ impl Mmu {
             0x4 | 0x5 => {
                 match self.mbc {
                     Mbc::Mbc1 => {
-                        if !self.mode { // ROM banking mode
-                            self.rombank = (self.rombank & 0x1f) |
-                                           (((val as u16) & 0x3) << 5);
-                        } else { // RAM banking mode
+                        if !self.mode {
+                            // ROM banking mode
+                            self.rombank = (self.rombank & 0x1f) | (((val as u16) & 0x3) << 5);
+                        } else {
+                            // RAM banking mode
                             self.rambank = val & 0x3;
                         }
                     }
@@ -319,17 +320,15 @@ impl Mmu {
                 }
             }
 
-            0x6 | 0x7 => {
-                match self.mbc {
-                    Mbc::Mbc1 => {
-                        self.mode = val & 0x1 != 0;
-                    }
-                    Mbc::Mbc3 => {
-                        self.rtc.latch(val);
-                    }
-                    _ => {}
+            0x6 | 0x7 => match self.mbc {
+                Mbc::Mbc1 => {
+                    self.mode = val & 0x1 != 0;
                 }
-            }
+                Mbc::Mbc3 => {
+                    self.rtc.latch(val);
+                }
+                _ => {}
+            },
 
             0x8 | 0x9 => {
                 self.gpu.vram_mut()[(addr & 0x1fff) as usize] = val;
@@ -343,17 +342,21 @@ impl Mmu {
                     if self.rtc.current & 0x8 != 0 {
                         self.rtc.wb(addr, val);
                     } else {
-                        let val = if self.mbc == Mbc::Mbc2 {val & 0xf} else {val};
-                        self.ram[(((self.rambank as u16) << 12) |
-                                 (addr & 0x1fff)) as usize] = val;
+                        let val = if self.mbc == Mbc::Mbc2 {
+                            val & 0xf
+                        } else {
+                            val
+                        };
+                        self.ram[(((self.rambank as u16) << 12) | (addr & 0x1fff)) as usize] = val;
                     }
                 }
             }
 
-            0xc | 0xe => { self.wram[(addr & 0xfff) as usize] = val; }
+            0xc | 0xe => {
+                self.wram[(addr & 0xfff) as usize] = val;
+            }
             0xd => {
-                self.wram[(((self.wrambank as u16) << 12) |
-                           (addr & 0xfff)) as usize] = val;
+                self.wram[(((self.wrambank as u16) << 12) | (addr & 0xfff)) as usize] = val;
             }
 
             0xf => {
@@ -399,7 +402,9 @@ impl Mmu {
                         self.timer.tac = val;
                         self.timer.update();
                     }
-                    0xf => { self.if_ = val; }
+                    0xf => {
+                        self.if_ = val;
+                    }
                     _ => {}
                 }
             }

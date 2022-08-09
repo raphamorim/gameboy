@@ -1,5 +1,5 @@
-use crate::mmu::mmu::Mmu;
 use crate::cpu::cpu::Interrupt;
+use crate::mmu::mmu::Mmu;
 
 const VRAM_SIZE: usize = 8 << 10; // 8K
 const OAM_SIZE: usize = 0xa0; // 0xffe00 - 0xffe9f is OAM
@@ -264,7 +264,7 @@ impl Gpu {
     // between a few different states. In one state, however, the rendering of a
     // screen occurs, but that doesn't always happen when calling this function.
     pub fn step(&mut self, clocks: u32, if_: &mut u8) {
-         // Timings located here:
+        // Timings located here:
         //      http://nocash.emubase.de/pandocs.htm#lcdstatusregister
         self.clock += clocks;
 
@@ -285,12 +285,21 @@ impl Gpu {
 
         // Hop between modes if we're not in vblank
         if self.ly < 144 {
-            if self.clock <= 80 { // RDOAM takes 80 cycles
-                if self.mode != Mode::RdOam { self.switch(Mode::RdOam, if_); }
-            } else if self.clock <= 252 { // RDVRAM takes 172 cycles
-                if self.mode != Mode::RdVram { self.switch(Mode::RdVram, if_); }
-            } else { // HBLANK takes rest of time before line rendered
-                if self.mode != Mode::HBlank { self.switch(Mode::HBlank, if_); }
+            if self.clock <= 80 {
+                // RDOAM takes 80 cycles
+                if self.mode != Mode::RdOam {
+                    self.switch(Mode::RdOam, if_);
+                }
+            } else if self.clock <= 252 {
+                // RDVRAM takes 172 cycles
+                if self.mode != Mode::RdVram {
+                    self.switch(Mode::RdVram, if_);
+                }
+            } else {
+                // HBLANK takes rest of time before line rendered
+                if self.mode != Mode::HBlank {
+                    self.switch(Mode::HBlank, if_);
+                }
             }
         }
     }
@@ -375,7 +384,7 @@ impl Gpu {
         }
     }
 
-     fn render_background(&mut self, scanline: &mut [u8; WIDTH]) {
+    fn render_background(&mut self, scanline: &mut [u8; WIDTH]) {
         let mapbase = self.bgbase();
         let line = self.ly as usize + self.scy as usize;
 
@@ -397,7 +406,7 @@ impl Gpu {
         // (&tiles[0]) == 0x9000, where if tiledata = 1, (&tiles[0]) = 0x8000.
         // This implies that the indices are treated as signed numbers.
         let mut i = 0;
-        let tilebase = if !self.tiledata {256} else {0};
+        let tilebase = if !self.tiledata { 256 } else { 0 };
 
         // println!("render background from {:x} {} {}", mapbase, self.scx, self.scy);
 
@@ -428,11 +437,10 @@ impl Gpu {
 
                 let attrs = self.vrambanks[1][mapbase + mapoff as usize] as usize;
 
-                let tile = self.tiles.data[tilebase +
-                                           ((attrs >> 3) & 1) * NUM_TILES];
+                let tile = self.tiles.data[tilebase + ((attrs >> 3) & 1) * NUM_TILES];
                 bgpri = attrs & 0x80 != 0;
                 hflip = attrs & 0x20 != 0;
-                row = tile[if attrs & 0x40 != 0 {7 - y} else {y} as usize];
+                row = tile[if attrs & 0x40 != 0 { 7 - y } else { y } as usize];
                 bgp = self.cgb.cbgp[attrs & 0x7];
             } else {
                 // Non CGB backgrounds are boring :(
@@ -443,25 +451,35 @@ impl Gpu {
             }
 
             while x < 8 && i < WIDTH as u8 {
-                let colori = row[if hflip {7 - x} else {x} as usize];
+                let colori = row[if hflip { 7 - x } else { x } as usize];
                 let color;
                 if self.is_sgb && !self.is_cgb {
                     let sgbaddr = (i >> 3) as usize + (self.ly as usize >> 3) * 20;
                     let mapped = self.sgb.atf[sgbaddr] as usize;
                     match bgp[colori as usize][0] {
-                          0 => { color = self.sgb.pal[mapped][3]; }
-                         96 => { color = self.sgb.pal[mapped][2]; }
-                        192 => { color = self.sgb.pal[mapped][1]; }
-                        255 => { color = self.sgb.pal[mapped][0]; }
+                        0 => {
+                            color = self.sgb.pal[mapped][3];
+                        }
+                        96 => {
+                            color = self.sgb.pal[mapped][2];
+                        }
+                        192 => {
+                            color = self.sgb.pal[mapped][1];
+                        }
+                        255 => {
+                            color = self.sgb.pal[mapped][0];
+                        }
 
                         // not actually reachable
-                        _ => { color = [0, 0, 0, 0]; }
+                        _ => {
+                            color = [0, 0, 0, 0];
+                        }
                     }
                 } else {
                     color = bgp[colori as usize];
                 }
                 // To indicate bg priority, list a color >= 4
-                scanline[i as usize] = if bgpri {4} else {colori};
+                scanline[i as usize] = if bgpri { 4 } else { colori };
 
                 self.image_data[coff] = color[0];
                 self.image_data[coff + 1] = color[1];
@@ -474,7 +492,9 @@ impl Gpu {
             }
 
             x = 0;
-            if i >= WIDTH as u8 { break }
+            if i >= WIDTH as u8 {
+                break;
+            }
         }
     }
 
