@@ -1,12 +1,20 @@
 // Memory Management Unit
 
+use crate::mmu::rtc::Rtc;
 use crate::gpu::gpu::Gpu;
+use crate::gameboy;
 use std::iter::repeat;
 
 use crate::mmu::timer::Timer;
 
 pub const WRAM_SIZE: usize = 32 << 10; // CGB has 32K (8 banks * 4 KB/bank), GB has 8K
 pub const HIRAM_SIZE: usize = 0x7f;
+
+#[derive(Copy, Debug, Clone)]
+pub enum Speed {
+    Normal,
+    Double,
+}
 
 #[derive(Debug)]
 pub struct Mmu {
@@ -22,39 +30,67 @@ pub struct Mmu {
     // Heap
     wram: Box<[u8; WRAM_SIZE]>,
     hiram: Box<[u8; HIRAM_SIZE]>,
+    battery: bool,
     ram: Vec<u8>,
     rom: Vec<u8>,
     rombank: u16,
+    target: gameboy::Target,
     rambank: u8,
     wrambank: u8,
     mode: bool,
     ramon: bool,
-    speedswitch: bool,
+    /// The speed that the gameboy is operating at and whether a switch has been
+    /// requested
+    pub speed: Speed,
+    pub speedswitch: bool,
     sound: bool,
+    mbc: Mbc,
+    /// Flag if this is a CGB cartridge or not
+    is_cgb: bool,
+    /// Flag if this is a SGB cartridge or not
+    is_sgb: bool,
     // _bios: [],
     // _eram: [],
     pub gpu: Box<Gpu>,
     pub timer: Box<Timer>,
+    pub rtc: Box<Rtc>,
+    // pub sgb: Option<Box<Sgb>>,
+}
+
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+enum Mbc {
+    Unknown,
+    Omitted,
+    Mbc1,
+    Mbc2,
+    Mbc3,
+    Mbc5,
 }
 
 impl Mmu {
-    pub fn new() -> Mmu {
+    pub fn new(target: gameboy::Target) -> Mmu {
         Mmu {
+            target: target,
             rom: Vec::new(),
             ram: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
             hiram: Box::new([0; HIRAM_SIZE]),
+            rtc: Box::new(Rtc::new()),
             timer: Box::new(Timer::new()),
             gpu: Box::new(Gpu::new()),
+            is_cgb: false, is_sgb: false,
             rombank: 1,
+            battery: false,
             mode: false,
-            speedswitch: false,
+            speed: Speed::Normal, speedswitch: false,
             sound: false,
             ie_: 0,
             if_: 0,
+            mbc: Mbc::Unknown,
             rambank: 0,
             wrambank: 0,
             ramon: false,
+            // sgb: None,
         }
     }
 
@@ -112,35 +148,36 @@ impl Mmu {
                 self.rom[(((self.rombank as u32) << 14) | ((addr as u32) & 0x3fff)) as usize]
             }
 
-            0x8 | 0x9 => self.gpu.vram()[(addr & 0x1fff) as usize],
+            0x8 | 0x9 => self.gpu.vram()[(addr & 0x1FFF) as usize],
 
             0xa | 0xb => {
                 // Swappable banks of RAM
                 if self.ramon {
-                    // if self.rtc.current & 0x08 != 0 {
-                    //     self.rtc.regs[(self.rtc.current & 0x7) as usize]
-                    // } else {
-                    self.ram[(((self.rambank as u16) << 12) | (addr & 0x1fff)) as usize]
-                    // }
+                    if self.rtc.current & 0x08 != 0 {
+                        self.rtc.regs[(self.rtc.current & 0x7) as usize]
+                    } else {
+                        self.ram[(((self.rambank as u16) << 12) | (addr & 0x1FFF)) as usize]
+                    }
                 } else {
                     0xff
                 }
             }
 
             // e000-fdff same as c000-ddff
-            0xe | 0xc => self.wram[(addr & 0xfff) as usize],
-            0xd => self.wram[(((self.rombank as u16) << 12) | (addr & 0xfff)) as usize],
+            0xe | 0xc => self.wram[(addr & 0x1FFF) as usize],
+            0xd => self.wram[(((self.rombank as u16) << 12) | (addr & 0x1FFF)) as usize],
 
             0xf => {
                 if addr < 0xfe00 {
                     // mirrored RAM
-                    self.rb(addr & 0xdfff)
-                } else if addr < 0xfea0 {
+                    // self.rb(addr & 0xdfff)
+                    self.wram[(addr & 0x1FFF) as usize]
+                } else if addr < 0xFEA0 {
                     // sprite attribute table (oam)
-                    self.gpu.oam[(addr & 0xff) as usize]
+                    self.gpu.oam[(addr & 0xFF) as usize]
                 } else if addr < 0xff00 {
                     // unusable ram
-                    0xff
+                    0
                 } else if addr < 0xff80 {
                     // I/O ports
                     self.ioreg_rb(addr)
@@ -183,7 +220,11 @@ impl Mmu {
 
             0x4 => {
                 if addr == 0xff4d {
-                    0x00 | (self.speedswitch as u8)
+                    let b = match self.speed {
+                        Speed::Normal => 0x00,
+                        Speed::Double => 0x80,
+                    };
+                    b | (self.speedswitch as u8)
                 } else {
                     self.gpu.rb(addr)
                 }
@@ -214,29 +255,80 @@ impl Mmu {
         // println!("<- saving... {:#06x} {}" ,addr, val);
         match addr >> 12 {
             0x0 | 0x1 => {
-                self.ramon = val & 0xf == 0xa;
+                match self.mbc {
+                    Mbc::Mbc1 | Mbc::Mbc3 | Mbc::Mbc5 => {
+                        self.ramon = val & 0xf == 0xa;
+                    }
+                    Mbc::Mbc2 => {
+                        if addr & 0x100 == 0 {
+                            self.ramon = !self.ramon;
+                        }
+                    }
+                    Mbc::Unknown | Mbc::Omitted => {}
+                }
             }
 
             0x2 | 0x3 => {
-                let val = val as u16;
-                self.rombank = (self.rombank & 0x60) | (val & 0x1f);
-                if self.rombank == 0 {
-                    self.rombank = 1;
+                 let val = val as u16;
+                match self.mbc {
+                    Mbc::Mbc1 => {
+                        self.rombank = (self.rombank & 0x60) | (val & 0x1f);
+                        if self.rombank == 0 {
+                            self.rombank = 1;
+                        }
+                    }
+                    Mbc::Mbc2 => {
+                        if addr & 0x100 != 0 {
+                            self.rombank = val & 0xf;
+                        }
+                    }
+                    Mbc::Mbc3 => {
+                        let val = val & 0x7f;
+                        self.rombank = val + if val != 0 {0} else {1};
+                    }
+                    Mbc::Mbc5 => {
+                        if addr >> 12 == 0x2 {
+                            self.rombank = (self.rombank & 0xff00) | val;
+                        } else {
+                            let val = (val & 1) << 8;
+                            self.rombank = (self.rombank & 0x00ff) | val;
+                        }
+                    }
+                    Mbc::Unknown | Mbc::Omitted => {}
                 }
             }
 
             0x4 | 0x5 => {
-                if !self.mode {
-                    // ROM banking mode
-                    self.rombank = (self.rombank & 0x1f) | (((val as u16) & 0x3) << 5);
-                } else {
-                    // RAM banking mode
-                    self.rambank = val & 0x3;
+                match self.mbc {
+                    Mbc::Mbc1 => {
+                        if !self.mode { // ROM banking mode
+                            self.rombank = (self.rombank & 0x1f) |
+                                           (((val as u16) & 0x3) << 5);
+                        } else { // RAM banking mode
+                            self.rambank = val & 0x3;
+                        }
+                    }
+                    Mbc::Mbc3 => {
+                        self.rtc.current = val & 0xf;
+                        self.rambank = val & 0x3
+                    }
+                    Mbc::Mbc5 => {
+                        self.rambank = val & 0xf;
+                    }
+                    Mbc::Unknown | Mbc::Omitted | Mbc::Mbc2 => {}
                 }
             }
 
             0x6 | 0x7 => {
-                self.mode = val & 0x1 != 0;
+                match self.mbc {
+                    Mbc::Mbc1 => {
+                        self.mode = val & 0x1 != 0;
+                    }
+                    Mbc::Mbc3 => {
+                        self.rtc.latch(val);
+                    }
+                    _ => {}
+                }
             }
 
             0x8 | 0x9 => {
@@ -248,21 +340,20 @@ impl Mmu {
 
             0xa | 0xb => {
                 if self.ramon {
-                    // if self.rtc.current & 0x8 != 0 {
-                    //     self.rtc.wb(addr, val);
-                    // } else {
-                    //     let val = if self.mbc == Mbc::Mbc2 {val & 0xf} else {val};
-                    self.ram[(((self.rambank as u16) << 12) | (addr & 0x1fff)) as usize] = val;
-                    // }
+                    if self.rtc.current & 0x8 != 0 {
+                        self.rtc.wb(addr, val);
+                    } else {
+                        let val = if self.mbc == Mbc::Mbc2 {val & 0xf} else {val};
+                        self.ram[(((self.rambank as u16) << 12) |
+                                 (addr & 0x1fff)) as usize] = val;
+                    }
                 }
             }
 
-            0xc | 0xe => {
-                // println!("salvavem {:?} {:?}", addr, val);
-                self.wram[(addr & 0xfff) as usize] = val;
-            }
+            0xc | 0xe => { self.wram[(addr & 0xfff) as usize] = val; }
             0xd => {
-                self.wram[(((self.wrambank as u16) << 12) | (addr & 0xfff)) as usize] = val;
+                self.wram[(((self.wrambank as u16) << 12) |
+                           (addr & 0xfff)) as usize] = val;
             }
 
             0xf => {
@@ -327,13 +418,13 @@ impl Mmu {
                     0xff46 => Gpu::oam_dma_transfer(self, val),
                     0xff55 => Gpu::hdma_dma_transfer(self, val),
                     0xff4d => {
-                        // if self.is_cgb {
-                        if val & 0x01 != 0 {
-                            self.speedswitch = true;
-                        } else {
-                            self.speedswitch = false;
+                        if self.is_cgb {
+                            if val & 0x01 != 0 {
+                                self.speedswitch = true;
+                            } else {
+                                self.speedswitch = false;
+                            }
                         }
-                        // }
                     }
                     _ => self.gpu.wb(addr, val),
                 }
@@ -355,7 +446,11 @@ impl Mmu {
     }
 
     pub fn switch_speed(&mut self) {
-        self.speedswitch = !self.speedswitch;
+        self.speedswitch = false;
+        self.speed = match self.speed {
+            Speed::Normal => Speed::Double,
+            Speed::Double => Speed::Normal,
+        };
     }
 
     // Write 16-bit byte to a given address
@@ -381,7 +476,77 @@ impl Mmu {
 
     pub fn load_rom(&mut self, rom: Vec<u8>) {
         self.rom = rom;
+        // See http://nocash.emubase.de/pandocs.htm#thecartridgeheader for
+        // header information.
+
+        self.battery = true;
+        self.mbc = Mbc::Unknown;
+        match self.rom[0x0147] {
+            0x00 |      // rom only
+            0x08 => {   // rom + ram
+                self.battery = false;
+                self.mbc = Mbc::Omitted;
+            }
+
+            0x09 => {   // rom + ram + battery
+                self.mbc = Mbc::Omitted;
+            }
+
+            0x01 |      // rom + mbc1
+            0x02 => {   // rom + mbc1 + ram
+                self.battery = false;
+                self.mbc = Mbc::Mbc1;
+            }
+            0x03 => {   // rom + mbc1 + ram + batt
+                self.mbc = Mbc::Mbc1;
+            }
+
+            0x05 => {   // rom + mbc2
+                self.battery = false;
+                self.mbc = Mbc::Mbc2;
+            }
+            0x06 => {   // rom + mbc2 + batt
+                self.mbc = Mbc::Mbc2;
+            }
+
+            0x11 |      // rom + mbc3
+            0x12 => {   // rom + mbc3 + ram
+                self.battery = false;
+                self.mbc = Mbc::Mbc3;
+            }
+            0x0f |      // rom + mbc3 + timer + batt
+            0x10 |      // rom + mbc3 + timer + ram + batt
+            0x13 => {   // rom + mbc3 + ram + batt
+                self.mbc = Mbc::Mbc3;
+            }
+
+            0x19 |      // <>
+            0x1a |      // ram
+            0x1c |      // rumble
+            0x1d => {   // rumble + ram
+                self.battery = false;
+                self.mbc = Mbc::Mbc5;
+            }
+            0x1b |      // ram + battery
+            0x1e => {   // rumble + ram + batter
+                self.mbc = Mbc::Mbc5;
+            }
+
+            n => { panic!("unknown cartridge inserted: {:x}", n); }
+        }
+
         self.ram = repeat(0u8).take(self.ram_size()).collect();
-        self.gpu.is_cgb = true;
+        if self.target == gameboy::GameBoyColor {
+            self.is_cgb = self.rom[0x0143] & 0x80 != 0;
+            self.gpu.is_cgb = self.is_cgb;
+        }
+
+        if self.target == gameboy::SuperGameBoy || self.target == gameboy::GameBoyColor {
+            // self.is_sgb = self.rom[0x0146] == 0x03;
+            // if self.is_sgb {
+            //     self.sgb = Some(Box::new(Sgb::new()));
+            //     self.gpu.is_sgb = self.is_sgb;
+            // }
+        }
     }
 }

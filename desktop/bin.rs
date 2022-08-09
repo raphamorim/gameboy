@@ -23,35 +23,34 @@ struct Args {
     scale: u8,
 }
 
-fn get_rom_from_filepath(filepath: &String) -> Result<Vec<u8>, String> {
-    let mut rom = Vec::new();
-    let file = File::open(filepath);
-    match file.and_then(|mut f| f.read_to_end(&mut rom)) {
-        Ok(..) => {}
-        Err(e) => return Err(format!("failed to read {}: {}", filepath, e)),
-    };
-
-    Ok(rom)
-}
-
 fn add_yellow_color(text: &str) -> String {
     format!("{}{}{}", "\x1b[93m", text, "\x1b[0m")
 }
 
 fn main() {
     let args = Args::parse();
-    let rom = get_rom_from_filepath(&args.filepath);
     let cmd = add_yellow_color("[LR35902]");
     let mut gb = gameboy::Gameboy::new();
     // gb.set_scale(&args.scale);
+    let filepath = &args.filepath;
 
     if &args.filepath == "" {
         println!("{} Please provide a rom file", cmd);        
         return;
     }
 
-    println!("{} ROM Path: {:?}", cmd, &args.filepath);
+    println!("{} ROM Path: {:?}", cmd, filepath);
 
-    gb.load(rom.unwrap());
+    let mut rom = Vec::new();
+    let file = File::open(filepath);
+    match file.and_then(|mut f| f.read_to_end(&mut rom)) {
+        Ok(..) => {}
+        Err(e) => {
+            println!("failed to read {}: {}", filepath, e);
+            return
+        },
+    };
+
+    gb.load(rom);
     render(gb);
 }

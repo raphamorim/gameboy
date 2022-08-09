@@ -1,3 +1,6 @@
+use crate::cpu::cpu::Interrupt;
+use crate::mmu::mmu::Speed;
+
 #[derive(Debug)]
 pub struct Timer {
     clock: Clock,
@@ -25,33 +28,31 @@ impl Timer {
             tma: 0,
             tac: 0,
             tima_speed: 256,
-            clock: Clock { tima: 0, div: 0 },
+            clock: Clock {
+                tima: 0,
+                div: 0,
+            }
         }
     }
 
     pub fn update(&mut self) {
         // See step() function for timings
         match self.tac & 0x3 {
-            0x0 => {
-                self.tima_speed = 256;
-            }
-            0x1 => {
-                self.tima_speed = 4;
-            }
-            0x2 => {
-                self.tima_speed = 16;
-            }
-            0x3 => {
-                self.tima_speed = 64;
-            }
+            0x0 => { self.tima_speed = 256; }
+            0x1 => { self.tima_speed = 4; }
+            0x2 => { self.tima_speed = 16; }
+            0x3 => { self.tima_speed = 64; }
             _ => {}
         }
     }
 
     // Details: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Timers
-    pub fn step(&mut self, ticks: u32) {
+    pub fn step(&mut self, ticks: u32, if_: &mut u8, speed: Speed) {
         // undo the multiplication in the cpu
-        let ticks = ticks / 4;
+        let ticks = match speed {
+            Speed::Normal => ticks / 4,
+            Speed::Double => ticks,
+        };
         self.clock.div += ticks;
 
         // CPU runs on a 4,194,304 Hz clock, although the argument to this
@@ -82,6 +83,7 @@ impl Timer {
                 self.tima += 1;
                 if self.tima == 0 {
                     self.tima = self.tma;
+                    *if_ |= Interrupt::Timer as u8;
                 }
                 self.clock.tima -= self.tima_speed;
             }

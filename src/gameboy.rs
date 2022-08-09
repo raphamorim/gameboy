@@ -6,17 +6,24 @@ pub const HEIGHT: u32 = 144;
 
 pub struct Gameboy {
     cpu: Cpu,
-    fps: u32,
     cycles: u32,
     // memory: Mmu,
 }
 
+pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
+
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+pub enum Target {
+    GameBoy,
+    GameBoyColor,
+    SuperGameBoy,
+}
+
 impl Gameboy {
     pub fn new() -> Gameboy {
-        let memory = Mmu::new();
+        let memory = Mmu::new(Target::GameBoy);
         let mut gb = Gameboy {
             cpu: Cpu::new(memory),
-            fps: 0,
             cycles: 0,
         };
 
@@ -33,26 +40,24 @@ impl Gameboy {
     }
 
     pub fn frame(&mut self) {
-        // self.cycles += 70224;
+        self.cycles += 70224;
 
-        // while self.cycles <= 70224 {
-        //     let time = self.cpu.exec(&mut self.mem);
-        //     self.memory.timer.step(time);
-        //     self.memory.gpu.step(time, &mut self.memory.f_flag);
-        //     self.cycles -= time;
-        // }
-
-        // self.fps += 1;
-        self.cpu.exec();
+        while self.cycles <= 70224 {
+            let time = self.cpu.exec();
+            println!("{:?} {:?}", self.cycles, time);
+            self.cpu.mmu.timer.step(time, &mut self.cpu.mmu.if_, self.cpu.mmu.speed);
+            self.cpu.mmu.gpu.step(time, &mut self.cpu.mmu.if_);
+            if time > self.cycles {
+                break;
+            } else {
+                self.cycles -= time;
+            }
+        }
     }
 
     pub fn image(&self) -> &[u8] {
         &*self.cpu.mmu.gpu.image_data
     }
-
-    // pub fn frames(&mut self) -> u32 {
-    //     memory::replace(&mut self.fps, 0)
-    // }
 
     // pub fn keydown(&mut self, key: input::Button) {
     //     self.memory.input.keydown(key, &mut self.memory.if_);

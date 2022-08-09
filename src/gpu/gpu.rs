@@ -1,4 +1,5 @@
 use crate::mmu::mmu::Mmu;
+use crate::cpu::cpu::Interrupt;
 
 const VRAM_SIZE: usize = 8 << 10; // 8K
 const OAM_SIZE: usize = 0xa0; // 0xffe00 - 0xffe9f is OAM
@@ -229,28 +230,27 @@ impl Gpu {
         &mut self.vrambanks[self.vrambank as usize]
     }
 
-    // fn switch(&mut self, mode: Mode, if_: &mut u8) {
-    fn switch(&mut self, mode: Mode) {
+    fn switch(&mut self, mode: Mode, if_: &mut u8) {
         self.mode = mode;
         match mode {
             Mode::HBlank => {
                 self.render_line();
                 if self.mode0int {
-                    // *if_ |= Interrupt::LCDStat as u8;
+                    *if_ |= Interrupt::LCDStat as u8;
                 }
             }
             Mode::VBlank => {
                 // TODO: a frame is ready, it should be put on screen at this
                 // point
-                // *if_ |= Interrupt::Vblank as u8;
-                // if self.mode1int {
-                //     *if_ |= Interrupt::LCDStat as u8;
-                // }
+                *if_ |= Interrupt::Vblank as u8;
+                if self.mode1int {
+                    *if_ |= Interrupt::LCDStat as u8;
+                }
             }
             Mode::RdOam => {
-                // if self.mode2int {
-                //     *if_ |= Interrupt::LCDStat as u8;
-                // }
+                if self.mode2int {
+                    *if_ |= Interrupt::LCDStat as u8;
+                }
             }
             Mode::RdVram => {}
         }
@@ -264,9 +264,8 @@ impl Gpu {
     // internal counter of clock cycles that have passed. It's a state machine
     // between a few different states. In one state, however, the rendering of a
     // screen occurs, but that doesn't always happen when calling this function.
-    // pub fn step(&mut self, clocks: u32, if_: &mut u8) {
-    pub fn step(&mut self, clocks: u32) {
-        // Timings located here:
+    pub fn step(&mut self, clocks: u32, if_: &mut u8) {
+         // Timings located here:
         //      http://nocash.emubase.de/pandocs.htm#lcdstatusregister
         self.clock += clocks;
 
@@ -277,31 +276,22 @@ impl Gpu {
             self.ly = (self.ly + 1) % 154; // 144 lines tall, 10 for a vblank
 
             if self.ly >= 144 && self.mode != Mode::VBlank {
-                self.switch(Mode::VBlank);
+                self.switch(Mode::VBlank, if_);
             }
 
             if self.ly == self.lyc && self.lycly {
-                // *if_ |= Interrupt::LCDStat as u8;
+                *if_ |= Interrupt::LCDStat as u8;
             }
         }
 
         // Hop between modes if we're not in vblank
         if self.ly < 144 {
-            if self.clock <= 80 {
-                // RDOAM takes 80 cycles
-                if self.mode != Mode::RdOam {
-                    self.switch(Mode::RdOam);
-                }
-            } else if self.clock <= 252 {
-                // RDVRAM takes 172 cycles
-                if self.mode != Mode::RdVram {
-                    self.switch(Mode::RdVram);
-                }
-            } else {
-                // HBLANK takes rest of time before line rendered
-                if self.mode != Mode::HBlank {
-                    self.switch(Mode::HBlank);
-                }
+            if self.clock <= 80 { // RDOAM takes 80 cycles
+                if self.mode != Mode::RdOam { self.switch(Mode::RdOam, if_); }
+            } else if self.clock <= 252 { // RDVRAM takes 172 cycles
+                if self.mode != Mode::RdVram { self.switch(Mode::RdVram, if_); }
+            } else { // HBLANK takes rest of time before line rendered
+                if self.mode != Mode::HBlank { self.switch(Mode::HBlank, if_); }
             }
         }
     }

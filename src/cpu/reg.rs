@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Copy, Clone, Debug)]
 pub struct Registers {
     pub a: u8,
@@ -10,6 +12,15 @@ pub struct Registers {
     pub l: u8,
     pub pc: u16,
     pub sp: u16,
+}
+
+impl fmt::Display for Registers {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "a:{:2x} b:{:2x} c:{:2x} d:{:2x} e:{:2x} \
+                   f:{:2x} h:{:2x} l:{:2x} pc:{:4x} sp:{:4x}",
+               self.a, self.b, self.c, self.d, self.e, self.f, self.h, self.l,
+               self.pc, self.sp)
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -25,13 +36,13 @@ impl Registers {
     pub fn new() -> Registers {
         Registers {
             a: 0x01,
-            f: 0xB0,
+            f: 0xb0,
             b: 0x00,
             c: 0x13,
             d: 0x00,
-            e: 0xD8,
+            e: 0xd8,
             h: 0x01,
-            l: 0x4D,
+            l: 0x4d,
             pc: 0x0100,
             sp: 0xFFFE,
         }

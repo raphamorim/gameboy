@@ -4,30 +4,36 @@
 use crate::cpu::reg::Registers;
 use crate::cpu::reg::CpuFlag::{C, H, N, Z};
 // use crate::cpu::stack;
-use crate::mmu::mmu::Mmu;
+use crate::mmu::mmu::{Mmu, Speed};
+
+#[allow(dead_code)]
+pub enum Interrupt {
+    Vblank  = 0x01,
+    LCDStat = 0x02,
+    Timer   = 0x04,
+    Serial  = 0x08,
+    Joypad  = 0x10,
+}
 
 #[derive(Debug)]
 pub struct Cpu {
+    pub ime: u32,
+    pub halt: u32,
+    pub stop: u32,
+    delay: u32,
+    ticks: u32,
+
     pub reg: Registers, // registers
-    // pub clock: Clock,
-    stop_loop: bool,
-    halted: bool,
-    instructions: Vec<u8>,
     pub mmu: Mmu,
-    setei: u32,
-    setdi: u32
 }
 
 impl Cpu {
     pub fn new(memory: Mmu) -> Self {
         Cpu {
-            reg: Registers::new_cgb(),
-            halted: false,
-            stop_loop: false,
-            // clock: Clock { m: 0, t: 0 },
-            instructions: Vec::new(),
+            reg: Registers::new(),
             mmu: memory,
-            setei: 0, setdi: 0
+            ime: 0, halt: 0, stop: 0,
+            ticks: 0, delay: 0
         }
     }
 
@@ -36,27 +42,67 @@ impl Cpu {
         self.reg.pc = self.reg.pc.wrapping_add(1);
         pc
     }
+    
+    pub fn rst(&mut self, i: u16) {
+        self.reg.sp -= 2;
+        self.mmu.ww(self.reg.sp, self.reg.pc);
+        self.reg.pc = i;
+    }
 
-    pub fn exec(&mut self) {
-        let mut timer = 0;
-        while timer <= 70224 {
-            // in case self.xx is called
-            if self.stop_loop {
-                break;
-            }
-
-            // let _counter = self.ca();
-            // println!("{:?} | {:#01x} | {:?}", counter, counter, self._r);
-            // self.debug_instructions(counter);
-            timer += self.call();
-            // let _time = self._r.t as u32;
-            // m.timer.step(timer);
-            self.mmu.gpu.step(timer);
-            // self.clock.inc_m(self._r.m);
-            // self.clock.inc_t(self._r.t);
+    pub fn exec(&mut self) -> u32 {
+        match self.delay {
+            0 => {}
+            1 => { self.delay = 0; self.ime = 1; }
+            2 => { self.delay = 1; }
+            _ => {}
         }
 
-        // println!("Instructions used: {:?}", self.instructions);
+        // When the CPU halts, it simply goes into a "low power mode" that
+        // doesn't execute any more instructions until an interrupt comes in.
+        // Deferring until this interrupt happens is fairly difficult, so we
+        // just don't execute any instructions. We simulate that the 'nop'
+        // instruction continuously happens until an interrupt comes in which
+        // will disable the halt flag
+        let mut ticks = if self.halt == 0 && self.stop == 0 {
+            self.call()
+        } else {
+            if self.stop != 0 && self.mmu.speedswitch {
+                self.mmu.switch_speed();
+                self.stop = 0;
+            }
+            4
+        };
+
+        // See http://nocash.emubase.de/pandocs.htm#interrupts
+        if self.ime != 0 || self.halt != 0 {
+            let ints = self.mmu.if_ & self.mmu.ie_;
+
+            if ints != 0 {
+                let i = ints.trailing_zeros();
+                if self.ime != 0 {
+                    self.mmu.if_ &= !(1 << (i as u32));
+                }
+                self.ime = 0;
+                self.halt = 0;
+                self.stop = 0;
+                match i {
+                    0 => { self.rst(0x40); }
+                    1 => { self.rst(0x48); }
+                    2 => { self.rst(0x50); }
+                    3 => { self.rst(0x58); }
+                    4 => { self.rst(0x60); }
+                    _ => {  }
+                }
+                ticks += 4;
+            }
+        }
+
+        match self.mmu.speed {
+            Speed::Normal => { ticks *= 1; }
+            Speed::Double => { ticks *= 2; }
+        }
+        self.ticks += ticks;
+        return ticks;
     }
 
     fn pushstack(&mut self, value: u16) {
@@ -70,15 +116,15 @@ impl Cpu {
         res
     }
 
-
     pub fn fetchword(&mut self) -> u16 {
         let w = self.mmu.rw(self.reg.pc);
         self.reg.pc += 2;
         w
     }
+
     fn call(&mut self) -> u32 {
         let opcode = self.fetchbyte();
-        println!("{:?} {:?}", opcode, self.reg);
+        // println!("{:?} {:?}", opcode, self.reg);
         match opcode {
             0x00 => { 1 },
             0x01 => { let v = self.fetchword(); self.reg.setbc(v); 3 },
@@ -97,7 +143,8 @@ impl Cpu {
             0x0E => { self.reg.c = self.fetchbyte(); 2 },
             0x0F => { self.reg.a = self.alu_rrc(self.reg.a); self.reg.flag(Z, false); 1 },
             0x10 => { 
-                self.mmu.switch_speed(); 
+                // self.mmu.switch_speed();
+                self.stop = 1;
                 1 
             }, // STOP
             0x11 => { let v = self.fetchword(); self.reg.setde(v); 3 },
@@ -202,7 +249,7 @@ impl Cpu {
             0x74 => { self.mmu.wb(self.reg.hl(), self.reg.h); 2 },
             0x75 => { self.mmu.wb(self.reg.hl(), self.reg.l); 2 },
             0x76 => { 
-                self.halted = true; 
+                self.halt = 1; 
                 1 
             },
             0x77 => { self.mmu.wb(self.reg.hl(), self.reg.a); 2 },
@@ -302,7 +349,7 @@ impl Cpu {
             0xD6 => { let v = self.fetchbyte(); self.alu_sub(v, false); 2 },
             0xD7 => { self.pushstack(self.reg.pc); self.reg.pc = 0x10; 4 },
             0xD8 => { if self.reg.getflag(C) { self.reg.pc = self.popstack(); 5 } else { 2 } },
-            0xD9 => { self.reg.pc = self.popstack(); self.setei = 1; 4 },
+            0xD9 => { self.reg.pc = self.popstack(); self.ime = 1; 4 },
             0xDA => { if self.reg.getflag(C) { self.reg.pc = self.fetchword(); 4 } else { self.reg.pc += 2; 3 } },
             0xDC => { if self.reg.getflag(C) { self.pushstack(self.reg.pc + 2); self.reg.pc = self.fetchword(); 6 } else { self.reg.pc += 2; 3 } },
             0xDE => { let v = self.fetchbyte(); self.alu_sub(v, true); 2 },
@@ -321,14 +368,23 @@ impl Cpu {
             0xF0 => { let a = 0xFF00 | self.fetchbyte() as u16; self.reg.a = self.mmu.rb(a); 3 },
             0xF1 => { let v = self.popstack() & 0xFFF0; self.reg.setaf(v); 3 },
             0xF2 => { self.reg.a = self.mmu.rb(0xFF00 | self.reg.c as u16); 2 },
-            0xF3 => { self.setdi = 2; 1 },
+            0xF3 => { 
+                self.ime = 0;
+                self.delay = 0;
+            1 },
             0xF5 => { self.pushstack(self.reg.af()); 4 },
             0xF6 => { let v = self.fetchbyte(); self.alu_or(v); 2 },
             0xF7 => { self.pushstack(self.reg.pc); self.reg.pc = 0x30; 4 },
             0xF8 => { let r = self.alu_add16imm(self.reg.sp); self.reg.sethl(r); 3 },
             0xF9 => { self.reg.sp = self.reg.hl(); 2 },
             0xFA => { let a = self.fetchword(); self.reg.a = self.mmu.rb(a); 4 },
-            0xFB => { self.setei = 2; 1 },
+            0xFB => { 
+                if self.delay == 2 || self.mmu.rb(self.reg.pc) == 0x76 {
+            self.delay = 1;
+        } else {
+            self.delay = 2;
+        }
+                self.ime = 1; 1 },
             0xFE => { let v = self.fetchbyte(); self.alu_cp(v); 2 },
             0xFF => { self.pushstack(self.reg.pc); self.reg.pc = 0x38; 4 },
             other=> panic!("Instruction {:2X} is not implemented", other),
@@ -778,6 +834,5 @@ impl Cpu {
     fn cpu_jr(&mut self) {
         let n = self.fetchbyte() as i8;
         self.reg.pc = ((self.reg.pc as u32 as i32) + (n as i32)) as u16;
- 
    }
 }
