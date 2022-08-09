@@ -399,7 +399,7 @@ impl Gpu {
         let mut i = 0;
         let tilebase = if !self.tiledata {256} else {0};
 
-        println!("render background from {:x} {} {}", mapbase, self.scx, self.scy);
+        // println!("render background from {:x} {} {}", mapbase, self.scx, self.scy);
 
         loop {
             // Backgrounds wrap around, so calculate the offset into the bgmap
