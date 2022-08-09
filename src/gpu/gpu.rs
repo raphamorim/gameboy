@@ -156,7 +156,7 @@ impl Gpu {
             vrambanks: Box::new([[0; VRAM_SIZE]; 2]),
             vrambank: 0,
             oam: [0; OAM_SIZE],
-            is_cgb: true,
+            is_cgb: false,
             is_sgb: false,
             image_data: Box::new([0; HEIGHT * WIDTH * 4]),
 
@@ -171,7 +171,6 @@ impl Gpu {
             scx: 0,
             scy: 0,
             mode0int: false,
-            // Enable by default
             mode1int: false,
             mode2int: false,
             lycly: false,
@@ -376,7 +375,7 @@ impl Gpu {
         }
     }
 
-    fn render_background(&mut self, scanline: &mut [u8; WIDTH]) {
+     fn render_background(&mut self, scanline: &mut [u8; WIDTH]) {
         let mapbase = self.bgbase();
         let line = self.ly as usize + self.scy as usize;
 
@@ -398,7 +397,9 @@ impl Gpu {
         // (&tiles[0]) == 0x9000, where if tiledata = 1, (&tiles[0]) = 0x8000.
         // This implies that the indices are treated as signed numbers.
         let mut i = 0;
-        let tilebase = if !self.tiledata { 256 } else { 0 };
+        let tilebase = if !self.tiledata {256} else {0};
+
+        println!("render background from {:x} {} {}", mapbase, self.scx, self.scy);
 
         loop {
             // Backgrounds wrap around, so calculate the offset into the bgmap
@@ -427,10 +428,11 @@ impl Gpu {
 
                 let attrs = self.vrambanks[1][mapbase + mapoff as usize] as usize;
 
-                let tile = self.tiles.data[tilebase + ((attrs >> 3) & 1) * NUM_TILES];
+                let tile = self.tiles.data[tilebase +
+                                           ((attrs >> 3) & 1) * NUM_TILES];
                 bgpri = attrs & 0x80 != 0;
                 hflip = attrs & 0x20 != 0;
-                row = tile[if attrs & 0x40 != 0 { 7 - y } else { y } as usize];
+                row = tile[if attrs & 0x40 != 0 {7 - y} else {y} as usize];
                 bgp = self.cgb.cbgp[attrs & 0x7];
             } else {
                 // Non CGB backgrounds are boring :(
@@ -441,35 +443,25 @@ impl Gpu {
             }
 
             while x < 8 && i < WIDTH as u8 {
-                let colori = row[if hflip { 7 - x } else { x } as usize];
+                let colori = row[if hflip {7 - x} else {x} as usize];
                 let color;
                 if self.is_sgb && !self.is_cgb {
                     let sgbaddr = (i >> 3) as usize + (self.ly as usize >> 3) * 20;
                     let mapped = self.sgb.atf[sgbaddr] as usize;
                     match bgp[colori as usize][0] {
-                        0 => {
-                            color = self.sgb.pal[mapped][3];
-                        }
-                        96 => {
-                            color = self.sgb.pal[mapped][2];
-                        }
-                        192 => {
-                            color = self.sgb.pal[mapped][1];
-                        }
-                        255 => {
-                            color = self.sgb.pal[mapped][0];
-                        }
+                          0 => { color = self.sgb.pal[mapped][3]; }
+                         96 => { color = self.sgb.pal[mapped][2]; }
+                        192 => { color = self.sgb.pal[mapped][1]; }
+                        255 => { color = self.sgb.pal[mapped][0]; }
 
                         // not actually reachable
-                        _ => {
-                            color = [0, 0, 0, 0];
-                        }
+                        _ => { color = [0, 0, 0, 0]; }
                     }
                 } else {
                     color = bgp[colori as usize];
                 }
                 // To indicate bg priority, list a color >= 4
-                scanline[i as usize] = if bgpri { 4 } else { colori };
+                scanline[i as usize] = if bgpri {4} else {colori};
 
                 self.image_data[coff] = color[0];
                 self.image_data[coff + 1] = color[1];
@@ -482,9 +474,7 @@ impl Gpu {
             }
 
             x = 0;
-            if i >= WIDTH as u8 {
-                break;
-            }
+            if i >= WIDTH as u8 { break }
         }
     }
 

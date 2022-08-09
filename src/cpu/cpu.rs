@@ -70,7 +70,7 @@ impl Cpu {
                 self.mmu.switch_speed();
                 self.stop = 0;
             }
-            4
+            1
         };
 
         // See http://nocash.emubase.de/pandocs.htm#interrupts
@@ -93,14 +93,14 @@ impl Cpu {
                     4 => { self.rst(0x60); }
                     _ => {  }
                 }
-                ticks += 4;
+                ticks += 1;
             }
         }
 
-        match self.mmu.speed {
-            Speed::Normal => { ticks *= 1; }
-            Speed::Double => { ticks *= 2; }
-        }
+        // match self.mmu.speed {
+        //     Speed::Normal => { ticks *= 4; }
+        //     Speed::Double => { ticks *= 2; }
+        // }
         self.ticks += ticks;
         return ticks;
     }
