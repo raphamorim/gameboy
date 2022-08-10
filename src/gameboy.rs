@@ -44,7 +44,7 @@ impl Gameboy {
 
         while self.cycles <= 70224 {
             let time = self.cpu.exec();
-            println!("{:?} {:?}", self.cycles, time);
+            // println!("{:?} {:?}", self.cycles, time);
             self.cpu
                 .memory
                 .timer

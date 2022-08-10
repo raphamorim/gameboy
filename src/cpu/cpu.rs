@@ -3,17 +3,6 @@ use crate::cpu::registers::{Clock, Registers};
 use crate::cpu::{bit, data, ldrr, stack, swap};
 use crate::mmu::mmu::{Mmu, Speed};
 
-// pub struct Cpu {
-//     pub ime: u32,
-//     pub halt: u32,
-//     pub stop: u32,
-//     delay: u32,
-//     ticks: u32,
-
-//     pub reg: Registers, // registers
-//     pub mmu: Mmu,
-// }
-
 #[allow(dead_code)]
 pub enum Interrupt {
     Vblank = 0x01,
@@ -69,15 +58,6 @@ impl Cpu {
         } else {
             self.registers.f |= 0;
         }
-    }
-    fn xx(&mut self) {
-        /*Undefined map entry*/
-        let opc = self.registers.pc - 1;
-        println!(
-            "Instruction at {:#01x} | {:#06x} | {} not implemented, stopping.",
-            opc, opc, opc
-        );
-        self.stop = 1;
     }
     fn sbcn(&mut self) {
         let b = self.get_byte();
@@ -202,12 +182,11 @@ impl Cpu {
         self.memory.wb(hl, self.registers.a);
     }
     fn ld_ahli(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
+        let mut addr = ((self.registers.h as u16) << 8) | (self.registers.l as u16);
         self.registers.a = self.memory.rb(addr);
-        self.registers.l = (self.registers.l + 1) & 255;
-        if self.registers.l == 0 {
-            self.registers.h = (self.registers.h + 1) & 255;
-        }
+        addr += 1;
+        self.registers.h = (addr >> 8) as u8;
+        self.registers.l = (addr & 0x00FF) as u8;
     }
     fn ld_hld_a(&mut self) {
         let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
@@ -377,7 +356,7 @@ impl Cpu {
 
     fn exec_current_operation(&mut self) -> u32 {
         let op = self.get_byte();
-        println!("{:?} {:?}", op, self.registers);
+        println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
         match op {
             0x00 => 1,
             0x01 => {
@@ -517,9 +496,9 @@ impl Cpu {
                 self.ld_hlia();
                 2
             }
-            35 => {
+            0x23 => {
                 data::inchl(self);
-                1
+                2
             }
             36 => {
                 data::incr_h(self);
@@ -541,9 +520,9 @@ impl Cpu {
                 data::addhlhl(self);
                 1
             }
-            42 => {
+            0x2a => {
                 self.ld_ahli();
-                1
+                2
             }
             43 => {
                 data::dechl(self);
@@ -585,9 +564,9 @@ impl Cpu {
                 data::inchlm(self);
                 1
             }
-            53 => {
+            0x35 => {
                 data::dechlm(self);
-                1
+                3
             }
             54 => {
                 self.ld_hlmn();
@@ -613,7 +592,7 @@ impl Cpu {
                 data::decsp(self);
                 1
             }
-            60 => {
+            0x3c => {
                 data::incr_a(self);
                 1
             }
@@ -1385,7 +1364,19 @@ impl Cpu {
             // 15 => self.RRCr_a,
             // 16 => self.RLr_b,
             // 17 => self.RLr_c,
-            // 18 => self.RLr_d,
+            18 => {
+                let a = self.registers.d;
+                let c = a & 0x80 == 0x80;
+                let r = (a << 1) | (if c { 1 } else { 0 });
+                
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+
+                self.registers.d = r;
+                2
+            },
             // 19 => self.RLr_e,
             // 20 => self.RLr_h,
             // 21 => self.RLr_l,
@@ -1395,17 +1386,62 @@ impl Cpu {
             // 25 => self.RRr_c,
             // 26 => self.RRr_d,
             // 27 => self.RRr_e,
-            // 28 => self.RRr_h,
-            // 29 => self.RRr_l,
+            28 => { 
+                let a = self.registers.h;
+                let c = a & 0x01 == 0x01;
+                let r = (a >> 1) | (if self.registers.getflag(C) { 0x80 } else { 0 });
+                
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+
+                self.registers.h = r; 
+                2 
+            },
+            29 => {
+                let a = self.registers.l;
+                let c = a & 0x01 == 0x01;
+                let r = (a >> 1) | (if self.registers.getflag(C) { 0x80 } else { 0 });
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+
+                self.registers.l = r; 
+                2
+            },
             // 30 => self.RRHL,
             // 31 => self.RRr_a,
             // 32 => self.SLAr_b,
             // 33 => self.SLAr_c,
             // 34 => self.SLAr_d,
-            // 35 => self.SLAr_e,
+            35 => {
+                let a = self.registers.e; 
+                let c = a & 0x80 == 0x80;
+                let r = a << 1;
+
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+
+                self.registers.e = r;
+                2
+            },
             // 36 => self.SLAr_h,
             // 37 => self.SLAr_l,
-            // 39 => self.SLAr_a,
+            39 => {
+                let a = self.registers.a;
+                let c = a & 0x80 == 0x80;
+                let r = a << 1;
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+                self.registers.a = r;
+                2
+            },
             // 40 => self.SRAr_b,
             // 41 => self.SRAr_c,
             // 42 => self.SRAr_d,
@@ -1445,9 +1481,42 @@ impl Cpu {
             // 57 => { self.SRLr_c; 2 },
             // 58 => { self.SRLr_d; 2 },
             // 59 => { self.SRLr_e; 2 },
-            // 60 => { self.SRLr_h; 2 },
-            // 61 => { self.SRLr_l; 2 },
-            // 63 => { self.SRLr_a; 2 },
+            60 => { 
+                let a = self.registers.h;
+                let c = a & 0x01 == 0x01;
+                let r = a >> 1;
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+                self.registers.h = r;
+
+                2
+            },
+            61 => { 
+                let a = self.registers.l;
+                let c = a & 0x01 == 0x01;
+                let r = a >> 1;
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+                self.registers.l = r;
+                2 
+            },
+            63 => { 
+                let a = self.registers.a;
+                let c = a & 0x01 == 0x01;
+                let r = a >> 1;
+                
+                self.registers.flag(H, false);
+                self.registers.flag(N, false);
+                self.registers.flag(Z, r == 0);
+                self.registers.flag(C, c);
+
+                self.registers.a = r;
+                2 
+            },
             64 => {
                 bit::bit0b(self);
                 2
@@ -1706,8 +1775,8 @@ impl Cpu {
             }
             _ => {
                 println!(
-                    "Instruction at {:#01x} | {:#06x} | {} not implemented, stopping.",
-                    op, op, op
+                    "cbmap -> Instruction at {:#01x} | {} not implemented, stopping.",
+                    op, op
                 );
                 self.stop = 1;
                 0
