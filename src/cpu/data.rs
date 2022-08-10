@@ -1,883 +1,877 @@
 use crate::cpu::cpu::Cpu;
 use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 
-pub fn addr_b(c: &mut Cpu) {
-    c.registers.a += c.registers.b;
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addr_b(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.b;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addr_c(c: &mut Cpu) {
-    c.registers.a += c.registers.c;
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addr_c(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.c;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addr_d(c: &mut Cpu) {
-    c.registers.a += c.registers.d;
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addr_d(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.d;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addr_e(c: &mut Cpu) {
-    c.registers.a += c.registers.e;
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addr_e(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.e;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addr_h(c: &mut Cpu) {
-    c.registers.a += c.registers.h;
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addr_h(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.h;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addr_l(c: &mut Cpu) {
-    c.registers.a += c.registers.l;
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addr_l(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.l;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addr_a(c: &mut Cpu) {
-    c.registers.a += c.registers.a;
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addr_a(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.a;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addhl(c: &mut Cpu) {
-    let addr = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    c.registers.a += c.memory.rb(addr);
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+pub fn addhl(cpu: &mut Cpu) {
+    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    cpu.registers.a += cpu.memory.rb(addr);
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn addn(c: &mut Cpu) {
-    let b = c.get_byte();
-    let a = c.registers.a;
+pub fn addn(cpu: &mut Cpu) {
+    let b = cpu.get_byte();
+    let a = cpu.registers.a;
     let r = a.wrapping_add(b);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (a & 0xF) + (b & 0xF) > 0xF);
-    c.registers.flag(N, false);
-    c.registers.flag(C, (a as u16) + (b as u16) > 0xFF);
-    c.registers.a = r;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0xF) + (b & 0xF) > 0xF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, (a as u16) + (b as u16) > 0xFF);
+    cpu.registers.a = r;
 }
-pub fn addhlbc(c: &mut Cpu) {
-    let b = ((c.registers.b as u16) << 8) | (c.registers.c as u16);
-    let a = ((c.registers.h as u16) << 8) | (c.registers.l as u16);
+pub fn addhlbc(cpu: &mut Cpu) {
+    let b = ((cpu.registers.b as u16) << 8) | (cpu.registers.c as u16);
+    let a = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
     let r = a.wrapping_add(b);
-    c.registers.flag(H, (a & 0x07FF) + (b & 0x07FF) > 0x07FF);
-    c.registers.flag(N, false);
-    c.registers.flag(C, a > 0xFFFF - b);
-    c.registers.h = (r >> 8) as u8;
-    c.registers.l = (r & 0x00FF) as u8;
+    cpu.registers.flag(H, (a & 0x07FF) + (b & 0x07FF) > 0x07FF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, a > 0xFFFF - b);
+    cpu.registers.h = (r >> 8) as u8;
+    cpu.registers.l = (r & 0x00FF) as u8;
 
-    // let mut hl = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    // hl += ((c.registers.b as u16) << 8) + c.registers.c as u16;
+    // let mut hl = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    // hl += ((cpu.registers.b as u16) << 8) + cpu.registers.c as u16;
     // if hl > 65535 {
-    //     c.registers.f |= 0x10;
+    //     cpu.registers.f |= 0x10;
     // } else {
-    //     c.registers.f &= 0xEF;
+    //     cpu.registers.f &= 0xEF;
     // }
-    // c.registers.h = ((hl >> 8) & 255) as u8;
-    // c.registers.l = (hl & 255) as u8;
+    // cpu.registers.h = ((hl >> 8) & 255) as u8;
+    // cpu.registers.l = (hl & 255) as u8;
 }
-pub fn addhlde(c: &mut Cpu) {
-    // let mut hl: u16 = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    // hl += ((c.registers.d as u16) << 8) + c.registers.e as u16;
+pub fn addhlde(cpu: &mut Cpu) {
+    // let mut hl: u16 = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    // hl += ((cpu.registers.d as u16) << 8) + cpu.registers.e as u16;
 
-    let de = ((c.registers.d as u16) << 8) | (c.registers.e as u16);
-    let a = ((c.registers.h as u16) << 8) | (c.registers.l as u16);
+    let de = ((cpu.registers.d as u16) << 8) | (cpu.registers.e as u16);
+    let a = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
     let r = a.wrapping_add(de);
-    c.registers.flag(H, (a & 0x07FF) + (de & 0x07FF) > 0x07FF);
-    c.registers.flag(N, false);
-    c.registers.flag(C, a > 0xFFFF - de);
-    c.registers.h = (r >> 8) as u8;
-    c.registers.l = (r & 0x00FF) as u8;
+    cpu.registers.flag(H, (a & 0x07FF) + (de & 0x07FF) > 0x07FF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, a > 0xFFFF - de);
+    cpu.registers.h = (r >> 8) as u8;
+    cpu.registers.l = (r & 0x00FF) as u8;
 }
-pub fn addhlhl(c: &mut Cpu) {
-    let mut hl: u16 = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    hl += ((c.registers.h as u16) << 8) + c.registers.l as u16;
+pub fn addhlhl(cpu: &mut Cpu) {
+    let mut hl: u16 = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    hl += ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
 
     if hl > 65535 {
-        c.registers.f |= 0x10;
+        cpu.registers.f |= 0x10;
     } else {
-        c.registers.f &= 0xEF;
-        c.registers.h = ((hl >> 8) & 255) as u8;
-        c.registers.l = (hl & 255) as u8;
+        cpu.registers.f &= 0xEF;
+        cpu.registers.h = ((hl >> 8) & 255) as u8;
+        cpu.registers.l = (hl & 255) as u8;
     }
 }
-pub fn addhlsp(c: &mut Cpu) {
-    let mut hl = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    hl += c.registers.sp;
+pub fn addhlsp(cpu: &mut Cpu) {
+    let mut hl = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    hl += cpu.registers.sp;
     if hl > 65535 {
-        c.registers.f |= 0x10;
+        cpu.registers.f |= 0x10;
     } else {
-        c.registers.f &= 0xEF;
+        cpu.registers.f &= 0xEF;
     }
-    c.registers.h = ((hl >> 8) & 255) as u8;
-    c.registers.l = (hl & 255) as u8;
+    cpu.registers.h = ((hl >> 8) & 255) as u8;
+    cpu.registers.l = (hl & 255) as u8;
 }
-// pub fn addspn(c: &mut Cpu) {
-//     let i = c.memory.rb(c.registers.pc);
+// pub fn addspn(cpu: &mut Cpu) {
+//     let i = cpu.memory.rb(cpu.registers.pc);
 //     if i > 127 {
 //         // i=-{ ((~i+1)&255)
 
 //     }
-//     c.registers.pc += 1;
-//     c.registers.sp += i as u16;
+//     cpu.registers.pc += 1;
+//     cpu.registers.sp += i as u16;
 //
 // }
 // https://github.com/alexcrichton/jba/blob/rust/src/cpu/z80/imp.rs#L81
-pub fn addspn(c: &mut Cpu) {
-    let b = c.memory.rb(c.registers.pc) as i8 as i16 as u16;
-    let res = c.registers.sp + b;
-    let tmp = b ^ res ^ c.registers.sp;
-    c.registers.f =
+pub fn addspn(cpu: &mut Cpu) {
+    let b = cpu.memory.rb(cpu.registers.pc) as i8 as i16 as u16;
+    let res = cpu.registers.sp + b;
+    let tmp = b ^ res ^ cpu.registers.sp;
+    cpu.registers.f =
         if tmp & 0x100 != 0 { 0x10 } else { 0 } | if tmp & 0x010 != 0 { 0x20 } else { 0 };
-    c.registers.sp = res;
+    cpu.registers.sp = res;
 }
-pub fn adcr_b(c: &mut Cpu) {
-    c.registers.a += c.registers.b;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcr_b(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.b;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adcr_c(c: &mut Cpu) {
-    c.registers.a += c.registers.c;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcr_c(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.c;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adcr_d(c: &mut Cpu) {
-    c.registers.a += c.registers.d;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcr_d(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.d;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adcr_e(c: &mut Cpu) {
-    c.registers.a += c.registers.e;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcr_e(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.e;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adcr_h(c: &mut Cpu) {
-    c.registers.a += c.registers.h;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcr_h(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.h;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adcr_l(c: &mut Cpu) {
-    c.registers.a += c.registers.l;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcr_l(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.l;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adcr_a(c: &mut Cpu) {
-    c.registers.a += c.registers.a;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcr_a(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.registers.a;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adchl(c: &mut Cpu) {
-    let addr = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    c.registers.a += c.memory.rb(addr);
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adchl(cpu: &mut Cpu) {
+    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    cpu.registers.a += cpu.memory.rb(addr);
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn adcn(c: &mut Cpu) {
-    c.registers.a += c.memory.rb(c.registers.pc);
-    c.registers.pc += 1;
-    if c.registers.f >= 0x10 {
-        c.registers.a += 1
+pub fn adcn(cpu: &mut Cpu) {
+    cpu.registers.a += cpu.memory.rb(cpu.registers.pc);
+    cpu.registers.pc += 1;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a += 1
     } else {
-        c.registers.a += 0
+        cpu.registers.a += 0
     }
-    c.fz(c.registers.a, 0);
-    if c.registers.a > u8::MAX {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 0);
+    if cpu.registers.a > u8::MAX {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn subr_b(c: &mut Cpu) {
-    c.registers.a -= c.registers.b;
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+pub fn subr_b(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.b;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn subr_c(c: &mut Cpu) {
-    let b = c.registers.c;
-    let a = c.registers.a;
+pub fn subr_c(cpu: &mut Cpu) {
+    let b = cpu.registers.c;
+    let a = cpu.registers.a;
     let r = a.wrapping_sub(b).wrapping_sub(0);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (a & 0x0F) < (b & 0x0F));
-    c.registers.flag(N, true);
-    c.registers.flag(C, (a as u16) < (b as u16));
-    c.registers.a = r;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) < (b & 0x0F));
+    cpu.registers.flag(N, true);
+    cpu.registers.flag(C, (a as u16) < (b as u16));
+    cpu.registers.a = r;
 }
-pub fn subr_d(c: &mut Cpu) {
-    c.registers.a -= c.registers.d;
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+pub fn subr_d(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.d;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn subr_e(c: &mut Cpu) {
-    c.registers.a -= c.registers.e;
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+pub fn subr_e(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.e;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn subr_h(c: &mut Cpu) {
-    c.registers.a -= c.registers.h;
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+pub fn subr_h(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.h;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn subr_l(c: &mut Cpu) {
-    c.registers.a -= c.registers.l;
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+pub fn subr_l(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.l;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn subr_a(c: &mut Cpu) {
-    // let c = if usec && self.reg.getflag(C) { 1 } else { 0 };
-    let b = c.registers.a;
-    let a = c.registers.a;
+pub fn subr_a(cpu: &mut Cpu) {
+    let b = cpu.registers.a;
+    let a = cpu.registers.a;
     let r = a.wrapping_sub(b).wrapping_sub(0);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (a & 0x0F) < (b & 0x0F));
-    c.registers.flag(N, true);
-    c.registers.flag(C, (a as u16) < (b as u16));
-    c.registers.a = r;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) < (b & 0x0F));
+    cpu.registers.flag(N, true);
+    cpu.registers.flag(C, (a as u16) < (b as u16));
+    cpu.registers.a = r;
 }
-pub fn subhl(c: &mut Cpu) {
-    let addr = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    c.registers.a -= c.memory.rb(addr);
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+pub fn subhl(cpu: &mut Cpu) {
+    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    cpu.registers.a -= cpu.memory.rb(addr);
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn subn(c: &mut Cpu) {
-    let b = c.get_byte();
-    let a = c.registers.a;
+pub fn subn(cpu: &mut Cpu) {
+    let b = cpu.get_byte();
+    let a = cpu.registers.a;
     let r = a.wrapping_sub(b);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (a & 0x0F) < (b & 0x0F));
-    c.registers.flag(N, true);
-    c.registers.flag(C, (a as u16) < (b as u16));
-    c.registers.a = r;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) < (b & 0x0F));
+    cpu.registers.flag(N, true);
+    cpu.registers.flag(C, (a as u16) < (b as u16));
+    cpu.registers.a = r;
 }
-pub fn sbcr_b(c: &mut Cpu) {
-    c.registers.a -= c.registers.b;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbcr_b(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.b;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbcr_c(c: &mut Cpu) {
-    c.registers.a -= c.registers.c;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbcr_c(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.c;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbcr_d(c: &mut Cpu) {
-    c.registers.a -= c.registers.d;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbcr_d(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.d;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbcr_e(c: &mut Cpu) {
-    c.registers.a -= c.registers.e;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbcr_e(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.e;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbcr_h(c: &mut Cpu) {
-    c.registers.a -= c.registers.h;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbcr_h(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.h;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbcr_l(c: &mut Cpu) {
-    c.registers.a -= c.registers.l;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbcr_l(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.l;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbcr_a(c: &mut Cpu) {
-    c.registers.a -= c.registers.a;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbcr_a(cpu: &mut Cpu) {
+    cpu.registers.a -= cpu.registers.a;
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbchl(c: &mut Cpu) {
-    let addr = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    c.registers.a -= c.memory.rb(addr);
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
+pub fn sbchl(cpu: &mut Cpu) {
+    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    cpu.registers.a -= cpu.memory.rb(addr);
+    if cpu.registers.f >= 0x10 {
+        cpu.registers.a -= 1
     } else {
-        c.registers.a -= 0;
+        cpu.registers.a -= 0;
     }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
+    cpu.fz(cpu.registers.a, 1);
+    if cpu.registers.a < 0 {
+        cpu.registers.f |= 0x10;
     }
-    c.registers.a &= 255;
+    cpu.registers.a &= 255;
 }
-pub fn sbcn(c: &mut Cpu) {
-    c.registers.a -= c.memory.rb(c.registers.pc);
-    c.registers.pc += 1;
-    if c.registers.f >= 0x10 {
-        c.registers.a -= 1
-    } else {
-        c.registers.a -= 0;
-    }
-    c.fz(c.registers.a, 1);
-    if c.registers.a < 0 {
-        c.registers.f |= 0x10;
-    }
-    c.registers.a &= 255;
+pub fn sbcn(cpu: &mut Cpu) {
+    let b = cpu.get_byte();
+    let c = if cpu.registers.getflag(C) { 1 } else { 0 };
+    let a = cpu.registers.a;
+    let r = a.wrapping_sub(b).wrapping_sub(c);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) < (b & 0x0F) + c);
+    cpu.registers.flag(N, true);
+    cpu.registers.flag(C, (a as u16) < (b as u16) + (c as u16));
+    cpu.registers.a = r;
 }
+pub fn cpr_b(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    i -= cpu.registers.b;
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cpr_c(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    i -= cpu.registers.c;
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cpr_d(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    i -= cpu.registers.d;
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cpr_e(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    i -= cpu.registers.e;
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cpr_h(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    i -= cpu.registers.h;
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cpr_l(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    i -= cpu.registers.l;
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cpr_a(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    i -= cpu.registers.a;
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cphl(cpu: &mut Cpu) {
+    let mut i = cpu.registers.a;
+    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    i -= cpu.memory.rb(addr);
+    cpu.fz(i, 1);
+    if i < 0 {
+        cpu.registers.f |= 0x10;
+    }
+    i &= 255;
+}
+pub fn cpn(cpu: &mut Cpu) {
+    // let v = cpu.fetchbyte(); cpu.alu_cp(v)
 
-pub fn cpr_b(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    i -= c.registers.b;
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cpr_c(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    i -= c.registers.c;
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cpr_d(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    i -= c.registers.d;
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cpr_e(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    i -= c.registers.e;
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cpr_h(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    i -= c.registers.h;
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cpr_l(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    i -= c.registers.l;
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cpr_a(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    i -= c.registers.a;
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cphl(c: &mut Cpu) {
-    let mut i = c.registers.a;
-    let addr = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    i -= c.memory.rb(addr);
-    c.fz(i, 1);
-    if i < 0 {
-        c.registers.f |= 0x10;
-    }
-    i &= 255;
-}
-pub fn cpn(c: &mut Cpu) {
-    // let v = self.fetchbyte(); self.alu_cp(v)
+    let b = cpu.get_byte();
+    let a = cpu.registers.a;
 
-    let b = c.get_byte();
-    let a = c.registers.a;
+    // cpu.alu_sub(b, false);
+    // cpu.reg.a = r;
 
-    // self.alu_sub(b, false);
-    // self.reg.a = r;
+    let r = cpu.registers.a.wrapping_sub(b);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) < (b & 0x0F));
+    cpu.registers.flag(N, true);
+    cpu.registers.flag(C, (a as u16) < (b as u16));
 
-    let r = c.registers.a.wrapping_sub(b);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (a & 0x0F) < (b & 0x0F));
-    c.registers.flag(N, true);
-    c.registers.flag(C, (a as u16) < (b as u16));
+    // cpu.registers.a = r;
+    cpu.registers.a = a;
 
-    // c.registers.a = r;
-    c.registers.a = a;
-
-    // let mut i = c.registers.a as u16;
-    // i = c.memory.rw(c.registers.pc) - i;
-    // c.registers.pc += 1;
-    // c.fz(i as u8, 1);
+    // let mut i = cpu.registers.a as u16;
+    // i = cpu.memory.rw(cpu.registers.pc) - i;
+    // cpu.registers.pc += 1;
+    // cpu.fz(i as u8, 1);
     // if i < 255 {
-    //     c.registers.f |= 0x10;
+    //     cpu.registers.f |= 0x10;
     // }
     // i &= 255;
 }
-pub fn andr_b(c: &mut Cpu) {
-    c.registers.a &= c.registers.b;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andr_b(cpu: &mut Cpu) {
+    cpu.registers.a &= cpu.registers.b;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andr_c(c: &mut Cpu) {
-    c.registers.a &= c.registers.c;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andr_c(cpu: &mut Cpu) {
+    cpu.registers.a &= cpu.registers.c;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andr_d(c: &mut Cpu) {
-    c.registers.a &= c.registers.d;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andr_d(cpu: &mut Cpu) {
+    cpu.registers.a &= cpu.registers.d;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andr_e(c: &mut Cpu) {
-    c.registers.a &= c.registers.e;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andr_e(cpu: &mut Cpu) {
+    cpu.registers.a &= cpu.registers.e;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andr_h(c: &mut Cpu) {
-    c.registers.a &= c.registers.h;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andr_h(cpu: &mut Cpu) {
+    cpu.registers.a &= cpu.registers.h;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andr_l(c: &mut Cpu) {
-    c.registers.a &= c.registers.l;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andr_l(cpu: &mut Cpu) {
+    cpu.registers.a &= cpu.registers.l;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andr_a(c: &mut Cpu) {
-    c.registers.a &= c.registers.a;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andr_a(cpu: &mut Cpu) {
+    cpu.registers.a &= cpu.registers.a;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andhl(c: &mut Cpu) {
-    let addr = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    c.registers.a &= c.memory.rb(addr);
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn andhl(cpu: &mut Cpu) {
+    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    cpu.registers.a &= cpu.memory.rb(addr);
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn andn(c: &mut Cpu) {
-    let v = c.get_byte();
-    let r = c.registers.a & v;
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, true);
-    c.registers.flag(C, false);
-    c.registers.flag(N, false);
-    c.registers.a = r;
+pub fn andn(cpu: &mut Cpu) {
+    let v = cpu.get_byte();
+    let r = cpu.registers.a & v;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, true);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 
-    // c.registers.a &= c.memory.rb(c.registers.pc);
-    // c.registers.pc += 1;
-    // c.registers.a &= 255;
-    // c.fz(c.registers.a, 0);
+    // cpu.registers.a &= cpu.memory.rb(cpu.registers.pc);
+    // cpu.registers.pc += 1;
+    // cpu.registers.a &= 255;
+    // cpu.fz(cpu.registers.a, 0);
 }
-pub fn orr_b(c: &mut Cpu) {
-    c.registers.a |= c.registers.b;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orr_b(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.registers.b;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orr_c(c: &mut Cpu) {
-    c.registers.a |= c.registers.c;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orr_c(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.registers.c;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orr_d(c: &mut Cpu) {
-    c.registers.a |= c.registers.d;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orr_d(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.registers.d;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orr_e(c: &mut Cpu) {
-    c.registers.a |= c.registers.e;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orr_e(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.registers.e;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orr_h(c: &mut Cpu) {
-    c.registers.a |= c.registers.h;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orr_h(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.registers.h;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orr_l(c: &mut Cpu) {
-    c.registers.a |= c.registers.l;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orr_l(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.registers.l;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orr_a(c: &mut Cpu) {
-    c.registers.a |= c.registers.a;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orr_a(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.registers.a;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orhl(c: &mut Cpu) {
-    let a = (c.registers.h as u16) << 8;
-    let addr: u16 = a + (c.registers.l as u16);
-    c.registers.a |= c.memory.rb(addr);
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orhl(cpu: &mut Cpu) {
+    let a = (cpu.registers.h as u16) << 8;
+    let addr: u16 = a + (cpu.registers.l as u16);
+    cpu.registers.a |= cpu.memory.rb(addr);
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn orn(c: &mut Cpu) {
-    c.registers.a |= c.memory.rb(c.registers.pc);
-    c.registers.pc += 1;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn orn(cpu: &mut Cpu) {
+    cpu.registers.a |= cpu.memory.rb(cpu.registers.pc);
+    cpu.registers.pc += 1;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorr_b(c: &mut Cpu) {
-    c.registers.a ^= c.registers.b;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorr_b(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.registers.b;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorr_c(c: &mut Cpu) {
-    c.registers.a ^= c.registers.c;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorr_c(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.registers.c;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorr_d(c: &mut Cpu) {
-    c.registers.a ^= c.registers.d;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorr_d(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.registers.d;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorr_e(c: &mut Cpu) {
-    c.registers.a ^= c.registers.e;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorr_e(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.registers.e;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorr_h(c: &mut Cpu) {
-    c.registers.a ^= c.registers.h;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorr_h(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.registers.h;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorr_l(c: &mut Cpu) {
-    c.registers.a ^= c.registers.l;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorr_l(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.registers.l;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorr_a(c: &mut Cpu) {
-    c.registers.a ^= c.registers.a;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorr_a(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.registers.a;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorhl(c: &mut Cpu) {
-    let addr = (c.registers.h as u16) << 8 + (c.registers.l as u16);
-    c.registers.a ^= c.memory.rb(addr);
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorhl(cpu: &mut Cpu) {
+    let addr = (cpu.registers.h as u16) << 8 + (cpu.registers.l as u16);
+    cpu.registers.a ^= cpu.memory.rb(addr);
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn xorn(c: &mut Cpu) {
-    c.registers.a ^= c.memory.rb(c.registers.pc);
-    c.registers.pc += 1;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn xorn(cpu: &mut Cpu) {
+    cpu.registers.a ^= cpu.memory.rb(cpu.registers.pc);
+    cpu.registers.pc += 1;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn incr_b(c: &mut Cpu) {
-    c.registers.b += 1;
-    c.registers.b &= 255;
-    c.fz(c.registers.b, 0);
+pub fn incr_b(cpu: &mut Cpu) {
+    cpu.registers.b += 1;
+    cpu.registers.b &= 255;
+    cpu.fz(cpu.registers.b, 0);
 }
-pub fn incr_c(c: &mut Cpu) {
-    c.registers.c += 1;
-    c.registers.c &= 255;
-    c.fz(c.registers.c, 0);
+pub fn incr_c(cpu: &mut Cpu) {
+    cpu.registers.c += 1;
+    cpu.registers.c &= 255;
+    cpu.fz(cpu.registers.c, 0);
 }
-pub fn incr_d(c: &mut Cpu) {
-    c.registers.d += 1;
-    c.registers.d &= 255;
-    c.fz(c.registers.d, 0);
+pub fn incr_d(cpu: &mut Cpu) {
+    cpu.registers.d += 1;
+    cpu.registers.d &= 255;
+    cpu.fz(cpu.registers.d, 0);
 }
-pub fn incr_e(c: &mut Cpu) {
-    c.registers.e += 1;
-    c.registers.e &= 255;
-    c.fz(c.registers.e, 0);
+pub fn incr_e(cpu: &mut Cpu) {
+    cpu.registers.e += 1;
+    cpu.registers.e &= 255;
+    cpu.fz(cpu.registers.e, 0);
 }
-pub fn incr_h(c: &mut Cpu) {
-    c.registers.h += 1;
-    c.registers.h &= 255;
-    c.fz(c.registers.h, 0);
+pub fn incr_h(cpu: &mut Cpu) {
+    cpu.registers.h += 1;
+    cpu.registers.h &= 255;
+    cpu.fz(cpu.registers.h, 0);
 }
-pub fn incr_l(c: &mut Cpu) {
-    c.registers.l += 1;
-    c.registers.l &= 255;
-    c.fz(c.registers.l, 0);
+pub fn incr_l(cpu: &mut Cpu) {
+    cpu.registers.l += 1;
+    cpu.registers.l &= 255;
+    cpu.fz(cpu.registers.l, 0);
 }
-pub fn incr_a(c: &mut Cpu) {
-    let a = c.registers.a;
+pub fn incr_a(cpu: &mut Cpu) {
+    let a = cpu.registers.a;
     let r = a.wrapping_add(1);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (a & 0x0F) + 1 > 0x0F);
-    c.registers.flag(N, false);
-    c.registers.a = r;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) + 1 > 0x0F);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
-pub fn inchlm(c: &mut Cpu) {
-    let addr = ((c.registers.h as u16) << 8) + (c.registers.l as u16);
-    let mut i = c.memory.rb(addr) + 1;
+pub fn inchlm(cpu: &mut Cpu) {
+    let addr = ((cpu.registers.h as u16) << 8) + (cpu.registers.l as u16);
+    let mut i = cpu.memory.rb(addr) + 1;
     i &= 255;
-    let waddr = ((c.registers.h as u16) << 8) + c.registers.l as u16;
-    c.memory.wb(waddr, i);
-    c.fz(i, 0);
+    let waddr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    cpu.memory.wb(waddr, i);
+    cpu.fz(i, 0);
 }
-pub fn decr_b(c: &mut Cpu) {
-    let a = c.registers.b;
+pub fn decr_b(cpu: &mut Cpu) {
+    let a = cpu.registers.b;
     let r = a.wrapping_sub(1);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (a & 0x0F) == 0);
-    c.registers.flag(N, true);
-    c.registers.b = r;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) == 0);
+    cpu.registers.flag(N, true);
+    cpu.registers.b = r;
 }
-pub fn decr_c(c: &mut Cpu) {
-    c.registers.c -= 1;
-    c.registers.c &= 255;
-    c.fz(c.registers.c, 0);
+pub fn decr_c(cpu: &mut Cpu) {
+    cpu.registers.c -= 1;
+    cpu.registers.c &= 255;
+    cpu.fz(cpu.registers.c, 0);
 }
-pub fn decr_d(c: &mut Cpu) {
-    let d = c.registers.d;
+pub fn decr_d(cpu: &mut Cpu) {
+    let d = cpu.registers.d;
     let r = d.wrapping_sub(1);
-    // c.registers.d &= 255;
-    // c.fz(c.registers.d, 0);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (d & 0x0F) == 0);
-    c.registers.flag(N, true);
-    c.registers.d = r;
+    // cpu.registers.d &= 255;
+    // cpu.fz(cpu.registers.d, 0);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (d & 0x0F) == 0);
+    cpu.registers.flag(N, true);
+    cpu.registers.d = r;
 }
-pub fn decr_e(c: &mut Cpu) {
-    let r = c.registers.e.wrapping_sub(1);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (c.registers.e & 0x0F) == 0);
-    c.registers.flag(N, true);
-    c.registers.e = r;
+pub fn decr_e(cpu: &mut Cpu) {
+    let r = cpu.registers.e.wrapping_sub(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (cpu.registers.e & 0x0F) == 0);
+    cpu.registers.flag(N, true);
+    cpu.registers.e = r;
 
-    // c.registers.e &= 255;
-    // c.fz(c.registers.e, 0);
+    // cpu.registers.e &= 255;
+    // cpu.fz(cpu.registers.e, 0);
 }
-pub fn decr_h(c: &mut Cpu) {
-    c.registers.h -= 1;
-    c.registers.h &= 255;
-    c.fz(c.registers.h, 0);
+pub fn decr_h(cpu: &mut Cpu) {
+    cpu.registers.h -= 1;
+    cpu.registers.h &= 255;
+    cpu.fz(cpu.registers.h, 0);
 }
-pub fn decr_l(c: &mut Cpu) {
-    c.registers.l -= 1;
-    c.registers.l &= 255;
-    c.fz(c.registers.l, 0);
+pub fn decr_l(cpu: &mut Cpu) {
+    cpu.registers.l -= 1;
+    cpu.registers.l &= 255;
+    cpu.fz(cpu.registers.l, 0);
 }
-pub fn decr_a(c: &mut Cpu) {
-    c.registers.a -= 1;
-    c.registers.a &= 255;
-    c.fz(c.registers.a, 0);
+pub fn decr_a(cpu: &mut Cpu) {
+    cpu.registers.a -= 1;
+    cpu.registers.a &= 255;
+    cpu.fz(cpu.registers.a, 0);
 }
-pub fn dechlm(c: &mut Cpu) {
-    let addr = ((c.registers.h as u16) << 8) | (c.registers.l as u16);
-    let v = c.memory.rb(addr);
+pub fn dechlm(cpu: &mut Cpu) {
+    let addr = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    let v = cpu.memory.rb(addr);
     let r = v.wrapping_sub(1);
-    c.registers.flag(Z, r == 0);
-    c.registers.flag(H, (v & 0x0F) == 0);
-    c.registers.flag(N, true);
-    c.memory.wb(addr, r);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (v & 0x0F) == 0);
+    cpu.registers.flag(N, true);
+    cpu.memory.wb(addr, r);
 }
-pub fn incbc(c: &mut Cpu) {
-    let cr_val = (c.registers.c as u16).wrapping_add(1);
-    let br_val = ((c.registers.b as u16) << 8).wrapping_add(1);
-    c.registers.b = (br_val >> 8) as u8;
-    c.registers.c = (cr_val & 0x00FF) as u8;
+pub fn incbc(cpu: &mut Cpu) {
+    let cr_val = (cpu.registers.c as u16).wrapping_add(1);
+    let br_val = ((cpu.registers.b as u16) << 8).wrapping_add(1);
+    cpu.registers.b = (br_val >> 8) as u8;
+    cpu.registers.c = (cr_val & 0x00FF) as u8;
 }
-pub fn incde(c: &mut Cpu) {
-    c.registers.e = (c.registers.e + 1) & 255;
-    if c.registers.e == 0 {
-        c.registers.d = (c.registers.d + 1) & 255;
+pub fn incde(cpu: &mut Cpu) {
+    cpu.registers.e = (cpu.registers.e + 1) & 255;
+    if cpu.registers.e == 0 {
+        cpu.registers.d = (cpu.registers.d + 1) & 255;
     }
 }
-pub fn inchl(c: &mut Cpu) {
-    let val = ((c.registers.h as u16) << 8) | (c.registers.l as u16).wrapping_add(1);
-    c.registers.h = (val >> 8) as u8;
-    c.registers.l = (val & 0x00FF) as u8;
+pub fn inchl(cpu: &mut Cpu) {
+    let val = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16).wrapping_add(1);
+    cpu.registers.h = (val >> 8) as u8;
+    cpu.registers.l = (val & 0x00FF) as u8;
 }
-pub fn incsp(c: &mut Cpu) {
-    c.registers.sp = (c.registers.sp + 1) & 65535;
+pub fn incsp(cpu: &mut Cpu) {
+    cpu.registers.sp = (cpu.registers.sp + 1) & 65535;
 }
-pub fn decbc(c: &mut Cpu) {
-    c.registers.c = (c.registers.c - 1) & 255;
-    if c.registers.c == 255 {
-        c.registers.b = (c.registers.b - 1) & 255;
+pub fn decbc(cpu: &mut Cpu) {
+    cpu.registers.c = (cpu.registers.c - 1) & 255;
+    if cpu.registers.c == 255 {
+        cpu.registers.b = (cpu.registers.b - 1) & 255;
     }
 }
-pub fn decde(c: &mut Cpu) {
-    c.registers.e = (c.registers.e - 1) & 255;
-    if c.registers.e == 255 {
-        c.registers.d = (c.registers.d - 1) & 255;
+pub fn decde(cpu: &mut Cpu) {
+    cpu.registers.e = (cpu.registers.e - 1) & 255;
+    if cpu.registers.e == 255 {
+        cpu.registers.d = (cpu.registers.d - 1) & 255;
     }
 }
-pub fn dechl(c: &mut Cpu) {
-    // c.registers.l = (c.registers.l - 1) & 255;
-    if c.registers.l == 255 {
-        c.registers.h = (c.registers.h - 1) & 255;
+pub fn dechl(cpu: &mut Cpu) {
+    // cpu.registers.l = (cpu.registers.l - 1) & 255;
+    if cpu.registers.l == 255 {
+        cpu.registers.h = (cpu.registers.h - 1) & 255;
     }
 }
-pub fn decsp(c: &mut Cpu) {
-    c.registers.sp = (c.registers.sp - 1) & 65535;
+pub fn decsp(cpu: &mut Cpu) {
+    cpu.registers.sp = (cpu.registers.sp - 1) & 65535;
 }
-
-pub fn cpl(c: &mut Cpu) {
-    c.registers.a = !c.registers.a;
-    c.registers.flag(H, true);
-    c.registers.flag(N, true);
+pub fn cpl(cpu: &mut Cpu) {
+    cpu.registers.a = !cpu.registers.a;
+    cpu.registers.flag(H, true);
+    cpu.registers.flag(N, true);
 }
-pub fn scf(c: &mut Cpu) {
-    c.registers.flag(C, true);
-    c.registers.flag(H, false);
-    c.registers.flag(N, false);
+pub fn scf(cpu: &mut Cpu) {
+    cpu.registers.flag(C, true);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
 }
-pub fn ccf(c: &mut Cpu) {
-    let v = !c.registers.getflag(C);
-    c.registers.flag(C, v);
-    c.registers.flag(H, false);
-    c.registers.flag(N, false);
+pub fn ccf(cpu: &mut Cpu) {
+    let v = !cpu.registers.getflag(C);
+    cpu.registers.flag(C, v);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
 }

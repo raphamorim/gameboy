@@ -1,6 +1,6 @@
 use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 use crate::cpu::registers::{Clock, Registers};
-use crate::cpu::{bit, data, ldrr, stack, swap};
+use crate::cpu::{bit, data, ld, misc, stack, swap};
 use crate::mmu::mmu::{Mmu, Speed};
 
 #[allow(dead_code)]
@@ -58,231 +58,6 @@ impl Cpu {
         } else {
             self.registers.f |= 0;
         }
-    }
-    fn sbcn(&mut self) {
-        let b = self.get_byte();
-        let c = if self.registers.getflag(C) { 1 } else { 0 };
-        let a = self.registers.a;
-        let r = a.wrapping_sub(b).wrapping_sub(c);
-        self.registers.flag(Z, r == 0);
-        self.registers.flag(H, (a & 0x0F) < (b & 0x0F) + c);
-        self.registers.flag(N, true);
-        self.registers.flag(C, (a as u16) < (b as u16) + (c as u16));
-        self.registers.a = r;
-    }
-    fn ldr_hlm_b(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.b = self.memory.rb(addr);
-    }
-    fn ldr_hlm_c(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.c = self.memory.rb(addr);
-    }
-    fn ldr_hlm_d(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.d = self.memory.rb(addr);
-    }
-    fn ldr_hlm_e(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.e = self.memory.rb(addr);
-    }
-    fn ldr_hlm_h(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.h = self.memory.rb(addr);
-    }
-    fn ldr_hlm_l(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.l = self.memory.rb(addr);
-    }
-    fn ldr_hlm_a(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.a = self.memory.rb(addr);
-    }
-    fn ld_hlmr_b(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.b);
-    }
-    fn ld_hlmr_c(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.c);
-    }
-    fn ld_hlmr_d(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.d);
-    }
-    fn ld_hlmr_e(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.e);
-    }
-    fn ld_hlmr_h(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.h);
-    }
-    fn ld_hlmr_l(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.l);
-    }
-    fn ld_hlmr_a(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.a);
-    }
-    fn ld_hlmn(&mut self) {
-        let value = self.memory.rb(self.registers.pc);
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, value);
-        self.registers.pc += 1;
-    }
-    fn ld_bcm_a(&mut self) {
-        let addr = ((self.registers.b as u16) << 8) + self.registers.c as u16;
-        self.memory.wb(addr, self.registers.a);
-    }
-    fn ld_dem_a(&mut self) {
-        let addr = ((self.registers.d as u16) << 8) + self.registers.e as u16;
-        self.memory.wb(addr, self.registers.a);
-    }
-    fn ldmm_a(&mut self) {
-        let addr = self.get_word();
-        self.memory.wb(addr, self.registers.a);
-    }
-    fn ld_abcm(&mut self) {
-        let addr = ((self.registers.b as u16) << 8) + self.registers.c as u16;
-        self.registers.a = self.memory.rb(addr);
-    }
-    fn ld_adem(&mut self) {
-        let addr = ((self.registers.d as u16) << 8) + self.registers.e as u16;
-        self.registers.a = self.memory.rb(addr);
-    }
-    fn ld_amm(&mut self) {
-        let addr = self.get_word();
-        self.registers.a = self.memory.rb(addr);
-    }
-    fn ld_bcnn(&mut self) {
-        let value = self.get_word();
-        self.registers.b = (value >> 8) as u8;
-        self.registers.c = (value & 0x00FF) as u8;
-    }
-    fn ld_denn(&mut self) {
-        self.registers.e = self.memory.rb(self.registers.pc);
-        self.registers.d = self.memory.rb(self.registers.pc + 1);
-        self.registers.pc += 2;
-    }
-    fn ld_hlnn(&mut self) {
-        let v = self.get_word();
-        self.registers.h = (v >> 8) as u8;
-        self.registers.l = (v & 0x00FF) as u8;
-    }
-    fn ld_spnn(&mut self) {
-        self.registers.sp = self.get_word();
-    }
-    fn ld_hlia(&mut self) {
-        let mut hl = ((self.registers.h as u16) << 8) | (self.registers.l as u16);
-        hl += 1;
-        self.registers.h = (hl >> 8) as u8;
-        self.registers.l = (hl & 0x00FF) as u8;
-        self.memory.wb(hl, self.registers.a);
-    }
-    fn ld_ahli(&mut self) {
-        let mut addr = ((self.registers.h as u16) << 8) | (self.registers.l as u16);
-        self.registers.a = self.memory.rb(addr);
-        addr += 1;
-        self.registers.h = (addr >> 8) as u8;
-        self.registers.l = (addr & 0x00FF) as u8;
-    }
-    fn ld_hld_a(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.memory.wb(addr, self.registers.a);
-        self.registers.l = (self.registers.l - 1) & 255;
-        if self.registers.l == 255 {
-            self.registers.h = (self.registers.h - 1) & 255;
-        }
-    }
-    fn ld_ahld(&mut self) {
-        let addr = ((self.registers.h as u16) << 8) + self.registers.l as u16;
-        self.registers.a = self.memory.rb(addr);
-        self.registers.l = (self.registers.l - 1) & 255;
-        if self.registers.l == 255 {
-            self.registers.h = (self.registers.h - 1) & 255;
-        }
-    }
-    fn ld_aion(&mut self) {
-        let addr = 0xFF00 | self.get_byte() as u16;
-        self.registers.a = self.memory.rb(addr);
-    }
-    fn ld_ion_a(&mut self) {
-        let a = 0xFF00 | self.get_byte() as u16;
-        self.memory.wb(a, self.registers.a);
-    }
-    fn ld_aioc(&mut self) {
-        let addr: u16 = (0xFF00 + self.registers.c as u16).into();
-        self.registers.a = self.memory.rb(addr);
-    }
-    fn ld_ioca(&mut self) {
-        let addr: u16 = (0xFF00 + self.registers.c as u16).into();
-        self.memory.wb(addr, self.registers.a);
-    }
-    fn ld_hlspn(&mut self) {
-        let mut i: u8 = self.memory.rb(self.registers.pc);
-        if i > 127 {
-            // i=-(!i+1);
-            // i = (i - (self.registers.sp as u8)) + 1;
-            i = 1;
-        }
-        self.registers.pc += 1;
-        i += self.registers.sp as u8;
-        // self.registers.h = ((i >> 8) as u8) & 255;
-        self.registers.h = i;
-        self.registers.l = i & 255;
-    }
-    fn ldmmsp(&mut self) {
-        let addr = self.get_word();
-        self.memory.ww(addr, self.registers.sp);
-    }
-    fn rla(&mut self) {
-        let mut ci = 0;
-        let mut co = 0;
-        if (self.registers.f & 0x10) > 0 {
-            ci = 1;
-        }
-        if (self.registers.a & 0x80) > 0 {
-            co = 0x10;
-        }
-        self.registers.a = (self.registers.a << 1) + ci;
-        self.registers.f = (self.registers.f & 0xEF) + co;
-    }
-    fn rlca(&mut self) {
-        let mut ci = 0;
-        let mut co = 0;
-        if (self.registers.a & 0x80) > 0 {
-            ci = 1;
-            co = 0x10;
-        }
-
-        self.registers.a = (self.registers.a << 1) + ci;
-        self.registers.f = (self.registers.f & 0xEF) + co;
-    }
-    fn rra(&mut self) {
-        let mut ci = 0;
-        let mut co = 0;
-        if (self.registers.f & 0x10) > 0 {
-            ci = 0x80;
-        }
-        if (self.registers.a & 1) > 0 {
-            co = 0x10;
-        }
-
-        self.registers.a = (self.registers.a >> 1) + ci;
-        self.registers.f = (self.registers.f & 0xEF) + co;
-    }
-    fn rrca(&mut self) {
-        let mut ci = 0;
-        let mut co = 0;
-        if (self.registers.a & 1) > 0 {
-            ci = 0x80;
-            co = 0x10;
-        }
-
-        self.registers.a = (self.registers.a >> 1) + ci;
-        self.registers.f = (self.registers.f & 0xEF) + co;
     }
 
     pub fn exec(&mut self) -> u32 {
@@ -360,11 +135,11 @@ impl Cpu {
         match op {
             0x00 => 1,
             0x01 => {
-                self.ld_bcnn();
+                ld::bcnn(self);
                 3
             }
             0x02 => {
-                self.ld_bcm_a();
+                ld::bcm_a(self);
                 2
             }
             0x03 => {
@@ -380,15 +155,15 @@ impl Cpu {
                 1
             }
             0x06 => {
-                ldrr::b(self);
+                ld::rr_b(self);
                 2
             }
             0x07 => {
-                self.rlca();
+                misc::rlca(self);
                 1
             }
             0x08 => {
-                self.ldmmsp();
+                ld::mmsp(self);
                 5
             }
             0x09 => {
@@ -396,7 +171,7 @@ impl Cpu {
                 1
             }
             0x0A => {
-                self.ld_abcm();
+                ld::abcm(self);
                 2
             }
             0x0B => {
@@ -412,11 +187,11 @@ impl Cpu {
                 1
             }
             0x0E => {
-                ldrr::c(self);
+                ld::rr_c(self);
                 2
             }
             0x0F => {
-                self.rrca();
+                misc::rrca(self);
                 1
             }
             0x10 => {
@@ -425,11 +200,11 @@ impl Cpu {
                 1
             } // 16
             0x11 => {
-                self.ld_denn();
+                ld::denn(self);
                 3
             } // 17
             18 => {
-                self.ld_dem_a();
+                ld::dem_a(self);
                 2
             }
             19 => {
@@ -445,11 +220,11 @@ impl Cpu {
                 1
             } // 21
             0x16 => {
-                ldrr::d(self);
+                ld::rr_d(self);
                 2
             } // 22
             23 => {
-                self.rla();
+                misc::rla(self);
                 1
             }
             0x18 => {
@@ -461,7 +236,7 @@ impl Cpu {
                 2
             } // 25
             26 => {
-                self.ld_adem();
+                ld::adem(self);
                 2
             }
             27 => {
@@ -477,11 +252,11 @@ impl Cpu {
                 1
             } // 29
             0x1E => {
-                ldrr::e(self);
+                ld::rr_e(self);
                 2
             } // 30
             31 => {
-                self.rra();
+                misc::rra(self);
                 1
             }
             0x20 => {
@@ -489,11 +264,11 @@ impl Cpu {
                 3
             } // todo
             0x21 => {
-                self.ld_hlnn();
+                ld::hlnn(self);
                 3
             }
             0x22 => {
-                self.ld_hlia();
+                ld::hlia(self);
                 2
             }
             0x23 => {
@@ -509,7 +284,7 @@ impl Cpu {
                 1
             }
             38 => {
-                ldrr::h(self);
+                ld::rr_h(self);
                 1
             }
             0x28 => {
@@ -521,7 +296,7 @@ impl Cpu {
                 1
             }
             0x2a => {
-                self.ld_ahli();
+                ld::ahli(self);
                 2
             }
             43 => {
@@ -537,7 +312,7 @@ impl Cpu {
                 1
             }
             46 => {
-                ldrr::l(self);
+                ld::rr_l(self);
                 1
             }
             0x2f => {
@@ -549,11 +324,11 @@ impl Cpu {
                 1
             }
             0x31 => {
-                self.ld_spnn();
+                ld::spnn(self);
                 3
             }
             50 => {
-                self.ld_hld_a();
+                ld::hld_a(self);
                 1
             }
             51 => {
@@ -569,7 +344,7 @@ impl Cpu {
                 3
             }
             54 => {
-                self.ld_hlmn();
+                ld::hlmn(self);
                 1
             }
             0x37 => {
@@ -585,7 +360,7 @@ impl Cpu {
                 1
             }
             58 => {
-                self.ld_ahld();
+                ld::ahld(self);
                 1
             }
             59 => {
@@ -601,7 +376,7 @@ impl Cpu {
                 1
             }
             0x3e => {
-                ldrr::a(self);
+                ld::rr_a(self);
                 2
             }
             0x3F => {
@@ -609,219 +384,219 @@ impl Cpu {
                 1
             }
             64 => {
-                ldrr::bb(self);
+                ld::rr_bb(self);
                 1
             }
             65 => {
-                ldrr::bc(self);
+                ld::rr_bc(self);
                 1
             }
             66 => {
-                ldrr::bd(self);
+                ld::rr_bd(self);
                 1
             }
             67 => {
-                ldrr::be(self);
+                ld::rr_be(self);
                 1
             }
             0x44 => {
-                ldrr::bh(self);
+                ld::rr_bh(self);
                 2
             }
             69 => {
-                ldrr::bl(self);
+                ld::rr_bl(self);
                 1
             }
             70 => {
-                self.ldr_hlm_b();
+                ld::r_hlm_b(self);
                 1
             }
             0x47 => {
-                ldrr::ba(self);
+                ld::rr_ba(self);
                 2
             }
             72 => {
-                ldrr::cb(self);
+                ld::rr_cb(self);
                 1
             }
             73 => {
-                // ldrr::cc(self);
+                // ld::rr_cc(self);
                 1
             }
             74 => {
-                ldrr::cd(self);
+                ld::rr_cd(self);
                 1
             }
             75 => {
-                ldrr::ce(self);
+                ld::rr_ce(self);
                 1
             }
             76 => {
-                ldrr::ch(self);
+                ld::rr_ch(self);
                 1
             }
             77 => {
-                ldrr::cl(self);
+                ld::rr_cl(self);
                 2
             }
             78 => {
-                self.ldr_hlm_c();
+                ld::r_hlm_c(self);
                 3
             }
             79 => {
-                ldrr::ca(self);
+                ld::rr_ca(self);
                 1
             }
             80 => {
-                ldrr::db(self);
+                ld::rr_db(self);
                 1
             }
             81 => {
-                ldrr::dc(self);
+                ld::rr_dc(self);
                 1
             }
             82 => {
-                // ldrr::dd(self);
+                // ld::rr_dd(self);
                 1
             }
             83 => {
-                ldrr::de(self);
+                ld::rr_de(self);
                 1
             }
             84 => {
-                ldrr::dh(self);
+                ld::rr_dh(self);
                 1
             }
             85 => {
-                ldrr::dl(self);
+                ld::rr_dl(self);
                 1
             }
             86 => {
-                self.ldr_hlm_d();
+                ld::r_hlm_d(self);
                 1
             }
             87 => {
-                ldrr::da(self);
+                ld::rr_da(self);
                 1
             }
             88 => {
-                ldrr::eb(self);
+                ld::rr_eb(self);
                 1
             }
             89 => {
-                ldrr::ec(self);
+                ld::rr_ec(self);
                 1
             }
             90 => {
-                ldrr::ed(self);
+                ld::rr_ed(self);
                 1
             }
             91 => {
-                // ldrr::ee(self);
+                // ld::rr_ee(self);
                 1
             }
             92 => {
-                ldrr::eh(self);
+                ld::rr_eh(self);
                 1
             }
             93 => {
-                ldrr::el(self);
+                ld::rr_el(self);
                 1
             }
             94 => {
-                self.ldr_hlm_e();
+                ld::r_hlm_e(self);
                 1
             }
             95 => {
-                ldrr::ea(self);
+                ld::rr_ea(self);
                 1
             }
             96 => {
-                ldrr::hb(self);
+                ld::rr_hb(self);
                 1
             }
             97 => {
-                ldrr::hc(self);
+                ld::rr_hc(self);
                 1
             }
             98 => {
-                ldrr::hd(self);
+                ld::rr_hd(self);
                 1
             }
             99 => {
-                ldrr::he(self);
+                ld::rr_he(self);
                 1
             }
             100 => {
-                ldrr::hh(self);
+                ld::rr_hh(self);
                 1
             }
             101 => {
-                ldrr::hl(self);
+                ld::rr_hl(self);
                 1
             }
             102 => {
-                self.ldr_hlm_h();
+                ld::r_hlm_h(self);
                 1
             }
             103 => {
-                ldrr::ha(self);
+                ld::rr_ha(self);
                 1
             }
             104 => {
-                ldrr::lb(self);
+                ld::rr_lb(self);
                 1
             }
             105 => {
-                ldrr::lc(self);
+                ld::rr_lc(self);
                 1
             }
             106 => {
-                ldrr::ld(self);
+                ld::rr_ld(self);
                 1
             }
             107 => {
-                ldrr::le(self);
+                ld::rr_le(self);
                 1
             }
             108 => {
-                ldrr::lh(self);
+                ld::rr_lh(self);
                 1
             }
             109 => {
-                // ldrr::ll(self);
+                // ld::rr_ll(self);
                 1
             }
             110 => {
-                self.ldr_hlm_l();
+                ld::r_hlm_l(self);
                 1
             }
             111 => {
-                ldrr::la(self);
+                ld::rr_la(self);
                 1
             }
             112 => {
-                self.ld_hlmr_b();
+                ld::hlmr_b(self);
                 1
             }
             113 => {
-                self.ld_hlmr_c();
+                ld::hlmr_c(self);
                 1
             }
             114 => {
-                self.ld_hlmr_d();
+                ld::hlmr_d(self);
                 1
             }
             115 => {
-                self.ld_hlmr_e();
+                ld::hlmr_e(self);
                 1
             }
             116 => {
-                self.ld_hlmr_h();
+                ld::hlmr_h(self);
                 1
             }
             117 => {
-                self.ld_hlmr_l();
+                ld::hlmr_l(self);
                 1
             }
             0x76 => {
@@ -829,39 +604,39 @@ impl Cpu {
                 1
             }
             119 => {
-                self.ld_hlmr_a();
+                ld::hlmr_a(self);
                 1
             }
             120 => {
-                ldrr::ab(self);
+                ld::rr_ab(self);
                 1
             }
             121 => {
-                ldrr::ac(self);
+                ld::rr_ac(self);
                 1
             }
             122 => {
-                ldrr::ad(self);
+                ld::rr_ad(self);
                 1
             }
             123 => {
-                ldrr::ae(self);
+                ld::rr_ae(self);
                 1
             }
             124 => {
-                ldrr::ah(self);
+                ld::rr_ah(self);
                 1
             }
             125 => {
-                ldrr::al(self);
+                ld::rr_al(self);
                 1
             }
             126 => {
-                self.ldr_hlm_a();
+                ld::r_hlm_a(self);
                 1
             }
             0x7F => {
-                // ldrr::aa(self);
+                // ld::rr_aa(self);
                 1
             }
             128 => {
@@ -1226,7 +1001,7 @@ impl Cpu {
                 1
             }
             0xDE => {
-                self.sbcn();
+                data::sbcn(self);
                 4
             }
             223 => {
@@ -1234,7 +1009,7 @@ impl Cpu {
                 1
             }
             0xe0 => {
-                self.ld_ion_a();
+                ld::ion_a(self);
                 3
             }
             225 => {
@@ -1242,7 +1017,7 @@ impl Cpu {
                 1
             }
             226 => {
-                self.ld_ioca();
+                ld::ioca(self);
                 1
             }
             229 => {
@@ -1266,7 +1041,7 @@ impl Cpu {
                 1
             }
             0xea => {
-                self.ldmm_a();
+                ld::mm_a(self);
                 1
             }
             238 => {
@@ -1278,7 +1053,7 @@ impl Cpu {
                 1
             }
             0xf0 => {
-                self.ld_aion();
+                ld::aion(self);
                 1
             }
             241 => {
@@ -1286,7 +1061,7 @@ impl Cpu {
                 1
             }
             242 => {
-                self.ld_aioc();
+                ld::aioc(self);
                 1
             }
             0xF3 => {
@@ -1307,11 +1082,11 @@ impl Cpu {
                 1
             }
             248 => {
-                self.ld_hlspn();
+                ld::hlspn(self);
                 1
             }
             250 => {
-                self.ld_amm();
+                ld::amm(self);
                 1
             }
             0xFB => {
@@ -1368,7 +1143,7 @@ impl Cpu {
                 let a = self.registers.d;
                 let c = a & 0x80 == 0x80;
                 let r = (a << 1) | (if c { 1 } else { 0 });
-                
+
                 self.registers.flag(H, false);
                 self.registers.flag(N, false);
                 self.registers.flag(Z, r == 0);
@@ -1376,7 +1151,7 @@ impl Cpu {
 
                 self.registers.d = r;
                 2
-            },
+            }
             // 19 => self.RLr_e,
             // 20 => self.RLr_h,
             // 21 => self.RLr_l,
@@ -1386,19 +1161,19 @@ impl Cpu {
             // 25 => self.RRr_c,
             // 26 => self.RRr_d,
             // 27 => self.RRr_e,
-            28 => { 
+            28 => {
                 let a = self.registers.h;
                 let c = a & 0x01 == 0x01;
                 let r = (a >> 1) | (if self.registers.getflag(C) { 0x80 } else { 0 });
-                
+
                 self.registers.flag(H, false);
                 self.registers.flag(N, false);
                 self.registers.flag(Z, r == 0);
                 self.registers.flag(C, c);
 
-                self.registers.h = r; 
-                2 
-            },
+                self.registers.h = r;
+                2
+            }
             29 => {
                 let a = self.registers.l;
                 let c = a & 0x01 == 0x01;
@@ -1408,16 +1183,16 @@ impl Cpu {
                 self.registers.flag(Z, r == 0);
                 self.registers.flag(C, c);
 
-                self.registers.l = r; 
+                self.registers.l = r;
                 2
-            },
+            }
             // 30 => self.RRHL,
             // 31 => self.RRr_a,
             // 32 => self.SLAr_b,
             // 33 => self.SLAr_c,
             // 34 => self.SLAr_d,
             35 => {
-                let a = self.registers.e; 
+                let a = self.registers.e;
                 let c = a & 0x80 == 0x80;
                 let r = a << 1;
 
@@ -1428,7 +1203,7 @@ impl Cpu {
 
                 self.registers.e = r;
                 2
-            },
+            }
             // 36 => self.SLAr_h,
             // 37 => self.SLAr_l,
             39 => {
@@ -1441,7 +1216,7 @@ impl Cpu {
                 self.registers.flag(C, c);
                 self.registers.a = r;
                 2
-            },
+            }
             // 40 => self.SRAr_b,
             // 41 => self.SRAr_c,
             // 42 => self.SRAr_d,
@@ -1481,7 +1256,7 @@ impl Cpu {
             // 57 => { self.SRLr_c; 2 },
             // 58 => { self.SRLr_d; 2 },
             // 59 => { self.SRLr_e; 2 },
-            60 => { 
+            60 => {
                 let a = self.registers.h;
                 let c = a & 0x01 == 0x01;
                 let r = a >> 1;
@@ -1492,8 +1267,8 @@ impl Cpu {
                 self.registers.h = r;
 
                 2
-            },
-            61 => { 
+            }
+            61 => {
                 let a = self.registers.l;
                 let c = a & 0x01 == 0x01;
                 let r = a >> 1;
@@ -1502,21 +1277,21 @@ impl Cpu {
                 self.registers.flag(Z, r == 0);
                 self.registers.flag(C, c);
                 self.registers.l = r;
-                2 
-            },
-            63 => { 
+                2
+            }
+            63 => {
                 let a = self.registers.a;
                 let c = a & 0x01 == 0x01;
                 let r = a >> 1;
-                
+
                 self.registers.flag(H, false);
                 self.registers.flag(N, false);
                 self.registers.flag(Z, r == 0);
                 self.registers.flag(C, c);
 
                 self.registers.a = r;
-                2 
-            },
+                2
+            }
             64 => {
                 bit::bit0b(self);
                 2
