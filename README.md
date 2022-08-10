@@ -232,6 +232,10 @@ Tthis section is for personal purposes.
 
 <img src="resources/6-august-2022.png" width="400" />
 
+#### Sat 10 August 2022 - d42c123aaf1f9632812be0061246bc3335cc71a7
+
+<img src="resources/10-august-2022.png" width="400" />
+
 # Resources & References
 
 - http://bgb.bircd.org/pandocs.htm
