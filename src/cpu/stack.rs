@@ -134,17 +134,17 @@ pub fn jrcn(c: &mut Cpu) -> u32 {
 
 // Switch speed
 // pub fn djnzn(c: &mut Cpu) {
-    // let mut i = c.memory.rb(c.registers.pc);
-    // if i > 127 {
-    //     // i=-((~i+1)&255)
-    //     i = 1;
-    // };
-    // c.registers.pc += 1;
-    // c.registers.b -= 1;
-    // if c.registers.b > 0 {
-    //     c.registers.pc += i as u16;
+// let mut i = c.memory.rb(c.registers.pc);
+// if i > 127 {
+//     // i=-((~i+1)&255)
+//     i = 1;
+// };
+// c.registers.pc += 1;
+// c.registers.b -= 1;
+// if c.registers.b > 0 {
+//     c.registers.pc += i as u16;
 
-    // }
+// }
 // }
 
 pub fn callnn(c: &mut Cpu) {

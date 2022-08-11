@@ -45,7 +45,7 @@ impl Registers {
             l: 0x4d,
             pc: 0x0100,
             sp: 0xFFFE,
-            ime: 0
+            ime: 0,
         }
     }
     pub fn flag(&mut self, flags: CpuFlag, set: bool) {

@@ -83,29 +83,18 @@ pub fn addhlbc(cpu: &mut Cpu) {
     cpu.registers.flag(H, (a & 0x07FF) + (b & 0x07FF) > 0x07FF);
     cpu.registers.flag(N, false);
     cpu.registers.flag(C, a > 0xFFFF - b);
+
     cpu.registers.h = (r >> 8) as u8;
     cpu.registers.l = (r & 0x00FF) as u8;
-
-    // let mut hl = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
-    // hl += ((cpu.registers.b as u16) << 8) + cpu.registers.c as u16;
-    // if hl > 65535 {
-    //     cpu.registers.f |= 0x10;
-    // } else {
-    //     cpu.registers.f &= 0xEF;
-    // }
-    // cpu.registers.h = ((hl >> 8) & 255) as u8;
-    // cpu.registers.l = (hl & 255) as u8;
 }
 pub fn addhlde(cpu: &mut Cpu) {
-    // let mut hl: u16 = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
-    // hl += ((cpu.registers.d as u16) << 8) + cpu.registers.e as u16;
-
     let de = ((cpu.registers.d as u16) << 8) | (cpu.registers.e as u16);
     let a = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
     let r = a.wrapping_add(de);
     cpu.registers.flag(H, (a & 0x07FF) + (de & 0x07FF) > 0x07FF);
     cpu.registers.flag(N, false);
     cpu.registers.flag(C, a > 0xFFFF - de);
+
     cpu.registers.h = (r >> 8) as u8;
     cpu.registers.l = (r & 0x00FF) as u8;
 }

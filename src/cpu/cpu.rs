@@ -36,7 +36,7 @@ impl Cpu {
             ime: 0,
             delay: 0,
 
-            _executed_operations: Vec::new()
+            _executed_operations: Vec::new(),
         }
     }
     fn mut_find_or_insert<T: PartialEq>(vec: &mut Vec<T>, val: T) -> &mut T {
@@ -272,9 +272,7 @@ impl Cpu {
                 misc::rra(self);
                 1
             }
-            0x20 => {
-                stack::jrnzn(self)
-            }
+            0x20 => stack::jrnzn(self),
             0x21 => {
                 ld::hlnn(self);
                 3
@@ -299,9 +297,7 @@ impl Cpu {
                 ld::rr_h(self);
                 1
             }
-            0x28 => {
-                stack::jrzn(self)
-            }
+            0x28 => stack::jrzn(self),
             41 => {
                 data::addhlhl(self);
                 1
@@ -330,9 +326,7 @@ impl Cpu {
                 data::cpl(self);
                 1
             }
-            0x30 => {
-                stack::jrncn(self)
-            }
+            0x30 => stack::jrncn(self),
             0x31 => {
                 ld::spnn(self);
                 3
@@ -361,9 +355,7 @@ impl Cpu {
                 data::scf(self);
                 1
             }
-            0x38 => {
-                stack::jrcn(self)
-            }
+            0x38 => stack::jrcn(self),
             57 => {
                 data::addhlsp(self);
                 1
@@ -912,9 +904,7 @@ impl Cpu {
                 stack::popbc(self);
                 1
             }
-            0xc2 => {
-                stack::jpnznn(self)
-            }
+            0xc2 => stack::jpnznn(self),
             0xc3 => {
                 stack::jpnn(self);
                 4
@@ -935,20 +925,14 @@ impl Cpu {
                 stack::rst00(self);
                 1
             }
-            0xC8 => {
-                stack::retz(self)
-            }
+            0xC8 => stack::retz(self),
             0xC9 => {
                 stack::ret(self);
                 4
             }
-            0xCA => {
-                stack::jpznn(self)
-            }
+            0xCA => stack::jpznn(self),
             0xCB => misc::cbmap(self),
-            0xCC => {
-                stack::callznn(self)
-            }
+            0xCC => stack::callznn(self),
             0xCD => {
                 stack::callnn(self);
                 2
@@ -969,9 +953,7 @@ impl Cpu {
                 stack::popde(self);
                 3
             }
-            0xD2 => {
-                stack::jpncnn(self)
-            }
+            0xD2 => stack::jpncnn(self),
             212 => {
                 stack::callncnn(self);
                 1
