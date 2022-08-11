@@ -72,31 +72,36 @@ pub fn popaf(c: &mut Cpu) {
     c.registers.sp += 1;
 }
 pub fn jpnn(c: &mut Cpu) {
-    // c.registers.pc = c.memory.rw(c.registers.pc);
     c.registers.pc = c.get_word();
 }
 pub fn jphl(c: &mut Cpu) {
     c.registers.pc = c.registers.h as u16;
 }
-pub fn jpnznn(c: &mut Cpu) {
+pub fn jpnznn(c: &mut Cpu) -> u32 {
     if !c.registers.getflag(Z) {
         c.registers.pc = c.get_word();
+        4
     } else {
         c.registers.pc += 2;
+        3
     }
 }
-pub fn jpznn(c: &mut Cpu) {
-    if (c.registers.f & 0x80) == 0x80 {
+pub fn jpznn(c: &mut Cpu) -> u32 {
+    if c.registers.getflag(Z) {
         c.registers.pc = c.memory.rw(c.registers.pc);
+        4
     } else {
         c.registers.pc += 2;
+        3
     }
 }
-pub fn jpncnn(c: &mut Cpu) {
-    if (c.registers.f & 0x10) == 0x00 {
+pub fn jpncnn(c: &mut Cpu) -> u32 {
+    if !c.registers.getflag(C) {
         c.registers.pc = c.memory.rw(c.registers.pc);
+        4
     } else {
         c.registers.pc += 2;
+        3
     }
 }
 pub fn jpcnn(c: &mut Cpu) {
@@ -113,44 +118,50 @@ pub fn jrn(c: &mut Cpu) {
 
     // c.registers.pc += i as u16;
 }
-pub fn jrnzn(c: &mut Cpu) {
+pub fn jrnzn(c: &mut Cpu) -> u32 {
     if !c.registers.getflag(Z) {
         let n = c.get_byte() as i8;
         c.registers.pc = ((c.registers.pc as u32 as i32) + (n as i32)) as u16;
+        3
     } else {
         c.registers.pc += 1;
+        2
     }
 }
-pub fn jrzn(c: &mut Cpu) {
+pub fn jrzn(c: &mut Cpu) -> u32 {
     if c.registers.getflag(Z) {
         let n = c.get_byte() as i8;
         c.registers.pc = ((c.registers.pc as u32 as i32) + (n as i32)) as u16;
+        3
     } else {
         c.registers.pc += 1;
+        2
     }
 }
 
-// 0x38 => { if self.reg.getflag(C) { self.cpu_jr(); 3 } else { self.reg.pc += 1; 2  } },
-pub fn jrncn(c: &mut Cpu) {
-    // let c = c.memory.rb(c.registers.c);
-    if c.registers.c > 0 {
+pub fn jrncn(c: &mut Cpu) -> u32 {
+    if !c.registers.getflag(C) {
         let n = c.get_byte() as i8;
         c.registers.pc = ((c.registers.pc as u32 as i32) + (n as i32)) as u16;
+        3
     } else {
         c.registers.pc += 1;
+        2
     }
 }
-pub fn jrcn(c: &mut Cpu) {
+pub fn jrcn(c: &mut Cpu) -> u32 {
     if c.registers.getflag(C) {
         let n = c.get_byte() as i8;
         c.registers.pc = ((c.registers.pc as u32 as i32) + (n as i32)) as u16;
+        3
     } else {
         c.registers.pc += 1;
+        2
     }
 }
 
 // Switch speed
-pub fn djnzn(c: &mut Cpu) {
+// pub fn djnzn(c: &mut Cpu) {
     // let mut i = c.memory.rb(c.registers.pc);
     // if i > 127 {
     //     // i=-((~i+1)&255)
@@ -162,7 +173,7 @@ pub fn djnzn(c: &mut Cpu) {
     //     c.registers.pc += i as u16;
 
     // }
-}
+// }
 
 pub fn callnn(c: &mut Cpu) {
     c.registers.sp -= 2;
@@ -178,13 +189,15 @@ pub fn callnznn(c: &mut Cpu) {
         c.registers.pc += 2;
     }
 }
-pub fn callznn(c: &mut Cpu) {
-    if (c.registers.f & 0x80) == 0x80 {
+pub fn callznn(c: &mut Cpu) -> u32 {
+    if c.registers.getflag(Z) {
         c.registers.sp -= 2;
         c.memory.ww(c.registers.sp, c.registers.pc + 2);
         c.registers.pc = c.memory.rw(c.registers.pc);
+        6
     } else {
         c.registers.pc += 2;
+        3
     }
 }
 pub fn callncnn(c: &mut Cpu) {
@@ -206,9 +219,6 @@ pub fn callcnn(c: &mut Cpu) {
     }
 }
 pub fn ret(c: &mut Cpu) {
-    // c.registers.pc = c.memory.rw(c.registers.sp) as u16;
-    // c.registers.sp += 2;
-
     let res = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
     c.registers.pc = res;
@@ -224,10 +234,13 @@ pub fn retnz(c: &mut Cpu) {
         c.registers.sp += 2;
     }
 }
-pub fn retz(c: &mut Cpu) {
-    if (c.registers.f & 0x80) == 0x80 {
+pub fn retz(c: &mut Cpu) -> u32 {
+    if c.registers.getflag(Z) {
         c.registers.pc = c.memory.rw(c.registers.sp);
         c.registers.sp += 2;
+        5
+    } else {
+        2
     }
 }
 pub fn retnc(c: &mut Cpu) {
@@ -242,7 +255,6 @@ pub fn retc(c: &mut Cpu) {
         c.registers.sp += 2;
     }
 }
-
 pub fn rst00(c: &mut Cpu) {
     c.registers.sp -= 2;
     c.memory.ww(c.registers.sp, c.registers.pc);

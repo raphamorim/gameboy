@@ -103,10 +103,9 @@ pub fn spnn(cpu: &mut Cpu) {
     cpu.registers.sp = cpu.get_word();
 }
 pub fn hlia(cpu: &mut Cpu) {
-    let mut hl = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
-    hl += 1;
-    cpu.registers.h = (hl >> 8) as u8;
-    cpu.registers.l = (hl & 0x00FF) as u8;
+    let hl = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    cpu.registers.h = ((hl + 1) >> 8) as u8;
+    cpu.registers.l = ((hl + 1) & 0x00FF) as u8;
     cpu.memory.wb(hl, cpu.registers.a);
 }
 pub fn ahli(cpu: &mut Cpu) {

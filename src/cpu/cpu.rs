@@ -1,4 +1,4 @@
-use crate::cpu::registers::{Clock, Registers};
+use crate::cpu::registers::Registers;
 use crate::cpu::{data, ld, misc, stack};
 use crate::mmu::mmu::{Mmu, Speed};
 
@@ -13,8 +13,7 @@ pub enum Interrupt {
 
 #[derive(Debug)]
 pub struct Cpu {
-    pub registers: Registers, // registers
-    pub clock: Clock,
+    pub registers: Registers,
     pub ime: u32,
     pub halt: u32,
     pub stop: u32,
@@ -33,7 +32,6 @@ impl Cpu {
             stop: 0,
             ime: 0,
             delay: 0,
-            clock: Clock { m: 0, t: 0 },
         }
     }
     pub fn get_byte(&mut self) -> u8 {
@@ -41,7 +39,6 @@ impl Cpu {
         self.registers.pc = self.registers.pc.wrapping_add(1);
         pc
     }
-
     pub fn get_word(&mut self) -> u16 {
         let w = self.memory.rw(self.registers.pc);
         self.registers.pc += 2;
@@ -58,7 +55,6 @@ impl Cpu {
             self.registers.f |= 0;
         }
     }
-
     pub fn exec(&mut self) -> u32 {
         match self.delay {
             0 => {}
@@ -73,7 +69,7 @@ impl Cpu {
         }
 
         let mut ticks = if self.halt == 0 && self.stop == 0 {
-            self.exec_current_operation() as u32
+            self.exec_operation() as u32
         } else {
             if self.stop != 0 && self.memory.speedswitch {
                 self.memory.switch_speed();
@@ -128,7 +124,7 @@ impl Cpu {
         return ticks;
     }
 
-    fn exec_current_operation(&mut self) -> u32 {
+    fn exec_operation(&mut self) -> u32 {
         let op = self.get_byte();
         println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
         match op {
@@ -167,7 +163,7 @@ impl Cpu {
             }
             0x09 => {
                 data::addhlbc(self);
-                1
+                2
             }
             0x0A => {
                 ld::abcm(self);
@@ -177,7 +173,7 @@ impl Cpu {
                 data::decbc(self);
                 2
             }
-            12 => {
+            0x0C => {
                 data::incr_c(self);
                 1
             }
@@ -197,31 +193,31 @@ impl Cpu {
                 // stack::djnzn(self);
                 self.stop = 1;
                 1
-            } // 16
+            }
             0x11 => {
                 ld::denn(self);
                 3
-            } // 17
+            }
             18 => {
                 ld::dem_a(self);
                 2
             }
-            19 => {
+            0x13 => {
                 data::incde(self);
                 2
             }
-            20 => {
+            0x14 => {
                 data::incr_d(self);
                 1
             }
             0x15 => {
                 data::decr_d(self);
                 1
-            } // 21
+            }
             0x16 => {
                 ld::rr_d(self);
                 2
-            } // 22
+            }
             23 => {
                 misc::rla(self);
                 1
@@ -229,11 +225,11 @@ impl Cpu {
             0x18 => {
                 stack::jrn(self);
                 3
-            } // 24
+            }
             0x19 => {
                 data::addhlde(self);
                 2
-            } // 25
+            }
             26 => {
                 ld::adem(self);
                 2
@@ -253,15 +249,14 @@ impl Cpu {
             0x1E => {
                 ld::rr_e(self);
                 2
-            } // 30
+            }
             31 => {
                 misc::rra(self);
                 1
             }
             0x20 => {
-                stack::jrnzn(self);
-                3
-            } // todo
+                stack::jrnzn(self)
+            }
             0x21 => {
                 ld::hlnn(self);
                 3
@@ -287,8 +282,7 @@ impl Cpu {
                 1
             }
             0x28 => {
-                stack::jrzn(self);
-                3
+                stack::jrzn(self)
             }
             41 => {
                 data::addhlhl(self);
@@ -318,9 +312,8 @@ impl Cpu {
                 data::cpl(self);
                 1
             }
-            48 => {
-                stack::jrncn(self);
-                1
+            0x30 => {
+                stack::jrncn(self)
             }
             0x31 => {
                 ld::spnn(self);
@@ -351,8 +344,7 @@ impl Cpu {
                 1
             }
             0x38 => {
-                stack::jrcn(self); // todo
-                3
+                stack::jrcn(self)
             }
             57 => {
                 data::addhlsp(self);
@@ -709,7 +701,7 @@ impl Cpu {
             0x91 => {
                 data::subr_c(self);
                 1
-            } // 145
+            }
             146 => {
                 data::subr_d(self);
                 1
@@ -903,12 +895,11 @@ impl Cpu {
                 1
             }
             0xc2 => {
-                stack::jpnznn(self);
-                1
+                stack::jpnznn(self)
             }
             0xc3 => {
                 stack::jpnn(self);
-                1
+                4
             }
             196 => {
                 stack::callnznn(self);
@@ -926,24 +917,21 @@ impl Cpu {
                 stack::rst00(self);
                 1
             }
-            200 => {
-                stack::retz(self);
-                1
+            0xC8 => {
+                stack::retz(self)
             }
-            201 => {
+            0xC9 => {
                 stack::ret(self);
-                1
+                4
             }
-            202 => {
-                stack::jpznn(self);
-                1
+            0xCA => {
+                stack::jpznn(self)
             }
-            0xcb => misc::cbmap(self),
-            204 => {
-                stack::callznn(self);
-                1
+            0xCB => misc::cbmap(self),
+            0xCC => {
+                stack::callznn(self)
             }
-            0xcd => {
+            0xCD => {
                 stack::callnn(self);
                 2
             }
@@ -963,7 +951,7 @@ impl Cpu {
                 stack::popde(self);
                 1
             }
-            210 => {
+            0xD2 => {
                 stack::jpncnn(self);
                 1
             }
@@ -1001,7 +989,7 @@ impl Cpu {
             }
             0xDE => {
                 data::sbcn(self);
-                4
+                2
             }
             223 => {
                 stack::rst18(self);
@@ -1023,9 +1011,9 @@ impl Cpu {
                 stack::pushhl(self);
                 1
             }
-            0xe6 => {
+            0xE6 => {
                 data::andn(self);
-                4
+                2
             }
             231 => {
                 stack::rst20(self);
@@ -1041,11 +1029,11 @@ impl Cpu {
             }
             0xea => {
                 ld::mm_a(self);
-                1
+                4
             }
             238 => {
                 data::orn(self);
-                1
+                2
             }
             239 => {
                 stack::rst28(self);
@@ -1070,15 +1058,15 @@ impl Cpu {
             }
             245 => {
                 stack::pushaf(self);
-                1
+                4
             }
             246 => {
                 data::xorn(self);
-                1
+                2
             }
             247 => {
                 stack::rst30(self);
-                1
+                4
             }
             248 => {
                 ld::hlspn(self);

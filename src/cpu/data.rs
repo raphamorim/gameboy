@@ -132,16 +132,6 @@ pub fn addhlsp(cpu: &mut Cpu) {
     cpu.registers.h = ((hl >> 8) & 255) as u8;
     cpu.registers.l = (hl & 255) as u8;
 }
-// pub fn addspn(cpu: &mut Cpu) {
-//     let i = cpu.memory.rb(cpu.registers.pc);
-//     if i > 127 {
-//         // i=-{ ((~i+1)&255)
-
-//     }
-//     cpu.registers.pc += 1;
-//     cpu.registers.sp += i as u16;
-//
-// }
 // https://github.com/alexcrichton/jba/blob/rust/src/cpu/z80/imp.rs#L81
 pub fn addspn(cpu: &mut Cpu) {
     let b = cpu.memory.rb(cpu.registers.pc) as i8 as i16 as u16;
@@ -716,34 +706,52 @@ pub fn xorn(cpu: &mut Cpu) {
     cpu.fz(cpu.registers.a, 0);
 }
 pub fn incr_b(cpu: &mut Cpu) {
-    cpu.registers.b += 1;
-    cpu.registers.b &= 255;
-    cpu.fz(cpu.registers.b, 0);
+    let addr = cpu.registers.b;
+    let r = addr.wrapping_add(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (addr & 0x0F) + 1 > 0x0F);
+    cpu.registers.flag(N, false);
+    cpu.registers.b = r;
 }
 pub fn incr_c(cpu: &mut Cpu) {
-    cpu.registers.c += 1;
-    cpu.registers.c &= 255;
-    cpu.fz(cpu.registers.c, 0);
+    let addr = cpu.registers.c;
+    let r = addr.wrapping_add(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (addr & 0x0F) + 1 > 0x0F);
+    cpu.registers.flag(N, false);
+    cpu.registers.c = r;
 }
 pub fn incr_d(cpu: &mut Cpu) {
-    cpu.registers.d += 1;
-    cpu.registers.d &= 255;
-    cpu.fz(cpu.registers.d, 0);
+    let addr = cpu.registers.d;
+    let r = addr.wrapping_add(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (addr & 0x0F) + 1 > 0x0F);
+    cpu.registers.flag(N, false);
+    cpu.registers.d = r;
 }
 pub fn incr_e(cpu: &mut Cpu) {
-    cpu.registers.e += 1;
-    cpu.registers.e &= 255;
-    cpu.fz(cpu.registers.e, 0);
+    let addr = cpu.registers.e;
+    let r = addr.wrapping_add(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (addr & 0x0F) + 1 > 0x0F);
+    cpu.registers.flag(N, false);
+    cpu.registers.e = r;
 }
 pub fn incr_h(cpu: &mut Cpu) {
-    cpu.registers.h += 1;
-    cpu.registers.h &= 255;
-    cpu.fz(cpu.registers.h, 0);
+    let addr = cpu.registers.h;
+    let r = addr.wrapping_add(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (addr & 0x0F) + 1 > 0x0F);
+    cpu.registers.flag(N, false);
+    cpu.registers.h = r;
 }
 pub fn incr_l(cpu: &mut Cpu) {
-    cpu.registers.l += 1;
-    cpu.registers.l &= 255;
-    cpu.fz(cpu.registers.l, 0);
+    let addr = cpu.registers.l;
+    let r = addr.wrapping_add(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (addr & 0x0F) + 1 > 0x0F);
+    cpu.registers.flag(N, false);
+    cpu.registers.l = r;
 }
 pub fn incr_a(cpu: &mut Cpu) {
     let a = cpu.registers.a;
@@ -777,37 +785,42 @@ pub fn decr_c(cpu: &mut Cpu) {
 pub fn decr_d(cpu: &mut Cpu) {
     let d = cpu.registers.d;
     let r = d.wrapping_sub(1);
-    // cpu.registers.d &= 255;
-    // cpu.fz(cpu.registers.d, 0);
     cpu.registers.flag(Z, r == 0);
     cpu.registers.flag(H, (d & 0x0F) == 0);
     cpu.registers.flag(N, true);
     cpu.registers.d = r;
 }
 pub fn decr_e(cpu: &mut Cpu) {
-    let r = cpu.registers.e.wrapping_sub(1);
+    let e = cpu.registers.e;
+    let r = e.wrapping_sub(1);
     cpu.registers.flag(Z, r == 0);
-    cpu.registers.flag(H, (cpu.registers.e & 0x0F) == 0);
+    cpu.registers.flag(H, (e & 0x0F) == 0);
     cpu.registers.flag(N, true);
     cpu.registers.e = r;
-
-    // cpu.registers.e &= 255;
-    // cpu.fz(cpu.registers.e, 0);
 }
 pub fn decr_h(cpu: &mut Cpu) {
-    cpu.registers.h -= 1;
-    cpu.registers.h &= 255;
-    cpu.fz(cpu.registers.h, 0);
+    let h = cpu.registers.h;
+    let r = h.wrapping_sub(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (h & 0x0F) == 0);
+    cpu.registers.flag(N, true);
+    cpu.registers.h = r;
 }
 pub fn decr_l(cpu: &mut Cpu) {
-    cpu.registers.l -= 1;
-    cpu.registers.l &= 255;
-    cpu.fz(cpu.registers.l, 0);
+    let l = cpu.registers.l;
+    let r = l.wrapping_sub(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (l & 0x0F) == 0);
+    cpu.registers.flag(N, true);
+    cpu.registers.l = r;
 }
 pub fn decr_a(cpu: &mut Cpu) {
-    cpu.registers.a -= 1;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let a = cpu.registers.a;
+    let r = a.wrapping_sub(1);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0x0F) == 0);
+    cpu.registers.flag(N, true);
+    cpu.registers.h = r;
 }
 pub fn dechlm(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
@@ -819,16 +832,14 @@ pub fn dechlm(cpu: &mut Cpu) {
     cpu.memory.wb(addr, r);
 }
 pub fn incbc(cpu: &mut Cpu) {
-    let cr_val = (cpu.registers.c as u16).wrapping_add(1);
-    let br_val = ((cpu.registers.b as u16) << 8).wrapping_add(1);
-    cpu.registers.b = (br_val >> 8) as u8;
-    cpu.registers.c = (cr_val & 0x00FF) as u8;
+    let val = ((cpu.registers.b as u16) << 8) | (cpu.registers.c as u16).wrapping_add(1);
+    cpu.registers.b = (val >> 8) as u8;
+    cpu.registers.c = (val & 0x00FF) as u8;
 }
 pub fn incde(cpu: &mut Cpu) {
-    cpu.registers.e = (cpu.registers.e + 1) & 255;
-    if cpu.registers.e == 0 {
-        cpu.registers.d = (cpu.registers.d + 1) & 255;
-    }
+    let val = ((cpu.registers.d as u16) << 8) | (cpu.registers.e as u16).wrapping_add(1);
+    cpu.registers.d = (val >> 8) as u8;
+    cpu.registers.e = (val & 0x00FF) as u8;
 }
 pub fn inchl(cpu: &mut Cpu) {
     let val = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16).wrapping_add(1);
