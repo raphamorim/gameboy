@@ -227,73 +227,8 @@ pub fn retc(c: &mut Cpu) {
         c.registers.sp += 2;
     }
 }
-pub fn rst00(c: &mut Cpu) {
+pub fn rst(c: &mut Cpu, val: u16) {
     c.registers.sp -= 2;
     c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x00;
-}
-pub fn rst08(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x08;
-}
-pub fn rst10(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x10;
-}
-pub fn rst18(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x18;
-}
-pub fn rst20(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x20;
-}
-pub fn rst28(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x28;
-}
-pub fn rst30(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x30;
-}
-pub fn rst38(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x38;
-}
-pub fn rst40(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x40;
-}
-pub fn rst48(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x48;
-}
-pub fn rst50(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x50;
-}
-pub fn rst58(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x58;
-}
-pub fn rst60(c: &mut Cpu) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = 0x60;
-}
-pub fn rst(c: &mut Cpu, i: u16) {
-    c.registers.sp -= 2;
-    c.memory.ww(c.registers.sp, c.registers.pc);
-    c.registers.pc = i;
+    c.registers.pc = val;
 }

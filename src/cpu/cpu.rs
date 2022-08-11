@@ -260,10 +260,10 @@ impl Cpu {
                 data::incr_e(self);
                 1
             }
-            29 => {
+            0x1D => {
                 data::decr_e(self);
                 1
-            } // 29
+            }
             0x1E => {
                 ld::rr_e(self);
                 2
@@ -372,7 +372,7 @@ impl Cpu {
                 data::incr_a(self);
                 1
             }
-            61 => {
+            0x3d => {
                 data::decr_a(self);
                 1
             }
@@ -436,7 +436,7 @@ impl Cpu {
                 ld::rr_ch(self);
                 1
             }
-            77 => {
+            0x4D => {
                 ld::rr_cl(self);
                 2
             }
@@ -922,7 +922,7 @@ impl Cpu {
                 2
             }
             199 => {
-                stack::rst00(self);
+                stack::rst(self, 0x00);
                 1
             }
             0xC8 => stack::retz(self),
@@ -942,7 +942,7 @@ impl Cpu {
                 1
             }
             207 => {
-                stack::rst08(self);
+                stack::rst(self, 0x08);
                 1
             }
             208 => {
@@ -967,7 +967,7 @@ impl Cpu {
                 2
             }
             215 => {
-                stack::rst10(self);
+                stack::rst(self, 0x10);
                 1
             }
             216 => {
@@ -991,7 +991,7 @@ impl Cpu {
                 2
             }
             0xDF => {
-                stack::rst18(self);
+                stack::rst(self, 0x18);
                 4
             }
             0xe0 => {
@@ -1015,7 +1015,7 @@ impl Cpu {
                 2
             }
             231 => {
-                stack::rst20(self);
+                stack::rst(self, 0x20);
                 1
             }
             232 => {
@@ -1035,7 +1035,7 @@ impl Cpu {
                 2
             }
             0xEF => {
-                stack::rst28(self);
+                stack::rst(self, 0x28);
                 4
             }
             0xf0 => {
@@ -1064,7 +1064,7 @@ impl Cpu {
                 2
             }
             247 => {
-                stack::rst30(self);
+                stack::rst(self, 0x30);
                 4
             }
             248 => {
@@ -1089,7 +1089,7 @@ impl Cpu {
                 2
             }
             0xFF => {
-                stack::rst38(self);
+                stack::rst(self, 0x38);
                 4
             }
             _ => {
