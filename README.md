@@ -16,7 +16,7 @@
 > Disclaimer 1.3: Tests need to pass by `ubuntu-20.04`, `macOS-latest` and `windows-latest`
 >
 
-## Internals
+## ●&nbsp;&nbsp;Internals
 
 <img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" width="500px" />
 
@@ -26,7 +26,7 @@
 
 * A scan of the main logic board for the DMG 01: https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
 
-## Emulators and a bit of Game Boy history...
+## ●&nbsp;&nbsp;Emulators and a bit of Game Boy history...
 
 An emulator typically enables the host system to run software or use peripheral devices designed for the guest system. Emulation refers to the ability of a computer program in an electronic device to emulate (or imitate) another program or device. In the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU. The Game Boy CPU is a hybrid between the Intel 8080 and the Zilog Z80. In computing, an emulator is hardware or software that enables one computer system (called the host) to behave like another computer system (called the guest).
 
@@ -80,7 +80,7 @@ Anyway, enough about the Game Boy history.
 
 The Z80 was designed to be binary compatible with the already existing Intel 8080. This means that the instruction set found in the 8080 was also implemented by the Z80 (in essence, the 8080 can be seen as a subset of the Z80). The Game Boy’s custom hybrid chip official name is *Sharp LR35902*.
 
-## LR35902 ~ High level architecture
+## ●&nbsp;&nbsp;LR35902 ~ High level architecture
 
 #### CPU (`src/cpu`)
 
