@@ -604,11 +604,6 @@ pub fn andn(cpu: &mut Cpu) {
     cpu.registers.flag(C, false);
     cpu.registers.flag(N, false);
     cpu.registers.a = r;
-
-    // cpu.registers.a &= cpu.memory.rb(cpu.registers.pc);
-    // cpu.registers.pc += 1;
-    // cpu.registers.a &= 255;
-    // cpu.fz(cpu.registers.a, 0);
 }
 pub fn orr_b(cpu: &mut Cpu) {
     cpu.registers.a |= cpu.registers.b;

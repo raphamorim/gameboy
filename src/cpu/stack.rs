@@ -5,55 +5,29 @@ pub fn pushbc(c: &mut Cpu) {
     let value = ((c.registers.b as u16) << 8) | (c.registers.c as u16);
     c.registers.sp -= 2;
     c.memory.ww(c.registers.sp, value);
-
-    // c.registers.sp -= 1;
-    // c.memory.wb(c.registers.sp, c.registers.b);
-    // c.registers.sp -= 1;
-    // c.memory.wb(c.registers.sp, c.registers.c);
 }
 pub fn pushde(c: &mut Cpu) {
     let value = ((c.registers.d as u16) << 8) | (c.registers.e as u16);
     c.registers.sp -= 2;
     c.memory.ww(c.registers.sp, value);
-
-    // c.registers.sp -= 1;
-    // c.memory.wb(c.registers.sp, c.registers.d);
-    // c.registers.sp -= 1;
-    // c.memory.wb(c.registers.sp, c.registers.e);
 }
 pub fn pushhl(c: &mut Cpu) {
-    c.registers.sp -= 1;
-    c.memory.wb(c.registers.sp, c.registers.h);
-    c.registers.sp -= 1;
-    c.memory.wb(c.registers.sp, c.registers.l);
+    let value = ((c.registers.h as u16) << 8) | (c.registers.l as u16);
+    c.registers.sp -= 2;
+    c.memory.ww(c.registers.sp, value);
 }
 pub fn pushaf(c: &mut Cpu) {
-    if c.registers.sp > 0 {
-        c.registers.sp -= 1;
-    }
-    c.memory.wb(c.registers.sp, c.registers.a);
-    if c.registers.sp > 0 {
-        c.registers.sp -= 1;
-    }
-    c.memory.wb(c.registers.sp, c.registers.f);
+    let value = ((c.registers.a as u16) << 8) | ((c.registers.f & 0xF0) as u16);
+    c.registers.sp -= 2;
+    c.memory.ww(c.registers.sp, value);
 }
-
 pub fn popbc(c: &mut Cpu) {
     let val = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
     c.registers.b = (val >> 8) as u8;
     c.registers.c = (val & 0x00FF) as u8;
-
-    // c.registers.c = c.memory.rb(c.registers.sp);
-    // c.registers.sp += 1;
-    // c.registers.b = c.memory.rb(c.registers.sp);
-    // c.registers.sp += 1;
 }
 pub fn popde(c: &mut Cpu) {
-    // c.registers.e = c.memory.rb(c.registers.sp);
-    // c.registers.sp += 1;
-    // c.registers.d = c.memory.rb(c.registers.sp);
-    // c.registers.sp += 1;
     let val = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
     c.registers.d = (val >> 8) as u8;
@@ -115,8 +89,6 @@ pub fn jpcnn(c: &mut Cpu) {
 pub fn jrn(c: &mut Cpu) {
     let n = c.get_byte() as i8;
     c.registers.pc = ((c.registers.pc as u32 as i32) + (n as i32)) as u16;
-
-    // c.registers.pc += i as u16;
 }
 pub fn jrnzn(c: &mut Cpu) -> u32 {
     if !c.registers.getflag(Z) {

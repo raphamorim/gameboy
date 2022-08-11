@@ -20,6 +20,9 @@ pub struct Cpu {
     pub memory: Mmu,
     delay: u32,
     ticks: u32,
+
+    // To debug
+    _executed_operations: Vec<u8>,
 }
 
 impl Cpu {
@@ -32,7 +35,22 @@ impl Cpu {
             stop: 0,
             ime: 0,
             delay: 0,
+
+            _executed_operations: Vec::new()
         }
+    }
+    fn mut_find_or_insert<T: PartialEq>(vec: &mut Vec<T>, val: T) -> &mut T {
+        if let Some(i) = vec.iter().position(|each| *each == val) {
+            &mut vec[i]
+        } else {
+            vec.push(val);
+            vec.last_mut().unwrap()
+        }
+    }
+    pub fn debug(&mut self, op: u8) {
+        Cpu::mut_find_or_insert(&mut self._executed_operations, op);
+        println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
+        println!("{:?}", self._executed_operations);
     }
     pub fn get_byte(&mut self) -> u8 {
         let pc = self.memory.rb(self.registers.pc);
@@ -126,7 +144,7 @@ impl Cpu {
 
     fn exec_operation(&mut self) -> u32 {
         let op = self.get_byte();
-        println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
+        // self.debug(op);
         match op {
             0x00 => 1,
             0x01 => {
@@ -374,8 +392,8 @@ impl Cpu {
                 data::ccf(self);
                 1
             }
-            64 => {
-                ld::rr_bb(self);
+            0x40 => {
+                // ld::rr_bb(self);
                 1
             }
             65 => {
@@ -392,7 +410,7 @@ impl Cpu {
             }
             0x44 => {
                 ld::rr_bh(self);
-                2
+                1
             }
             69 => {
                 ld::rr_bl(self);
@@ -404,13 +422,13 @@ impl Cpu {
             }
             0x47 => {
                 ld::rr_ba(self);
-                2
+                1
             }
             72 => {
                 ld::rr_cb(self);
                 1
             }
-            73 => {
+            0x49 => {
                 // ld::rr_cc(self);
                 1
             }
@@ -446,7 +464,7 @@ impl Cpu {
                 ld::rr_dc(self);
                 1
             }
-            82 => {
+            0x52 => {
                 // ld::rr_dd(self);
                 1
             }
@@ -482,7 +500,7 @@ impl Cpu {
                 ld::rr_ed(self);
                 1
             }
-            91 => {
+            0x5B => {
                 // ld::rr_ee(self);
                 1
             }
@@ -554,7 +572,7 @@ impl Cpu {
                 ld::rr_lh(self);
                 1
             }
-            109 => {
+            0x6D => {
                 // ld::rr_ll(self);
                 1
             }
@@ -725,7 +743,7 @@ impl Cpu {
             0x97 => {
                 data::subr_a(self);
                 1
-            } // 151
+            }
             152 => {
                 data::sbcr_b(self);
                 1
@@ -947,21 +965,20 @@ impl Cpu {
                 stack::retnc(self);
                 1
             }
-            209 => {
+            0xD1 => {
                 stack::popde(self);
-                1
+                3
             }
             0xD2 => {
-                stack::jpncnn(self);
-                1
+                stack::jpncnn(self)
             }
             212 => {
                 stack::callncnn(self);
                 1
             }
-            213 => {
+            0xD5 => {
                 stack::pushde(self);
-                1
+                4
             }
             0xD6 => {
                 data::subn(self);
@@ -991,9 +1008,9 @@ impl Cpu {
                 data::sbcn(self);
                 2
             }
-            223 => {
+            0xDF => {
                 stack::rst18(self);
-                1
+                4
             }
             0xe0 => {
                 ld::ion_a(self);
@@ -1035,28 +1052,28 @@ impl Cpu {
                 data::orn(self);
                 2
             }
-            239 => {
+            0xEF => {
                 stack::rst28(self);
-                1
+                4
             }
             0xf0 => {
                 ld::aion(self);
-                1
+                3
             }
             241 => {
                 stack::popaf(self);
-                1
+                3
             }
             242 => {
                 ld::aioc(self);
-                1
+                2
             }
             0xF3 => {
                 self.ime = 0;
                 self.delay = 0;
                 1
             }
-            245 => {
+            0xF5 => {
                 stack::pushaf(self);
                 4
             }
