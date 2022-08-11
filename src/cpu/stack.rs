@@ -25,7 +25,7 @@ pub fn popbc(c: &mut Cpu) {
     let val = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
     c.registers.b = (val >> 8) as u8;
-    c.registers.c = (val & 0x00FF) as u8;
+    c.registers.c = (val & 0x00FF) as u8
 }
 pub fn popde(c: &mut Cpu) {
     let val = c.memory.rw(c.registers.sp);

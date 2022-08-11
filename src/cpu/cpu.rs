@@ -438,7 +438,7 @@ impl Cpu {
             }
             0x4D => {
                 ld::rr_cl(self);
-                2
+                1
             }
             78 => {
                 ld::r_hlm_c(self);
@@ -900,12 +900,12 @@ impl Cpu {
                 stack::retnz(self);
                 1
             }
-            193 => {
+            0xC1 => {
                 stack::popbc(self);
-                1
+                3
             }
-            0xc2 => stack::jpnznn(self),
-            0xc3 => {
+            0xC2 => stack::jpnznn(self),
+            0xC3 => {
                 stack::jpnn(self);
                 4
             }
@@ -913,9 +913,9 @@ impl Cpu {
                 stack::callnznn(self);
                 1
             }
-            197 => {
+            0xC5 => {
                 stack::pushbc(self);
-                1
+                4
             }
             0xC6 => {
                 data::addn(self);
@@ -935,7 +935,7 @@ impl Cpu {
             0xCC => stack::callznn(self),
             0xCD => {
                 stack::callnn(self);
-                2
+                6
             }
             206 => {
                 data::adcn(self);
@@ -994,7 +994,7 @@ impl Cpu {
                 stack::rst(self, 0x18);
                 4
             }
-            0xe0 => {
+            0xE0 => {
                 ld::ion_a(self);
                 3
             }
@@ -1026,7 +1026,7 @@ impl Cpu {
                 stack::jphl(self);
                 1
             }
-            0xea => {
+            0xEA => {
                 ld::mm_a(self);
                 4
             }
@@ -1038,7 +1038,7 @@ impl Cpu {
                 stack::rst(self, 0x28);
                 4
             }
-            0xf0 => {
+            0xF0 => {
                 ld::aion(self);
                 3
             }
@@ -1098,7 +1098,7 @@ impl Cpu {
                     op, op, op
                 );
                 self.stop = 1;
-                0
+                panic!("{:#06x} not implemented", op);
             }
         }
     }
