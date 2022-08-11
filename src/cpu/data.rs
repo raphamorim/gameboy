@@ -2,6 +2,7 @@ use crate::cpu::cpu::Cpu;
 use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 
 pub fn addr_b(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     cpu.registers.a += cpu.registers.b;
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -10,6 +11,7 @@ pub fn addr_b(cpu: &mut Cpu) {
     cpu.registers.a &= 255;
 }
 pub fn addr_c(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     cpu.registers.a += cpu.registers.c;
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -18,6 +20,7 @@ pub fn addr_c(cpu: &mut Cpu) {
     cpu.registers.a &= 255;
 }
 pub fn addr_d(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     cpu.registers.a += cpu.registers.d;
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -26,6 +29,7 @@ pub fn addr_d(cpu: &mut Cpu) {
     cpu.registers.a &= 255;
 }
 pub fn addr_e(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     cpu.registers.a += cpu.registers.e;
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -34,6 +38,7 @@ pub fn addr_e(cpu: &mut Cpu) {
     cpu.registers.a &= 255;
 }
 pub fn addr_h(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     cpu.registers.a += cpu.registers.h;
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -42,6 +47,7 @@ pub fn addr_h(cpu: &mut Cpu) {
     cpu.registers.a &= 255;
 }
 pub fn addr_l(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     cpu.registers.a += cpu.registers.l;
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -50,6 +56,7 @@ pub fn addr_l(cpu: &mut Cpu) {
     cpu.registers.a &= 255;
 }
 pub fn addr_a(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     cpu.registers.a += cpu.registers.a;
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -59,6 +66,7 @@ pub fn addr_a(cpu: &mut Cpu) {
 }
 pub fn addhl(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    panic!("fix f attribution");
     cpu.registers.a += cpu.memory.rb(addr);
     cpu.fz(cpu.registers.a, 0);
     if cpu.registers.a > u8::MAX {
@@ -99,6 +107,7 @@ pub fn addhlde(cpu: &mut Cpu) {
     cpu.registers.l = (r & 0x00FF) as u8;
 }
 pub fn addhlhl(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     let mut hl: u16 = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
     hl += ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
 
@@ -111,6 +120,7 @@ pub fn addhlhl(cpu: &mut Cpu) {
     }
 }
 pub fn addhlsp(cpu: &mut Cpu) {
+    panic!("fix f attribution");
     let mut hl = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
     hl += cpu.registers.sp;
     if hl > 65535 {

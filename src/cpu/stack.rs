@@ -40,6 +40,7 @@ pub fn pophl(c: &mut Cpu) {
     c.registers.sp += 1;
 }
 pub fn popaf(c: &mut Cpu) {
+    panic!("fix f attribution");
     c.registers.f = c.memory.rb(c.registers.sp);
     c.registers.sp += 1;
     c.registers.a = c.memory.rb(c.registers.sp);
@@ -181,13 +182,15 @@ pub fn callncnn(c: &mut Cpu) {
         c.registers.pc += 2;
     }
 }
-pub fn callcnn(c: &mut Cpu) {
-    if (c.registers.f & 0x10) == 0x10 {
+pub fn callcnn(c: &mut Cpu) -> u32 {
+    if c.registers.getflag(C) {
         c.registers.sp -= 2;
         c.memory.ww(c.registers.sp, c.registers.pc + 2);
-        c.registers.pc = c.memory.rw(c.registers.pc);
+        c.registers.pc = c.get_word();
+        6
     } else {
         c.registers.pc += 2;
+        3
     }
 }
 pub fn ret(c: &mut Cpu) {
@@ -196,7 +199,7 @@ pub fn ret(c: &mut Cpu) {
     c.registers.pc = res;
 }
 pub fn reti(c: &mut Cpu) {
-    c.registers.ime = 1;
+    c.ime = 1;
     c.registers.pc = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
 }

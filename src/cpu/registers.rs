@@ -10,7 +10,6 @@ pub struct Registers {
     pub e: u8,
     pub h: u8,
     pub l: u8,
-    pub ime: u8,
 
     // The flags register (F)
     // it automatically calculates certain bits, or flags, based on the result of the last operation.
@@ -19,6 +18,14 @@ pub struct Registers {
     // 16-bit registers
     pub pc: u16,
     pub sp: u16,
+}
+
+#[derive(Copy, Clone)]
+pub enum CpuFlag {
+    C = 0b00010000,
+    H = 0b00100000,
+    N = 0b01000000,
+    Z = 0b10000000,
 }
 
 impl fmt::Display for Registers {
@@ -45,7 +52,6 @@ impl Registers {
             l: 0x4d,
             pc: 0x0100,
             sp: 0xFFFE,
-            ime: 0,
         }
     }
     pub fn flag(&mut self, flags: CpuFlag, set: bool) {
@@ -61,14 +67,6 @@ impl Registers {
         let mask = flags as u8;
         self.f & mask > 0
     }
-}
-
-#[derive(Copy, Clone)]
-pub enum CpuFlag {
-    C = 0b00010000,
-    H = 0b00100000,
-    N = 0b01000000,
-    Z = 0b10000000,
 }
 
 // #[cfg(test)]

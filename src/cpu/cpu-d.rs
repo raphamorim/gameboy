@@ -25,6 +25,9 @@ pub struct Cpu {
 
     pub reg: Registers, // registers
     pub memory: Mmu,
+
+    // To debug
+    _executed_operations: Vec<u8>,
 }
 
 impl Cpu {
@@ -33,7 +36,8 @@ impl Cpu {
             reg: Registers::new(),
             memory: memory,
             ime: 0, halt: 0, stop: 0,
-            ticks: 0, delay: 0
+            ticks: 0, delay: 0,
+            _executed_operations: Vec::new(),
         }
     }
 
@@ -47,6 +51,20 @@ impl Cpu {
         self.reg.sp -= 2;
         self.memory.ww(self.reg.sp, self.reg.pc);
         self.reg.pc = i;
+    }
+
+    fn mut_find_or_insert<T: PartialEq>(vec: &mut Vec<T>, val: T) -> &mut T {
+        if let Some(i) = vec.iter().position(|each| *each == val) {
+            &mut vec[i]
+        } else {
+            vec.push(val);
+            vec.last_mut().unwrap()
+        }
+    }
+    pub fn debug(&mut self, op: u8) {
+        Cpu::mut_find_or_insert(&mut self._executed_operations, op);
+        println!("{} {:#01x} {}", op, op, format!("{:?}", self.reg));
+        println!("{:?}", self._executed_operations);
     }
 
     pub fn exec(&mut self) -> u32 {
@@ -124,7 +142,8 @@ impl Cpu {
 
     fn call(&mut self) -> u32 {
         let opcode = self.fetchbyte();
-        // println!("{:?} {:?}", opcode, self.reg);
+        println!("{:?} {:?}", opcode, self.reg);
+        self.debug(opcode);
         match opcode {
             0x00 => { 1 },
             0x01 => { let v = self.fetchword(); self.reg.setbc(v); 3 },
@@ -191,7 +210,7 @@ impl Cpu {
             0x3A => { self.reg.a = self.memory.rb(self.reg.hld()); 2 },
             0x3B => { self.reg.sp = self.reg.sp.wrapping_sub(1); 2 },
             0x3C => { self.reg.a = self.alu_inc(self.reg.a); 1 },
-            0x3D => { self.reg.a = self.alu_dec(self.reg.a); 1 },
+            0x3D => { self.reg.a = self.alu_dec(self.reg.a); panic!("oi"); 1 },
             0x3E => { self.reg.a = self.fetchbyte(); 2 },
             0x3F => { let v = !self.reg.getflag(C); self.reg.flag(C, v); self.reg.flag(H, false); self.reg.flag(N, false); 1 },
             0x40 => { 1 },

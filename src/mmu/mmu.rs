@@ -479,6 +479,10 @@ impl Mmu {
         }
     }
 
+    pub fn debug(&mut self) {
+        println!("{:?}", self.rambank);
+    }
+
     pub fn load_rom(&mut self, rom: Vec<u8>) {
         self.rom = rom;
         // See http://nocash.emubase.de/pandocs.htm#thecartridgeheader for

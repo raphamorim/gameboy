@@ -1,7 +1,7 @@
 mod bit;
 pub mod cpu;
 mod data;
-// pub mod reg;
+// mod reg;
 mod ld;
 mod misc;
 mod registers;

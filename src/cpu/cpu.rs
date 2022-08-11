@@ -29,13 +29,12 @@ impl Cpu {
     pub fn new(memory: Mmu) -> Self {
         Cpu {
             registers: Registers::new(),
-            halt: 0,
-            ticks: 0,
             memory: memory,
-            stop: 0,
             ime: 0,
+            halt: 0,
+            stop: 0,
+            ticks: 0,
             delay: 0,
-
             _executed_operations: Vec::new(),
         }
     }
@@ -63,14 +62,14 @@ impl Cpu {
         w
     }
     pub fn fz(&mut self, i: u8, cond: u8) {
-        self.registers.f = 0;
+        // self.registers.f = 0;
         if !((i & 255) > 0) {
-            self.registers.f |= 128;
+            // self.registers.f |= 128;
         }
         if cond > 0 {
-            self.registers.f |= 0x40;
+            // self.registers.f |= 0x40;
         } else {
-            self.registers.f |= 0;
+            // self.registers.f |= 0;
         }
     }
     pub fn exec(&mut self) -> u32 {
@@ -87,7 +86,7 @@ impl Cpu {
         }
 
         let mut ticks = if self.halt == 0 && self.stop == 0 {
-            self.exec_operation() as u32
+            self.exec_operation()
         } else {
             if self.stop != 0 && self.memory.speedswitch {
                 self.memory.switch_speed();
@@ -368,15 +367,15 @@ impl Cpu {
                 data::decsp(self);
                 1
             }
-            0x3c => {
+            0x3C => {
                 data::incr_a(self);
                 1
             }
-            0x3d => {
+            0x3D => {
                 data::decr_a(self);
                 1
             }
-            0x3e => {
+            0x3E => {
                 ld::rr_a(self);
                 2
             }
@@ -982,10 +981,7 @@ impl Cpu {
                 stack::jpcnn(self);
                 1
             }
-            220 => {
-                stack::callcnn(self);
-                1
-            }
+            0xDC => stack::callcnn(self),
             0xDE => {
                 data::sbcn(self);
                 2
