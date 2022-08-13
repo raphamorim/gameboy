@@ -143,7 +143,7 @@ impl Cpu {
 
     fn call(&mut self) -> u32 {
         let opcode = self.fetchbyte();
-        self.debug(opcode);
+        // self.debug(opcode);
         match opcode {
             0x00 => { 1 },
             0x01 => { let v = self.fetchword(); self.reg.setbc(v); 3 },
@@ -412,6 +412,7 @@ impl Cpu {
 
     fn call_cb(&mut self) -> u32 {
         let opcode = self.fetchbyte();
+        println!("{:?}", opcode);
         match opcode {
             0x00 => { self.reg.b = self.alu_rlc(self.reg.b); 2 },
             0x01 => { self.reg.c = self.alu_rlc(self.reg.c); 2 },

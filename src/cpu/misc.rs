@@ -1,7 +1,19 @@
 use crate::cpu::cpu::Cpu;
 use crate::cpu::registers::CpuFlag::{C, H, N, Z};
-use crate::cpu::{bit, swap};
 
+pub fn bit(cpu: &mut Cpu, a: u8, b: u8) -> u32 {
+    let r = a & (1 << (b as u32)) == 0;
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(H, true);
+    cpu.registers.flag(Z, r);
+    2
+}
+pub fn bit_m(cpu: &mut Cpu, i: u8) -> u32 {
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
+    let value = cpu.memory.rb(addr);
+    bit(cpu, value, i);
+    3
+}
 pub fn rla(cpu: &mut Cpu) {
     let mut ci = 0;
     let mut co = 0;
@@ -49,9 +61,65 @@ pub fn rrca(cpu: &mut Cpu) {
     cpu.registers.a = (cpu.registers.a >> 1) + ci;
     cpu.registers.f = (cpu.registers.f & 0xEF) + co;
 }
-
+pub fn r_b(cpu: &mut Cpu) {
+    let r = cpu.registers.b;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.b = (r >> 4) | (r << 4);
+}
+pub fn r_c(cpu: &mut Cpu) {
+    let r = cpu.registers.c;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.c = (r >> 4) | (r << 4);
+}
+pub fn r_d(cpu: &mut Cpu) {
+    let r = cpu.registers.d;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.d = (r >> 4) | (r << 4);
+}
+pub fn r_e(cpu: &mut Cpu) {
+    let r = cpu.registers.e;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.e = (r >> 4) | (r << 4);
+}
+pub fn r_h(cpu: &mut Cpu) {
+    let r = cpu.registers.h;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.h = (r >> 4) | (r << 4);
+}
+pub fn r_l(cpu: &mut Cpu) {
+    let r = cpu.registers.l;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.l = (r >> 4) | (r << 4);
+}
+pub fn r_a(cpu: &mut Cpu) {
+    let r = cpu.registers.a;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = (r >> 4) | (r << 4);
+}
 pub fn cbmap(cpu: &mut Cpu) -> u32 {
     let op = cpu.get_byte();
+    println!("cbmap {:?}", op);
     match op {
         // CB00
         // 0 => cpu.RLCr_b,
@@ -158,31 +226,35 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
         // 45 => cpu.SRAr_l,
         // 47 => { cpu.SRAr_a; 2 },
         48 => {
-            swap::r_b(cpu);
+            r_b(cpu);
             2
         }
         49 => {
-            swap::r_c(cpu);
+            r_c(cpu);
             2
         }
         50 => {
-            swap::r_d(cpu);
+            r_d(cpu);
             2
         }
         51 => {
-            swap::r_e(cpu);
+            r_e(cpu);
             2
         }
         52 => {
-            swap::r_h(cpu);
+            r_h(cpu);
             2
         }
         53 => {
-            swap::r_l(cpu);
+            r_l(cpu);
             2
         }
+        54 => {
+            // let a = self.reg.hl(); let v = self.memory.rb(a); let v2 = self.alu_swap(v); self.memory.wb(a, v2); 4
+            4
+        }
         55 => {
-            swap::r_a(cpu);
+            r_a(cpu);
             2
         }
         // 56 => { cpu.SRLr_b; 2 },
@@ -225,268 +297,75 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             cpu.registers.a = r;
             2
         }
-        64 => {
-            bit::bit0b(cpu);
-            2
-        }
-        65 => {
-            bit::bit0c(cpu);
-            2
-        }
-        66 => {
-            bit::bit0d(cpu);
-            2
-        }
-        67 => {
-            bit::bit0e(cpu);
-            2
-        }
-        68 => {
-            bit::bit0h(cpu);
-            2
-        }
-        69 => {
-            bit::bit0l(cpu);
-            2
-        }
-        70 => {
-            bit::bit0m(cpu);
-            2
-        }
-        71 => {
-            bit::bit0a(cpu);
-            2
-        }
-        72 => {
-            bit::bit1b(cpu);
-            2
-        }
-        73 => {
-            bit::bit1c(cpu);
-            2
-        }
-        74 => {
-            bit::bit1d(cpu);
-            2
-        }
-        75 => {
-            bit::bit1e(cpu);
-            2
-        }
-        76 => {
-            bit::bit1h(cpu);
-            2
-        }
-        77 => {
-            bit::bit1l(cpu);
-            2
-        }
-        78 => {
-            bit::bit1m(cpu);
-            2
-        }
-        79 => {
-            bit::bit1a(cpu);
-            2
-        }
-        80 => {
-            bit::bit2b(cpu);
-            2
-        }
-        81 => {
-            bit::bit2c(cpu);
-            2
-        }
-        82 => {
-            bit::bit2d(cpu);
-            2
-        }
-        83 => {
-            bit::bit2e(cpu);
-            2
-        }
-        84 => {
-            bit::bit2h(cpu);
-            2
-        }
-        85 => {
-            bit::bit2l(cpu);
-            2
-        }
-        86 => {
-            bit::bit2m(cpu);
-            2
-        }
-        87 => {
-            bit::bit2a(cpu);
-            2
-        }
-        88 => {
-            bit::bit3b(cpu);
-            2
-        }
-        89 => {
-            bit::bit3c(cpu);
-            2
-        }
-        90 => {
-            bit::bit3d(cpu);
-            2
-        }
-        91 => {
-            bit::bit3e(cpu);
-            2
-        }
-        92 => {
-            bit::bit3h(cpu);
-            2
-        }
-        93 => {
-            bit::bit3l(cpu);
-            2
-        }
-        94 => {
-            bit::bit3m(cpu);
-            2
-        }
-        95 => {
-            bit::bit3a(cpu);
-            2
-        }
-        96 => {
-            bit::bit4b(cpu);
-            2
-        }
-        97 => {
-            bit::bit4c(cpu);
-            2
-        }
-        98 => {
-            bit::bit4d(cpu);
-            2
-        }
-        99 => {
-            bit::bit4e(cpu);
-            2
-        }
-        100 => {
-            bit::bit4h(cpu);
-            2
-        }
-        101 => {
-            bit::bit4l(cpu);
-            2
-        }
-        102 => {
-            bit::bit4m(cpu);
-            2
-        }
-        103 => {
-            bit::bit4a(cpu);
-            2
-        }
-        104 => {
-            bit::bit5b(cpu);
-            2
-        }
-        105 => {
-            bit::bit5c(cpu);
-            2
-        }
-        106 => {
-            bit::bit5d(cpu);
-            2
-        }
-        107 => {
-            bit::bit5e(cpu);
-            2
-        }
-        108 => {
-            bit::bit5h(cpu);
-            2
-        }
-        109 => {
-            bit::bit5l(cpu);
-            2
-        }
-        110 => {
-            bit::bit5m(cpu);
-            2
-        }
-        111 => {
-            bit::bit5a(cpu);
-            2
-        }
-        112 => {
-            bit::bit6b(cpu);
-            2
-        }
-        113 => {
-            bit::bit6c(cpu);
-            2
-        }
-        114 => {
-            bit::bit6d(cpu);
-            2
-        }
-        115 => {
-            bit::bit6e(cpu);
-            2
-        }
-        116 => {
-            bit::bit6h(cpu);
-            2
-        }
-        117 => {
-            bit::bit6l(cpu);
-            2
-        }
-        118 => {
-            bit::bit6m(cpu);
-            2
-        }
-        119 => {
-            bit::bit6a(cpu);
-            2
-        }
-        120 => {
-            bit::bit7b(cpu);
-            2
-        }
-        121 => {
-            bit::bit7c(cpu);
-            2
-        }
-        122 => {
-            bit::bit7d(cpu);
-            2
-        }
-        123 => {
-            bit::bit7e(cpu);
-            2
-        }
-        124 => {
-            bit::bit7h(cpu);
-            2
-        }
-        125 => {
-            bit::bit7l(cpu);
-            2
-        }
-        126 => {
-            bit::bit7m(cpu);
-            2
-        }
-        127 => {
-            bit::bit7a(cpu);
-            2
-        }
+        64 => bit(cpu, cpu.registers.b, 0),
+        65 => bit(cpu, cpu.registers.c, 0),
+        66 => bit(cpu, cpu.registers.d, 0),
+        67 => bit(cpu, cpu.registers.e, 0),
+        68 => bit(cpu, cpu.registers.h, 0),
+        69 => bit(cpu, cpu.registers.l, 0),
+        70 => bit_m(cpu, 0),
+        71 => bit(cpu, cpu.registers.a, 0),
+        72 => bit(cpu, cpu.registers.b, 1),
+        73 => bit(cpu, cpu.registers.c, 1),
+        74 => bit(cpu, cpu.registers.d, 1),
+        75 => bit(cpu, cpu.registers.e, 1),
+        76 => bit(cpu, cpu.registers.h, 1),
+        77 => bit(cpu, cpu.registers.l, 1),
+        78 => bit_m(cpu, 1),
+        79 => bit(cpu, cpu.registers.a, 1),
+        80 => bit(cpu, cpu.registers.b, 2),
+        81 => bit(cpu, cpu.registers.c, 2),
+        82 => bit(cpu, cpu.registers.d, 2),
+        83 => bit(cpu, cpu.registers.e, 2),
+        84 => bit(cpu, cpu.registers.h, 2),
+        85 => bit(cpu, cpu.registers.l, 2),
+        86 => bit_m(cpu, 2),
+        87 => bit(cpu, cpu.registers.a, 2),
+        88 => bit(cpu, cpu.registers.b, 3),
+        89 => bit(cpu, cpu.registers.c, 3),
+        90 => bit(cpu, cpu.registers.d, 3),
+        91 => bit(cpu, cpu.registers.e, 3),
+        92 => bit(cpu, cpu.registers.h, 3),
+        93 => bit(cpu, cpu.registers.l, 3),
+        94 => bit_m(cpu, 3),
+        95 => bit(cpu, cpu.registers.a, 3),
+        96 => bit(cpu, cpu.registers.b, 4),
+        97 => bit(cpu, cpu.registers.c, 4),
+        98 => bit(cpu, cpu.registers.d, 4),
+        99 => bit(cpu, cpu.registers.e, 4),
+        100 => bit(cpu, cpu.registers.h, 4),
+        101 => bit(cpu, cpu.registers.l, 4),
+        102 => bit_m(cpu, 4),
+        103 => bit(cpu, cpu.registers.a, 4),
+        104 => bit(cpu, cpu.registers.b, 5),
+        105 => bit(cpu, cpu.registers.c, 5),
+        106 => bit(cpu, cpu.registers.d, 5),
+        107 => bit(cpu, cpu.registers.e, 5),
+        108 => bit(cpu, cpu.registers.h, 5),
+        109 => bit(cpu, cpu.registers.l, 5),
+        110 => bit_m(cpu, 5),
+        111 => bit(cpu, cpu.registers.a, 5),
+        112 => bit(cpu, cpu.registers.b, 6),
+        113 => bit(cpu, cpu.registers.c, 6),
+        114 => bit(cpu, cpu.registers.d, 6),
+        115 => bit(cpu, cpu.registers.e, 6),
+        116 => bit(cpu, cpu.registers.h, 6),
+        117 => bit(cpu, cpu.registers.l, 6),
+        118 => bit_m(cpu, 6),
+        119 => bit(cpu, cpu.registers.a, 6),
+        120 => bit(cpu, cpu.registers.b, 7),
+        121 => bit(cpu, cpu.registers.c, 7),
+        122 => bit(cpu, cpu.registers.d, 7),
+        123 => bit(cpu, cpu.registers.e, 7),
+        124 => bit(cpu, cpu.registers.h, 7),
+        125 => bit(cpu, cpu.registers.l, 7),
+        126 => bit_m(cpu, 7),
+        127 => bit(cpu, cpu.registers.a, 7),
         _ => {
             println!(
-                "cbmap -> Instruction at {:#01x} | {} not implemented, stopping.",
+                "cbmap -> Instruction at {:#01x} | {} not implemented",
                 op, op
             );
-            cpu.stop = 1;
             0
         }
     }

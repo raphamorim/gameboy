@@ -50,7 +50,7 @@ impl Cpu {
         Cpu::mut_find_or_insert(&mut self._executed_operations, op);
         // println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
         println!("{} {}", op, format!("{:?}", self.registers));
-        println!("{:?}", self._executed_operations);
+        // println!("{:?}", self._executed_operations);
     }
     pub fn get_byte(&mut self) -> u8 {
         let pc = self.memory.rb(self.registers.pc);
@@ -62,16 +62,17 @@ impl Cpu {
         self.registers.pc += 2;
         w
     }
-    pub fn fz(&mut self, i: u8, cond: u8) {
+    pub fn fz(&mut self, _i: u8, _cond: u8) {
+        panic!("fix it");
         // self.registers.f = 0;
-        if !((i & 255) > 0) {
-            // self.registers.f |= 128;
-        }
-        if cond > 0 {
-            // self.registers.f |= 0x40;
-        } else {
-            // self.registers.f |= 0;
-        }
+        // if !((i & 255) > 0) {
+        //     // self.registers.f |= 128;
+        // }
+        // if cond > 0 {
+        //     // self.registers.f |= 0x40;
+        // } else {
+        //     // self.registers.f |= 0;
+        // }
     }
     pub fn exec(&mut self) -> u32 {
         match self.delay {
@@ -130,21 +131,22 @@ impl Cpu {
             }
         }
 
-        match self.memory.speed {
-            Speed::Normal => {
-                // ticks *= 4;
-            }
-            Speed::Double => {
-                ticks *= 2;
-            }
-        }
+        // match self.memory.speed {
+        //     Speed::Normal => {
+        //         // ticks *= 4;
+        //     }
+        //     Speed::Double => {
+        //         ticks *= 2;
+        //     }
+        // }
         self.ticks += ticks;
         return ticks;
     }
 
     fn exec_operation(&mut self) -> u32 {
         let op = self.get_byte();
-        self.debug(op);
+        // self.debug(op);
+        // [0, 195, 49, 62, 224, 151, 234, 1, 205, 33, 22, 30, 240, 230, 32, 10, 34, 3, 21, 194, 29, 201, 197, 71, 14, 9, 193, 68, 77, 213, 25, 209, 6, 5, 35, 251, 243, 245, 61, 229, 42, 254, 40, 225, 250, 60, 241, 217, 47, 203, 176, 160, 120, 126, 202]
         match op {
             0x00 => 1,
             0x01 => {
@@ -302,7 +304,7 @@ impl Cpu {
                 data::addhlhl(self);
                 1
             }
-            0x2a => {
+            0x2A => {
                 ld::ahli(self);
                 2
             }
@@ -322,7 +324,7 @@ impl Cpu {
                 ld::rr_l(self);
                 1
             }
-            0x2f => {
+            0x2F => {
                 data::cpl(self);
                 1
             }
@@ -608,7 +610,7 @@ impl Cpu {
                 ld::hlmr_a(self);
                 1
             }
-            120 => {
+            0x78 => {
                 ld::rr_ab(self);
                 1
             }
@@ -632,19 +634,19 @@ impl Cpu {
                 ld::rr_al(self);
                 1
             }
-            126 => {
+            0x7E => {
                 ld::r_hlm_a(self);
-                1
+                2
             }
             0x7F => {
                 // ld::rr_aa(self);
                 1
             }
-            128 => {
+            0x80 => {
                 data::addr_b(self);
                 1
             }
-            129 => {
+            0x81 => {
                 data::addr_c(self);
                 1
             }
@@ -652,7 +654,7 @@ impl Cpu {
                 data::addr_d(self);
                 1
             }
-            131 => {
+            0x83 => {
                 data::addr_e(self);
                 1
             }
@@ -704,7 +706,7 @@ impl Cpu {
                 data::adcr_a(self);
                 1
             }
-            144 => {
+            0x90 => {
                 data::subr_b(self);
                 1
             }
@@ -768,7 +770,7 @@ impl Cpu {
                 data::sbcr_a(self);
                 1
             }
-            160 => {
+            0xA0 => {
                 data::andr_b(self);
                 1
             }
@@ -832,7 +834,7 @@ impl Cpu {
                 data::xorr_a(self);
                 1
             }
-            176 => {
+            0xB0 => {
                 data::orr_b(self);
                 1
             }
@@ -974,9 +976,9 @@ impl Cpu {
                 stack::retc(self);
                 1
             }
-            217 => {
+            0xD9 => {
                 stack::reti(self);
-                1
+                4
             }
             218 => {
                 stack::jpcnn(self);
@@ -995,17 +997,17 @@ impl Cpu {
                 ld::ion_a(self);
                 3
             }
-            225 => {
+            0xE1 => {
                 stack::pophl(self);
-                1
+                3
             }
             226 => {
                 ld::ioca(self);
                 1
             }
-            229 => {
+            0xE5 => {
                 stack::pushhl(self);
-                1
+                4
             }
             0xE6 => {
                 data::andn(self);
@@ -1068,9 +1070,9 @@ impl Cpu {
                 ld::hlspn(self);
                 1
             }
-            250 => {
+            0xFA => {
                 ld::amm(self);
-                1
+                4
             }
             0xFB => {
                 if self.delay == 2 || self.memory.rb(self.registers.pc) == 0x76 {

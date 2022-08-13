@@ -1,62 +1,62 @@
 pub fn r_hlm_b(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.b = cpu.memory.rb(addr);
 }
 pub fn r_hlm_c(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.c = cpu.memory.rb(addr);
 }
 pub fn r_hlm_d(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.d = cpu.memory.rb(addr);
 }
 pub fn r_hlm_e(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.e = cpu.memory.rb(addr);
 }
 pub fn r_hlm_h(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.h = cpu.memory.rb(addr);
 }
 pub fn r_hlm_l(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.l = cpu.memory.rb(addr);
 }
 pub fn r_hlm_a(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.a = cpu.memory.rb(addr);
 }
 pub fn hlmr_b(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, cpu.registers.b);
 }
 pub fn hlmr_c(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, cpu.registers.c);
 }
 pub fn hlmr_d(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, cpu.registers.d);
 }
 pub fn hlmr_e(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, cpu.registers.e);
 }
 pub fn hlmr_h(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, cpu.registers.h);
 }
 pub fn hlmr_l(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, cpu.registers.l);
 }
 pub fn hlmr_a(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, cpu.registers.a);
 }
 pub fn hlmn(cpu: &mut Cpu) {
     let value = cpu.memory.rb(cpu.registers.pc);
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.memory.wb(addr, value);
     cpu.registers.pc += 1;
 }
@@ -110,11 +110,10 @@ pub fn hlia(cpu: &mut Cpu) {
     cpu.registers.l = (hl & 0x00FF) as u8;
 }
 pub fn ahli(cpu: &mut Cpu) {
-    let mut addr = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    let addr = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    cpu.registers.h = ((addr + 1) >> 8) as u8;
+    cpu.registers.l = ((addr + 1) & 0x00FF) as u8;
     cpu.registers.a = cpu.memory.rb(addr);
-    addr += 1;
-    cpu.registers.h = (addr >> 8) as u8;
-    cpu.registers.l = (addr & 0x00FF) as u8;
 }
 pub fn hld_a(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
@@ -168,9 +167,6 @@ pub fn mmsp(cpu: &mut Cpu) {
 
 use crate::cpu::cpu::Cpu;
 
-pub fn rr_bb(cpu: &mut Cpu) {
-    cpu.registers.b = cpu.registers.b;
-}
 pub fn rr_bc(cpu: &mut Cpu) {
     cpu.registers.b = cpu.registers.c;
 }

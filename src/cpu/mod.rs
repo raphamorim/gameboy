@@ -1,9 +1,7 @@
-pub mod cpu;
-mod bit;
-mod data;
 // mod reg;
+pub mod cpu;
+mod data;
 mod ld;
 mod misc;
 mod registers;
 mod stack;
-mod swap;

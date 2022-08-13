@@ -1,5 +1,5 @@
 use crate::cpu::cpu::Cpu;
-use crate::cpu::registers::CpuFlag::{C, H, N, Z};
+use crate::cpu::registers::CpuFlag::{C, Z};
 
 pub fn pushbc(c: &mut Cpu) {
     let value = ((c.registers.b as u16) << 8) | (c.registers.c as u16);
@@ -34,10 +34,10 @@ pub fn popde(c: &mut Cpu) {
     c.registers.e = (val & 0x00FF) as u8;
 }
 pub fn pophl(c: &mut Cpu) {
-    c.registers.l = c.memory.rb(c.registers.sp);
-    c.registers.sp += 1;
-    c.registers.h = c.memory.rb(c.registers.sp);
-    c.registers.sp += 1;
+    let value = c.memory.rw(c.registers.sp);
+    c.registers.sp += 2;
+    c.registers.h = (value >> 8) as u8;
+    c.registers.l = (value & 0x00FF) as u8;
 }
 pub fn popaf(c: &mut Cpu) {
     let res = c.memory.rw(c.registers.sp);
@@ -86,7 +86,6 @@ pub fn jpcnn(c: &mut Cpu) {
         c.registers.pc += 2;
     }
 }
-
 pub fn jrn(c: &mut Cpu) {
     let n = c.get_byte() as i8;
     c.registers.pc = ((c.registers.pc as u32 as i32) + (n as i32)) as u16;
@@ -194,14 +193,15 @@ pub fn callcnn(c: &mut Cpu) -> u32 {
     }
 }
 pub fn ret(c: &mut Cpu) {
-    let res = c.memory.rw(c.registers.sp);
+    let val = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
-    c.registers.pc = res;
+    c.registers.pc = val;
 }
 pub fn reti(c: &mut Cpu) {
-    c.ime = 1;
-    c.registers.pc = c.memory.rw(c.registers.sp);
+    let val = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
+    c.registers.pc = val;
+    c.ime = 1;
 }
 pub fn retnz(c: &mut Cpu) {
     if (c.registers.f & 0x80) == 0x00 {
