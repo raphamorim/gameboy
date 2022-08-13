@@ -131,14 +131,14 @@ impl Cpu {
             }
         }
 
-        // match self.memory.speed {
-        //     Speed::Normal => {
-        //         // ticks *= 4;
-        //     }
-        //     Speed::Double => {
-        //         ticks *= 2;
-        //     }
-        // }
+        match self.memory.speed {
+            Speed::Normal => {
+                // ticks *= 4;
+            }
+            Speed::Double => {
+                ticks *= 2;
+            }
+        }
         self.ticks += ticks;
         return ticks;
     }
@@ -146,7 +146,6 @@ impl Cpu {
     fn exec_operation(&mut self) -> u32 {
         let op = self.get_byte();
         // self.debug(op);
-        // [0, 195, 49, 62, 224, 151, 234, 1, 205, 33, 22, 30, 240, 230, 32, 10, 34, 3, 21, 194, 29, 201, 197, 71, 14, 9, 193, 68, 77, 213, 25, 209, 6, 5, 35, 251, 243, 245, 61, 229, 42, 254, 40, 225, 250, 60, 241, 217, 47, 203, 176, 160, 120, 126, 202]
         match op {
             0x00 => 1,
             0x01 => {
@@ -160,7 +159,7 @@ impl Cpu {
             0x03 => {
                 data::incbc(self);
                 2
-            } // todo
+            }
             0x04 => {
                 data::incr_b(self);
                 1

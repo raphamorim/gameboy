@@ -236,6 +236,14 @@ Tthis section is for personal purposes.
 
 <img src="resources/10-august-2022.png" width="400" />
 
+#### Sun 14 August 2022 - d42c123aaf1f9632812be0061246bc3335cc71a7
+
+Operations covered: `0x00, 0xC3, 0x31, 0x3E, 0xE0, 0x97, 0xEA, 0x01, 0xCD, 0x21, 0x16, 0x1E, 0xF0, 0xE6, 0x20, 0xA, 0x22, 0x03, 21, 194, 29, 201, 197, 0x47, 14, 0x09, 193, 68, 77, 213, 25, 209, 0x06, 0x05, 35, 251, 243, 245, 61, 229, 42, 254, 40, 225, 250, 60, 241, 217, 47, 203, 176, 160, 120, 126, 202`
+
+205's operations: `0x37, 0x77, 0x7F, 0x6F, 0x67, 0x47, 0x4F`
+
+<img src="resources/10-august-2022.png" width="400" />
+
 # Resources & References
 
 - http://bgb.bircd.org/pandocs.htm

@@ -856,17 +856,20 @@ pub fn dechlm(cpu: &mut Cpu) {
     cpu.memory.wb(addr, r);
 }
 pub fn incbc(cpu: &mut Cpu) {
-    let val = ((cpu.registers.b as u16) << 8) | (cpu.registers.c as u16).wrapping_add(1);
+    let mut val = ((cpu.registers.b as u16) << 8) | (cpu.registers.c as u16);
+    val = val.wrapping_add(1);
     cpu.registers.b = (val >> 8) as u8;
     cpu.registers.c = (val & 0x00FF) as u8;
 }
 pub fn incde(cpu: &mut Cpu) {
-    let val = ((cpu.registers.d as u16) << 8) | (cpu.registers.e as u16).wrapping_add(1);
+    let mut val = ((cpu.registers.d as u16) << 8) | (cpu.registers.e as u16);
+    val = val.wrapping_add(1);
     cpu.registers.d = (val >> 8) as u8;
     cpu.registers.e = (val & 0x00FF) as u8;
 }
 pub fn inchl(cpu: &mut Cpu) {
-    let val = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16).wrapping_add(1);
+    let mut val = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    val = val.wrapping_add(1);
     cpu.registers.h = (val >> 8) as u8;
     cpu.registers.l = (val & 0x00FF) as u8;
 }

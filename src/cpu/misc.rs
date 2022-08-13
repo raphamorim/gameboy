@@ -119,7 +119,7 @@ pub fn r_a(cpu: &mut Cpu) {
 }
 pub fn cbmap(cpu: &mut Cpu) -> u32 {
     let op = cpu.get_byte();
-    println!("cbmap {:?}", op);
+    // println!("cbmap {:?}", op);
     match op {
         // CB00
         // 0 => cpu.RLCr_b,
