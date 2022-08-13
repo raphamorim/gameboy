@@ -217,11 +217,13 @@ make start
 - [x] Browser
     - [x] Create server using port `3000`
 - [ ] `.gb`
+- [ ] Extend Renderer to render on web with WASM
 - [ ] Keyboard handlers
+- [ ] Support `.cgb` rom (Game Boy Color)
 - [ ] Audio
     - [ ] Desktop
     - [ ] Web
-- [ ] Support `.cgb` rom (Game Boy Color)
+- [ ] Tests for classic Gameboy `/tests`
 - [ ] Support `.sgb` rom (Super Game Boy)
 
 # Development Diary
