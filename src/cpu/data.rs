@@ -814,7 +814,7 @@ pub fn decr_a(cpu: &mut Cpu) {
     cpu.registers.flag(Z, r == 0);
     cpu.registers.flag(H, (a & 0x0F) == 0);
     cpu.registers.flag(N, true);
-    cpu.registers.h = r;
+    cpu.registers.a = r;
 }
 pub fn dechlm(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);

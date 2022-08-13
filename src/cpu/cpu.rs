@@ -48,7 +48,8 @@ impl Cpu {
     }
     pub fn debug(&mut self, op: u8) {
         Cpu::mut_find_or_insert(&mut self._executed_operations, op);
-        println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
+        // println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
+        println!("{} {}", op, format!("{:?}", self.registers));
         println!("{:?}", self._executed_operations);
     }
     pub fn get_byte(&mut self) -> u8 {
@@ -143,7 +144,7 @@ impl Cpu {
 
     fn exec_operation(&mut self) -> u32 {
         let op = self.get_byte();
-        // self.debug(op);
+        self.debug(op);
         match op {
             0x00 => 1,
             0x01 => {
@@ -1038,7 +1039,7 @@ impl Cpu {
                 ld::aion(self);
                 3
             }
-            241 => {
+            0xF1 => {
                 stack::popaf(self);
                 3
             }

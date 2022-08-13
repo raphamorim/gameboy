@@ -1,5 +1,5 @@
-mod bit;
 pub mod cpu;
+mod bit;
 mod data;
 // mod reg;
 mod ld;

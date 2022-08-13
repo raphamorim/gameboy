@@ -63,8 +63,9 @@ impl Cpu {
     }
     pub fn debug(&mut self, op: u8) {
         Cpu::mut_find_or_insert(&mut self._executed_operations, op);
-        println!("{} {:#01x} {}", op, op, format!("{:?}", self.reg));
-        println!("{:?}", self._executed_operations);
+        // println!("{} {:#01x} {}", op, op, format!("{:?}", self.reg));
+        println!("{} {}", op, format!("{:?}", self.reg));
+        // println!("{:?}", self._executed_operations);
     }
 
     pub fn exec(&mut self) -> u32 {
@@ -142,7 +143,6 @@ impl Cpu {
 
     fn call(&mut self) -> u32 {
         let opcode = self.fetchbyte();
-        println!("{:?} {:?}", opcode, self.reg);
         self.debug(opcode);
         match opcode {
             0x00 => { 1 },
@@ -210,7 +210,7 @@ impl Cpu {
             0x3A => { self.reg.a = self.memory.rb(self.reg.hld()); 2 },
             0x3B => { self.reg.sp = self.reg.sp.wrapping_sub(1); 2 },
             0x3C => { self.reg.a = self.alu_inc(self.reg.a); 1 },
-            0x3D => { self.reg.a = self.alu_dec(self.reg.a); panic!("oi"); 1 },
+            0x3D => { self.reg.a = self.alu_dec(self.reg.a); 1 },
             0x3E => { self.reg.a = self.fetchbyte(); 2 },
             0x3F => { let v = !self.reg.getflag(C); self.reg.flag(C, v); self.reg.flag(H, false); self.reg.flag(N, false); 1 },
             0x40 => { 1 },

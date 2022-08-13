@@ -40,11 +40,11 @@ pub fn pophl(c: &mut Cpu) {
     c.registers.sp += 1;
 }
 pub fn popaf(c: &mut Cpu) {
-    panic!("fix f attribution");
-    c.registers.f = c.memory.rb(c.registers.sp);
-    c.registers.sp += 1;
-    c.registers.a = c.memory.rb(c.registers.sp);
-    c.registers.sp += 1;
+    let res = c.memory.rw(c.registers.sp);
+    c.registers.sp += 2;
+    let v = res & 0xFFF0;
+    c.registers.a = (v >> 8) as u8;
+    c.registers.f = (v & 0x00F0) as u8;
 }
 pub fn jpnn(c: &mut Cpu) {
     c.registers.pc = c.get_word();
