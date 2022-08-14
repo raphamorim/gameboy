@@ -1,4 +1,3 @@
-// mod reg;
 pub mod cpu;
 mod data;
 mod ld;

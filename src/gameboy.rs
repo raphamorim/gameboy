@@ -42,7 +42,8 @@ impl Gameboy {
     pub fn frame(&mut self) {
         self.cycles += 70224;
 
-        while self.cycles <= 70224 {
+        // while self.cycles <= 70224 {
+        while self.cycles <= 80000 {
             let time = self.cpu.exec();
             // println!("{:?} {:?}", self.cycles, time);
             self.cpu
