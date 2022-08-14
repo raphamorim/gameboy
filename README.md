@@ -63,12 +63,12 @@ The Game Boy has four operation buttons labeled _"A"_, _"B"_, _"SELECT"_, and _"
 pub enum Input {
     A,
     B,
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
-    START,
-    SELECT,
+    Left,
+    Right,
+    Up,
+    Down,
+    Start,
+    Select,
 }
 ```
 

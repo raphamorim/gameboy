@@ -18,33 +18,29 @@ test:
 ############################
 ######## Desktop ###########
 ############################
-d:
-#	Debug
-	make desktop-build && RUST_BACKTRACE=1 make desktop
-
-dl:
-	make desktop-build && RUST_BACKTRACE=1 make desktop >> log
-
-desktop-build:
-	cd desktop && cargo build
-
 desktop:
-#	Runs with a demo
-	./desktop/target/debug/desktop ./sample-rom.gb
+	cd ./examples/desktop && make desktop-build && RUST_BACKTRACE=1 make desktop
 
 ############################
 ######## LR35902 ###########
 ############################
+w:
+#	Debug
+	make build
+
 build:
 	wasm-pack build --debug
+
+run:
+	yarn serve
 
 ############################
 ######### Server ###########
 ############################
-web-build:
+web-server-build:
 	cd web && cargo build --release && ./target/release/web
 
-web:
+web-server-run:
 	yarn && yarn serve
 
 # TODO: migrate to Rust
