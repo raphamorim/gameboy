@@ -26,23 +26,10 @@ desktop:
 ############################
 w:
 #	Debug
-	make build
+	make build && make run
 
 build:
-	wasm-pack build --debug
+	yarn && wasm-pack build --debug
 
 run:
 	yarn serve
-
-############################
-######### Server ###########
-############################
-web-server-build:
-	cd web && cargo build --release && ./target/release/web
-
-web-server-run:
-	yarn && yarn serve
-
-# TODO: migrate to Rust
-web-rust:
-	open http://0.0.0.0:3000; cd web && ./target/release/web

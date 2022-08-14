@@ -1,9 +1,6 @@
 use crate::cpu::cpu::Cpu;
 use crate::mmu::mmu::Mmu;
 
-// pub const WIDTH: u32 = 160;
-// pub const HEIGHT: u32 = 144;
-
 pub struct Gameboy {
     cpu: Cpu,
     cycles: u32,
@@ -68,10 +65,6 @@ impl Gameboy {
         rom
     }
 
-    pub fn reset() {
-        // TODO: reset memory, cpu
-    }
-
     pub fn frame(&mut self) {
         self.cycles += 70224;
 
@@ -111,14 +104,3 @@ impl Gameboy {
     //     self.memory.input.keyup(key);
     // }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-// fn test_create_gb() {
-// let country: Country = get_countries("SE").ok().unwrap();
-// assert_eq!(country.language_code, "sv");
-// }
-// }

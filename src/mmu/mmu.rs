@@ -485,9 +485,6 @@ impl Mmu {
 
     pub fn load_rom(&mut self, rom: Vec<u8>) {
         self.rom = rom;
-        // See http://nocash.emubase.de/pandocs.htm#thecartridgeheader for
-        // header information.
-
         self.battery = true;
         self.mbc = Mbc::Unknown;
         match self.rom[0x0147] {

@@ -2,7 +2,7 @@ extern crate gl;
 extern crate glutin;
 extern crate libc;
 
-use crate::gameboy::{Gameboy};
+use crate::gameboy::Gameboy;
 use std::ffi::CString;
 use std::iter::repeat;
 use std::mem;

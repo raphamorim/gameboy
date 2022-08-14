@@ -5,5 +5,23 @@
   </head>
   <body>
     <h1>LR35902 WebAssembly</h1>
+    <p>
+      <label for="rom">Select a rom file</label>
+      <input type="file" id="rom" />
+    </p>
+    <p>
+      <button id="run">Load Game</button>
+    </p>
+    <script type="text/javascript">
+      // function load(argument) {
+      //   alert(1)
+      // }
+
+      const fileReader = new FileReader();
+      const romFile = document.getElementById("rom");
+      romFile.addEventListener("change", e => fileReader.readAsText(romFile.files[0]));
+
+
+    </script>
   </body>
 </html>
