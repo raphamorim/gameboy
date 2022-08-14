@@ -2,7 +2,7 @@ extern crate gl;
 extern crate glutin;
 extern crate libc;
 
-use crate::gameboy::{Gameboy, HEIGHT, WIDTH};
+use crate::gameboy::{Gameboy};
 use std::ffi::CString;
 use std::iter::repeat;
 use std::mem;
@@ -28,12 +28,12 @@ struct Glcx {
 }
 
 pub fn render(mut gameboy: Gameboy) {
-    let mut ratio = 1 + (WIDTH / 10);
+    let mut ratio = 1 + (gameboy.height / 10);
     let event_loop: glutin::event_loop::EventLoop<()> =
         glutin::event_loop::EventLoop::with_user_event();
     let inner_size = glutin::dpi::LogicalSize {
-        width: WIDTH,
-        height: HEIGHT,
+        width: gameboy.width,
+        height: gameboy.height,
     };
     let window = glutin::window::WindowBuilder::new()
         .with_title("LR35902")
@@ -59,7 +59,7 @@ pub fn render(mut gameboy: Gameboy) {
 
         gameboy.frame();
         // println!("{:?}", gameboy.image());
-        cx.draw(gameboy.image());
+        cx.draw(gameboy.width, gameboy.height, gameboy.image());
         gl_window.swap_buffers().unwrap();
         thread::sleep(Duration::from_millis(10));
     })
@@ -293,7 +293,7 @@ impl Glcx {
         panic!("{}", str::from_utf8(&buf).unwrap());
     }
 
-    fn draw(&self, data: &[u8]) {
+    fn draw(&self, width: u32, height: u32, data: &[u8]) {
         unsafe {
             gl::ClearColor(0.0, 0.0, 1.0, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
@@ -302,8 +302,8 @@ impl Glcx {
                 gl::TEXTURE_2D,
                 0,
                 gl::RGB as i32,
-                WIDTH as i32,
-                HEIGHT as i32,
+                width as i32,
+                height as i32,
                 0,
                 gl::RGBA,
                 gl::UNSIGNED_BYTE,

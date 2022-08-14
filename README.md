@@ -221,30 +221,15 @@ use lr35902::{ gameboy, renderer::render };
 
 3. Configure it:
 
+> Default scale is `1` (160x144) 
+
 ```rust
 fn main() {
-    let args = Args::parse();
     let mut gb = gameboy::Gameboy::new();
-    let filepath = &args.filepath;
-
-    if &args.filepath == "" {
-        println!("Please provide a ROM file");        
-        return;
-    }
-
-    println!("ROM Path: {:?}", filepath);
-
-    let mut rom = Vec::new();
-    let file = File::open(filepath);
-    match file.and_then(|mut f| f.read_to_end(&mut rom)) {
-        Ok(..) => {}
-        Err(e) => {
-            println!("failed to read {}: {}", filepath, e);
-            return
-        },
-    };
-
-    gb.load(rom);
+    let rom: Vec<u8> = gb.read_rom_by_filepath("./sample-rom.gb");
+    
+    // Default scale is 1 (160x144) 
+    gb.set_scale(2).load(rom);
     render(gb);
 }
 ```

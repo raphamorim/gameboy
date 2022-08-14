@@ -1,13 +1,15 @@
 use crate::cpu::cpu::Cpu;
 use crate::mmu::mmu::Mmu;
 
-pub const WIDTH: u32 = 160;
-pub const HEIGHT: u32 = 144;
+// pub const WIDTH: u32 = 160;
+// pub const HEIGHT: u32 = 144;
 
 pub struct Gameboy {
     cpu: Cpu,
     cycles: u32,
-    // memory: Mmu,
+    scale: u8,
+    pub width: u32,
+    pub height: u32,
 }
 
 pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
@@ -19,12 +21,19 @@ pub enum Target {
     SuperGameBoy,
 }
 
+fn add_yellow_color(text: &str) -> String {
+    format!("{}{}{}", "\x1b[93m", text, "\x1b[0m")
+}
+
 impl Gameboy {
     pub fn new() -> Gameboy {
         let memory = Mmu::new(Target::GameBoy);
         let mut gb = Gameboy {
             cpu: Cpu::new(memory),
             cycles: 0,
+            scale: 1,
+            width: 160,
+            height: 144
         };
 
         gb.cpu.memory.power_on();
@@ -33,6 +42,30 @@ impl Gameboy {
 
     pub fn load(&mut self, rom: Vec<u8>) {
         self.cpu.memory.load_rom(rom);
+    }
+
+    #[cfg(feature = "desktop")]
+    pub fn read_rom_by_filepath(&mut self, filepath: &str) -> Vec<u8> {
+        use std::fs::File;
+        use std::io::Read;
+
+        let cmd = add_yellow_color("[lr35902]");
+        let mut rom = Vec::new();
+        if filepath == "" {
+            println!("{} Please provide a rom file", cmd);        
+            return rom;
+        }
+
+        println!("{} ROM Path: {:?}", cmd, filepath);
+        let file = File::open(filepath);
+        match file.and_then(|mut f| f.read_to_end(&mut rom)) {
+            Ok(..) => {}
+            Err(e) => {
+                println!("failed to read {}: {}", filepath, e);
+            },
+        };
+
+        rom
     }
 
     pub fn reset() {
@@ -61,6 +94,13 @@ impl Gameboy {
 
     pub fn image(&self) -> &[u8] {
         &*self.cpu.memory.gpu.image_data
+    }
+
+    pub fn set_scale(&mut self, scale: u8) -> &mut Gameboy {
+        self.scale = scale;
+        self.width *= scale as u32;
+        self.height *= scale as u32;
+        self
     }
 
     // pub fn keydown(&mut self, key: input::Button) {

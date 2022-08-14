@@ -20,8 +20,8 @@ pub fn start() -> Result<(), JsValue> {
         .create_element("canvas")?
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
     document.body().unwrap().append_child(&canvas)?;
-    canvas.set_width(gameboy::WIDTH);
-    canvas.set_height(gameboy::HEIGHT);
+    // canvas.set_width(gameboy.width);
+    // canvas.set_height(gameboy.height);
     canvas.style().set_property("border", "solid")?;
     let context = canvas
         .get_context("2d")?
