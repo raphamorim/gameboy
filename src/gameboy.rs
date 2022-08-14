@@ -89,6 +89,10 @@ impl Gameboy {
         &*self.cpu.memory.gpu.image_data
     }
 
+    pub fn image_mut(&mut self) -> &mut [u8] {
+        &mut *self.cpu.memory.gpu.image_data
+    }
+
     pub fn set_scale(&mut self, scale: u8) -> &mut Gameboy {
         self.scale = scale;
         self.width *= scale as u32;
