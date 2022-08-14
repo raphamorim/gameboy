@@ -15,6 +15,8 @@
 >
 > Disclaimer 1.3: Tests need to pass by `ubuntu-20.04`, `macOS-latest` and `windows-latest`
 >
+> Disclaimer 1.4: Skip to [usage examples](#usage-examples) .
+>
 
 ## ●&nbsp;&nbsp;Internals
 
@@ -196,21 +198,58 @@ pub const HEIGHT: usize = 144;
 
 > https://github.com/raphamorim/LR35902/blob/main/src/gb.rs#L3-L4
 
-# Running
+# ●&nbsp;&nbsp;Usage examples
 
-Install `wasm-pack`:
+## Web ~ JavaScript/WASM usage:
 
-```zsh
-curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+## Desktop ~ Rust usage:
+
+tl;dr: You can see the destop example in the example folder ([`/examples/desktop`](/examples/desktop))
+
+1. Add `lr35902` as dependency and make sure to have `desktop` as feature on:
+
+```toml
+[dependencies]
+lr35902 = { version = "0.1.0", features = ["desktop"] }
 ```
 
-Run this command:
+2. Import `gameboy` and `renderer::render`:
 
-```zsh
-make start
+```rust
+use lr35902::{ gameboy, renderer::render };
 ```
 
-# TODO
+3. Configure it:
+
+```rust
+fn main() {
+    let args = Args::parse();
+    let mut gb = gameboy::Gameboy::new();
+    let filepath = &args.filepath;
+
+    if &args.filepath == "" {
+        println!("Please provide a ROM file");        
+        return;
+    }
+
+    println!("ROM Path: {:?}", filepath);
+
+    let mut rom = Vec::new();
+    let file = File::open(filepath);
+    match file.and_then(|mut f| f.read_to_end(&mut rom)) {
+        Ok(..) => {}
+        Err(e) => {
+            println!("failed to read {}: {}", filepath, e);
+            return
+        },
+    };
+
+    gb.load(rom);
+    render(gb);
+}
+```
+
+# ●&nbsp;&nbsp;TODO
 
 - [x] Desktop
     - [x] Create desktop window
@@ -226,7 +265,7 @@ make start
 - [ ] Tests for classic Gameboy `/tests`
 - [ ] Support `.sgb` rom (Super Game Boy)
 
-# Development Diary
+# ●&nbsp;&nbsp;Development Diary
 
 Tthis section is for personal purposes.
 
@@ -236,7 +275,7 @@ Tthis section is for personal purposes.
 | [Sat, 10 August 2022](d42c123aaf1f9632812be0061246bc3335cc71a7) | ![Diary Aug 10](resources/10-august-2022.png) | CPU connected with GPU and MMU but using wrong data to plot on screen. Few issues regarding the order of execution on the registers  |
 | [Sun, 14 August 2022](9d242d49c3f11703cc8de83b4eb9999ccdbd7308) | ![Diary Aug 14](resources/14-august-2022.png) | Operations covered: `0x00, 0xC3, 0x31, 0x3E, 0xE0, 0x97, 0xEA, 0x01, 0xCD, 0x21, 0x16, 0x1E, 0xF0, 0xE6, 0x20, 0xA, 0x22, 0x03, 21, 194, 29, 201, 197, 0x47, 14, 0x09, 193, 68, 77, 213, 25, 209, 0x06, 0x05, 35, 251, 243, 245, 61, 229, 42, 254, 40, 225, 250, 60, 241, 217, 47, 203, 176, 160, 120, 126, 202`. <br/><br/>`0xCD` operations: `0x37, 0x77, 0x7F, 0x6F, 0x67, 0x47, 0x4F` |
 
-# Resources & References
+# ●&nbsp;&nbsp;Resources & References
 
 - http://bgb.bircd.org/pandocs.htm
 - https://github.com/mvdnes/rboy
