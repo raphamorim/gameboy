@@ -17,6 +17,8 @@
 >
 > Disclaimer 1.4: Skip to [usage examples](#usage-examples) .
 >
+> Disclaimer 1.5: The emulator is not 100% done, you can track it development by [Tests](#tests) and [Todo](#todo)
+>
 
 ## ●&nbsp;&nbsp;Internals
 
@@ -27,6 +29,18 @@
 <img src="resources/dmg-main-board-schematic-circuit.png" alt="GameBoy Internals" width="500px" />
 
 * A scan of the main logic board for the DMG 01: https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
+
+## Tests
+
+The tests are based on Blargg's Gameboy hardware test ROMs. Link to the repository: https://github.com/retrio/gb-test-roms.git
+
+| Tests | Desktop Test | Web Test
+| --- | --- | --- |
+| CPU instructions test: ![CPU instructions test](resources/tests/cpu-instrs.png) | Passed | Passed |
+| ![Bits Unused test](resources/tests/bits-unused.png) | Passed | Passed |
+| ![Halt Bug test](resources/tests/halt-bug.png) | Passed | Passed |
+| ![Bits bank1 test](resources/tests/bits-bank1.png) | Passed | Passed |
+| ![GGB Sound test](resources/tests/cgb-sound.png) | Passed | Passed |
 
 ## ●&nbsp;&nbsp;Emulators and a bit of Game Boy history...
 
