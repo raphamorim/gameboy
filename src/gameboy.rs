@@ -18,6 +18,7 @@ pub enum Target {
     SuperGameBoy,
 }
 
+#[warn(dead_code)]
 fn add_yellow_color(text: &str) -> String {
     format!("{}{}{}", "\x1b[93m", text, "\x1b[0m")
 }

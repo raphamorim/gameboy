@@ -2,16 +2,28 @@
   <head>
     <title>LR35902 WebAssembly</title>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+    <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   </head>
   <body>
-    <h1>LR35902 WebAssembly</h1>
-    <p>
-      <label for="rom">Select a rom file</label>
-      <input type="file" id="rom" />
-    </p>
-    <p>
-      <button id="run">Load Game</button>
-    </p>
+    <div class="window">
+      <div class="title-bar"> 
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">LR35902 WebAssembly</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      
+      <div class="window-pane">
+        <p>
+          <label for="rom">Select a rom file</label>
+          <input type="file" id="rom" />
+        </p>
+        <p>
+          <button id="run" class="btn">Load Game</button>
+        </p>
+      </div>
+    </div>
+
     <script type="text/javascript">
       // function load(argument) {
       //   alert(1)
