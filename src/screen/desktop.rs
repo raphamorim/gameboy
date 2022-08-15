@@ -52,18 +52,22 @@ pub fn render(mut gameboy: Gameboy) {
 
     let cx = Glcx::new();
 
+    let mut focused = true;
     event_loop.run(move |event, _, control_flow| {
         let window = gl_window.window();
         match event {
             glutin::event::Event::WindowEvent {
                 window_id: _,
                 event: wevent,
-            } => *control_flow = process_window(window, &wevent, &mut gameboy),
+            } => *control_flow = process_window(window, &wevent, &mut gameboy, &mut focused),
             glutin::event::Event::MainEventsCleared => window.request_redraw(),
             glutin::event::Event::RedrawRequested(_) => {
-                gameboy.frame();
-                cx.draw(gameboy.width, gameboy.height, gameboy.image());
-                gl_window.swap_buffers().unwrap();
+                if focused == true {
+                    gameboy.frame();
+                    cx.draw(gameboy.width, gameboy.height, gameboy.image());
+                    gl_window.swap_buffers().unwrap();
+                }
+
                 thread::sleep(Duration::from_millis(10));
             }
             _ => {
@@ -79,24 +83,13 @@ fn process_window(
     window: &glutin::window::Window,
     wevent: &glutin::event::WindowEvent,
     gameboy: &mut Gameboy,
+    focused: &mut bool
 ) -> glutin::event_loop::ControlFlow {
     match wevent {
-        // Event::Closed => return false,
-        // Event::Resized(width, height) => {
-        //     let (width, height) = if width < height {
-        //         (width, width * HEIGHT / WIDTH)
-        //     } else {
-        //         (height * WIDTH / HEIGHT, height)
-        //     };
-        //     window.set_inner_size(width, height);
-        // }
-        // Event::Focused(f) => *focused = f,
-        // Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Equals)) => {
-        //     glutin::event_loop::ControlFlow::Poll
-        // }
-        // Event::KeyboardInput(ElementState::Pressed, _, Some(VirtualKeyCode::Minus)) => {
-        //     glutin::event_loop::ControlFlow::Poll
-        // }
+        glutin::event::WindowEvent::Focused(f) => {
+            *focused = *f;
+            glutin::event_loop::ControlFlow::Poll
+        }
         glutin::event::WindowEvent::KeyboardInput { input, .. } => {
             if let Some(virt_keycode) = input.virtual_keycode {
                 let button = match virt_keycode {
@@ -120,23 +113,6 @@ fn process_window(
 
             glutin::event_loop::ControlFlow::Poll
         }
-
-        // glutin::event::WindowEvent::CursorMoved {
-        //     position: glutin::dpi::PhysicalPosition { x, y },
-        //     ..
-        // } => {
-        //     unsafe {
-        //         if MOUSE_GRABBED {
-        //             let mouse_pos = get_window_center(window);
-        //             let (dx, dy) = (x - mouse_pos.x, y - mouse_pos.y);
-        //             window
-        //                 .set_cursor_position(get_window_center(window))
-        //                 .unwrap();
-        //             camera.rotate_by((-dy * 0.1) as f32, (dx * 0.1) as f32, 0.0);
-        //         }
-        //     }
-        //     glutin::event_loop::ControlFlow::Poll
-        // }
         glutin::event::WindowEvent::Resized(glutin::dpi::PhysicalSize { width, height }) => {
             glutin::event_loop::ControlFlow::Poll
         }
