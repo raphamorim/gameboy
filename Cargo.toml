@@ -41,4 +41,5 @@ features = [
   'Window',
   'MouseEvent',
   'File',
+  'Blob',
 ]

@@ -1,4 +1,5 @@
 use crate::cpu::cpu::Cpu;
+use crate::input::Button;
 use crate::mmu::mmu::Mmu;
 
 pub struct Gameboy {
@@ -25,13 +26,13 @@ fn add_yellow_color(text: &str) -> String {
 
 impl Gameboy {
     pub fn new() -> Gameboy {
-        let memory = Mmu::new(Target::GameBoy);
+        let memory: Mmu = Mmu::new(Target::GameBoy);
         let mut gb = Gameboy {
             cpu: Cpu::new(memory),
             cycles: 0,
             scale: 1,
             width: 160,
-            height: 144
+            height: 144,
         };
 
         gb.cpu.memory.power_on();
@@ -50,7 +51,7 @@ impl Gameboy {
         let cmd = add_yellow_color("[lr35902]");
         let mut rom = Vec::new();
         if filepath == "" {
-            println!("{} Please provide a rom file", cmd);        
+            println!("{} Please provide a rom file", cmd);
             return rom;
         }
 
@@ -60,7 +61,7 @@ impl Gameboy {
             Ok(..) => {}
             Err(e) => {
                 println!("failed to read {}: {}", filepath, e);
-            },
+            }
         };
 
         rom
@@ -101,11 +102,11 @@ impl Gameboy {
         self
     }
 
-    // pub fn keydown(&mut self, key: input::Button) {
-    //     self.memory.input.keydown(key, &mut self.memory.if_);
-    // }
+    pub fn keydown(&mut self, key: Button) {
+        self.cpu.memory.input.keydown(key, &mut self.cpu.memory.if_);
+    }
 
-    // pub fn keyup(&mut self, key: input::Button) {
-    //     self.memory.input.keyup(key);
-    // }
+    pub fn keyup(&mut self, key: Button) {
+        self.cpu.memory.input.keyup(key);
+    }
 }

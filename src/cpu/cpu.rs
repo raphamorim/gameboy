@@ -88,7 +88,7 @@ impl Cpu {
         }
 
         let mut ticks = if self.halt == 0 && self.stop == 0 {
-            self.exec_operation()
+            self.operation()
         } else {
             if self.stop != 0 && self.memory.speedswitch {
                 self.memory.switch_speed();
@@ -143,7 +143,7 @@ impl Cpu {
         return ticks;
     }
 
-    fn exec_operation(&mut self) -> u32 {
+    fn operation(&mut self) -> u32 {
         let op = self.get_byte();
         // self.debug(op);
         match op {

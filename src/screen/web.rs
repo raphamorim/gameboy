@@ -5,17 +5,19 @@ use crate::screen::debug_rom;
 use core::cell::RefCell;
 
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::JsFuture;
-use wasm_bindgen::JsCast;
 use thiserror::Error;
-use web_sys::{WebGlProgram, ImageBitmap, MouseEvent, HtmlInputElement, WebGlRenderingContext, WebGlShader};
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{
+    Blob, HtmlInputElement, ImageBitmap, MouseEvent, WebGlProgram, WebGlRenderingContext,
+    WebGlShader,
+};
 
 use std::panic;
 
 #[derive(Error, Debug)]
-pub enum LoadTextureError {
-
+pub enum LoadError {
     #[error("failed to create image bitmap: {0:?}")]
     CreateImageBitmap(JsValue),
 
@@ -42,32 +44,29 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         .expect("should register `requestAnimationFrame` OK");
 }
 
-async fn from_data(
-        data: &mut [u8],
-    ) -> Result<ImageBitmap, LoadTextureError> {
+async fn from_data(data: &mut [u8]) -> Result<ImageBitmap, LoadError> {
+    let blob = Blob::new().unwrap();
     let image_bitmap: ImageBitmap = {
-            // TODO: Why does this need &mut [u8]?
-            let promise = web_sys::window()
-                .unwrap()
-                .create_image_bitmap_with_u8_array(data)
-                .map_err(LoadTextureError::CreateImageBitmap)?;
-            let value = JsFuture::from(promise)
-                .await
-                .map_err(LoadTextureError::AwaitCreateImageBitmap)?;
-            assert!(value.is_instance_of::<ImageBitmap>());
-            value.dyn_into().unwrap()
-        };
+        let promise = web_sys::window()
+            .unwrap()
+            .create_image_bitmap_with_blob(&blob)
+            .map_err(LoadError::CreateImageBitmap)?;
 
+        let value = JsFuture::from(promise)
+            .await
+            .map_err(LoadError::AwaitCreateImageBitmap)?;
+
+        assert!(value.is_instance_of::<ImageBitmap>());
+        value.dyn_into().unwrap()
+    };
 
     Ok(image_bitmap)
 
     // Self::from_image_bitmap(gl, image_bitmap, params).await
-
 }
 
-#[wasm_bindgen(start)]
-pub async fn start() -> Result<(), JsValue> {
-	panic::set_hook(Box::new(console_error_panic_hook::hook));
+pub async fn render() -> Result<(), JsValue> {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let document = web_sys::window().unwrap().document().unwrap();
     let canvas = document
@@ -77,7 +76,7 @@ pub async fn start() -> Result<(), JsValue> {
     canvas.set_width(160);
     canvas.set_height(144);
     // canvas.style().set_property("border", "solid")?;
-     
+
     // let context = canvas
     //     .get_context("webgl")?
     //     .unwrap()
@@ -139,104 +138,98 @@ pub async fn start() -> Result<(), JsValue> {
     // context.enable_vertex_attrib_array(0);
 
     let mut gb = Gameboy::new();
-	let rom: Vec<u8> = debug_rom::get_rom();
+    let rom: Vec<u8> = debug_rom::get_rom();
 
-	gb.load(rom);
+    gb.load(rom);
 
-	// one CPU loop
+    // one CPU loop
 
-	// let f = Rc::new(RefCell::new(None));
- //    let g = f.clone();
+    // let f = Rc::new(RefCell::new(None));
+    //    let g = f.clone();
 
- //    let mut i = 0;
- //    // *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
- //        if i > 10 {
- //            // body().set_text_content(Some("All done!"));
+    //    let mut i = 0;
+    //    // *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+    //        if i > 10 {
+    //            // body().set_text_content(Some("All done!"));
 
- //            // Drop our handle to this closure so that it will get cleaned
- //            // up once we return.
- //            let _ = f.borrow_mut().take();
- //            // return;
- //        }
+    //            // Drop our handle to this closure so that it will get cleaned
+    //            // up once we return.
+    //            let _ = f.borrow_mut().take();
+    //            // return;
+    //        }
 
-        // i += 1;
-        
-    	gb.frame();
-		let mut data = gb.image_mut();
+    // i += 1;
 
-		log(format!("{:?}", data));
-	    // log_u32(i);
+    gb.frame();
+    let image_data: &mut [u8] = gb.image_mut();
 
-	    
+    log(format!("{:?}", image_data));
+    // log_u32(i);
 
-	    // let image = w.create_image_bitmap_with_u8_array(&mut data).unwrap();
-	    let image_bitmap = from_data(&mut data);
-	    context.draw_image_with_image_bitmap(&image_bitmap.await.unwrap(), 160.0, 144.0)?;
+    // let image = w.create_image_bitmap_with_u8_array(&mut data).unwrap();
+    // let image_bitmap = from_data(image_data);
+    // context.draw_image_with_image_bitmap(&image_bitmap.await.unwrap(), 160.0, 144.0)?;
 
-		// context.clear_color(0.0, 0.0, 0.0, 1.0);
-		// context.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+    // context.clear_color(0.0, 0.0, 0.0, 1.0);
+    // context.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
 
-		// context.compressed_tex_image_2d_with_u8_array(
-		// 	WebGlRenderingContext::TEXTURE_2D,
-		// 	WebGlRenderingContext::RGB as i32,
-		// 	160,
-		// 	144,
-		// 	0,
-		// 	0,
-		// 	data,
-		// );
-	    
-		// context.draw_elements_with_i32(WebGlRenderingContext::TRIANGLES, 6, WebGlRenderingContext::UNSIGNED_INT, 1);
+    // context.compressed_tex_image_2d_with_u8_array(
+    // 	WebGlRenderingContext::TEXTURE_2D,
+    // 	WebGlRenderingContext::RGB as i32,
+    // 	160,
+    // 	144,
+    // 	0,
+    // 	0,
+    // 	data,
+    // );
 
-
+    // context.draw_elements_with_i32(WebGlRenderingContext::TRIANGLES, 6, WebGlRenderingContext::UNSIGNED_INT, 1);
 
     //     request_animation_frame(f.borrow().as_ref().unwrap());
     // }) as Box<dyn FnMut()>));
 
     // request_animation_frame(g.borrow().as_ref().unwrap());
 
-
-
     // click não ta rolando
 
-  //   {
-		// let document = web_sys::window().unwrap().document().unwrap();
-		// let input = document.get_element_by_id("run").unwrap();
+    //   {
+    // let document = web_sys::window().unwrap().document().unwrap();
+    // let input = document.get_element_by_id("run").unwrap();
 
-		// let context = context.clone();
-		// let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
-		// 	let mut gb = gameboy::Gameboy::new();
-		//     // let rom: Vec<u8> = gb.read_rom_by_filepath("./sample-rom.gb");
+    // let context = context.clone();
+    // let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
+    // 	let mut gb = gameboy::Gameboy::new();
+    //     // let rom: Vec<u8> = gb.read_rom_by_filepath("./sample-rom.gb");
 
-		// 	let rom: Vec<u8> = debug_rom::get_rom();
+    // 	let rom: Vec<u8> = debug_rom::get_rom();
 
-		// 	gb.load(rom);
+    // 	gb.load(rom);
 
-		// 	// one CPU loop
-		// 	gb.frame();
+    // 	// one CPU loop
+    // 	gb.frame();
 
-		// 	let data = gb.image();
+    // 	let data = gb.image();
 
-		// 	println!("{:?}", data);
+    // 	println!("{:?}", data);
 
-		// 	context.clear_color(0.0, 0.0, 0.0, 1.0);
-		// 	context.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+    // 	context.clear_color(0.0, 0.0, 0.0, 1.0);
+    // 	context.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
 
-		// 	context.compressed_tex_image_2d_with_u8_array(
-		// 		WebGlRenderingContext::TEXTURE_2D,
-		// 		WebGlRenderingContext::RGB as i32,
-		// 		160,
-		// 		144,
-		// 		0,
-		// 		0,
-		// 		data,
-		// 	);
-		    
-		// 	context.draw_elements_with_i32(WebGlRenderingContext::TRIANGLES, 6, WebGlRenderingContext::UNSIGNED_INT, 1);
-  //       }) as Box<dyn FnMut(_)>);
-  //       input.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-  //       closure.forget();
-  //   }
+    // 	context.compressed_tex_image_2d_with_u8_array(
+    // 		WebGlRenderingContext::TEXTURE_2D,
+    // 		WebGlRenderingContext::RGB as i32,
+    // 		160,
+    // 		144,
+    // 		0,
+    // 		0,
+    // 		data,
+    // 	);
+
+    // 	context.draw_elements_with_i32(WebGlRenderingContext::TRIANGLES, 6, WebGlRenderingContext::UNSIGNED_INT, 1);
+    //       }) as Box<dyn FnMut(_)>);
+    //       input.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+    //       closure.forget();
+    //   }
 
     Ok(())
 }

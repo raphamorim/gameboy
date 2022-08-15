@@ -7,6 +7,8 @@ use std::iter::repeat;
 
 use crate::mmu::timer::Timer;
 
+use crate::input;
+
 pub const WRAM_SIZE: usize = 32 << 10; // CGB has 32K (8 banks * 4 KB/bank), GB has 8K
 pub const HIRAM_SIZE: usize = 0x7f;
 
@@ -51,6 +53,7 @@ pub struct Mmu {
     is_sgb: bool,
     // _bios: [],
     // _eram: [],
+    pub input: Box<input::Input>,
     pub gpu: Box<Gpu>,
     pub timer: Box<Timer>,
     pub rtc: Box<Rtc>,
@@ -75,6 +78,7 @@ impl Mmu {
             ram: Vec::new(),
             wram: Box::new([0; WRAM_SIZE]),
             hiram: Box::new([0; HIRAM_SIZE]),
+            input: Box::new(input::Input::new()),
             rtc: Box::new(Rtc::new()),
             timer: Box::new(Timer::new()),
             gpu: Box::new(Gpu::new()),
@@ -205,17 +209,15 @@ impl Mmu {
             //
             // TODO: serial data transfer
             // http://nocash.emubase.de/pandocs.htm#serialdatatransferlinkcable
-            0x0 => {
-                match addr & 0xf {
-                    // 0x0 => self.input.r8b(addr),
-                    0x4 => self.timer.div,
-                    0x5 => self.timer.tima,
-                    0x6 => self.timer.tma,
-                    0x7 => self.timer.tac,
-                    0xf => self.if_,
-                    _ => 0xff,
-                }
-            }
+            0x0 => match addr & 0xf {
+                0x0 => self.input.rb(addr),
+                0x4 => self.timer.div,
+                0x5 => self.timer.tima,
+                0x6 => self.timer.tma,
+                0x7 => self.timer.tac,
+                0xf => self.if_,
+                _ => 0xff,
+            },
 
             // Sound info: http://nocash.emubase.de/pandocs.htm#soundcontroller
             0x1 | 0x2 | 0x3 => 0xff,
@@ -384,30 +386,28 @@ impl Mmu {
         match (addr >> 4) & 0xf {
             // TODO: serial data transfer
             // http://nocash.emubase.de/pandocs.htm#serialdatatransferlinkcable
-            0x0 => {
-                match addr & 0xf {
-                    0x0 => {
-                        // self.input.wb(addr, val);
-                    }
-                    0x4 => {
-                        self.timer.div = 0;
-                    }
-                    0x5 => {
-                        self.timer.tima = val;
-                    }
-                    0x6 => {
-                        self.timer.tma = val;
-                    }
-                    0x7 => {
-                        self.timer.tac = val;
-                        self.timer.update();
-                    }
-                    0xf => {
-                        self.if_ = val;
-                    }
-                    _ => {}
+            0x0 => match addr & 0xf {
+                0x0 => {
+                    self.input.wb(addr, val);
                 }
-            }
+                0x4 => {
+                    self.timer.div = 0;
+                }
+                0x5 => {
+                    self.timer.tima = val;
+                }
+                0x6 => {
+                    self.timer.tma = val;
+                }
+                0x7 => {
+                    self.timer.tac = val;
+                    self.timer.update();
+                }
+                0xf => {
+                    self.if_ = val;
+                }
+                _ => {}
+            },
 
             // Sound info: http://nocash.emubase.de/pandocs.htm#soundcontroller
             // TODO: sound registers
