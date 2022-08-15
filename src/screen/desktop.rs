@@ -40,9 +40,7 @@ pub fn render(mut gameboy: Gameboy) {
     let window_builder = glutin::window::WindowBuilder::new()
         .with_title("LR35902")
         .with_inner_size(inner_size)
-        // .with_dimensions(glium::glutin::dpi::LogicalSize::new(WIDTH, HEIGHT))
         .with_resizable(false);
-
     let gl_window = glutin::ContextBuilder::new()
         .build_windowed(window_builder, &event_loop)
         .unwrap();
@@ -51,7 +49,6 @@ pub fn render(mut gameboy: Gameboy) {
     gl::load_with(|s| gl_window.get_proc_address(s) as *const _);
 
     let cx = Glcx::new();
-
     let mut focused = true;
     event_loop.run(move |event, _, control_flow| {
         let window = gl_window.window();
@@ -83,7 +80,7 @@ fn process_window(
     window: &glutin::window::Window,
     wevent: &glutin::event::WindowEvent,
     gameboy: &mut Gameboy,
-    focused: &mut bool
+    focused: &mut bool,
 ) -> glutin::event_loop::ControlFlow {
     match wevent {
         glutin::event::WindowEvent::Focused(f) => {

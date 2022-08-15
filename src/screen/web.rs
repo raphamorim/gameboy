@@ -2,9 +2,9 @@ extern crate console_error_panic_hook;
 
 use crate::gameboy::Gameboy;
 use crate::screen::debug_rom;
-use core::cell::RefCell;
+// use core::cell::RefCell;
 
-use std::rc::Rc;
+// use std::rc::Rc;
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

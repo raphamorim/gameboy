@@ -68,21 +68,3 @@ impl Registers {
         self.f & mask > 0
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn test_clock_set() {
-//         let mut clock: Clock = Clock { t: 0, m: 0 };
-//         assert_eq!(clock.t, 0);
-//         assert_eq!(clock.m, 0);
-
-//         clock.set_m(1);
-//         clock.set_t(2);
-
-//         assert_eq!(clock.t, 2);
-//         assert_eq!(clock.m, 1);
-//     }
-// }

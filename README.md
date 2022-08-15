@@ -242,10 +242,13 @@ fn main() {
     - [x] Create desktop window
 - [x] Browser
     - [x] Create server using port `3000`
-- [ ] `.gb`
-- [ ] Extend Renderer to render on web with WASM
 - [ ] Keyboard handlers
+    - [ ] Web
+    - [x] Desktop
+- [ ] Classic gameboy instructions (`.gb`)
+- [ ] Extend screen mod to render on web with WASM
 - [ ] Support `.cgb` rom (Game Boy Color)
+- [ ] `Gameboy::setScale(u8)` for desktop
 - [ ] Audio
     - [ ] Desktop
     - [ ] Web
