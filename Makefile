@@ -22,14 +22,10 @@ desktop:
 	cd ./examples/desktop && make desktop-build && RUST_BACKTRACE=1 make desktop
 
 ############################
-######## LR35902 ###########
+######## Web ###############
 ############################
-w:
-#	Debug
-	make build && make run
-
-build:
+web-build:
 	yarn && wasm-pack build --debug
 
-run:
+web:
 	yarn serve
