@@ -53,20 +53,17 @@ impl Gameboy {
 
         let mut rom = Vec::new();
         if filepath == "" {
-            return Err(String::from("Please provide a valid filepath"))
+            return Err(String::from("Please provide a valid filepath"));
         }
 
         let file = File::open(filepath);
         match file.and_then(|mut f| f.read_to_end(&mut rom)) {
             Ok(..) => {}
-            Err(e) => {
-                return Err(format!("Failed to read {}: {}", filepath, e))
-            }
+            Err(e) => return Err(format!("Failed to read {}: {}", filepath, e)),
         };
 
         self.cpu.memory.load_rom(rom);
 
-        // TODO: return Self to use function render
         Ok(true)
     }
 
@@ -75,7 +72,7 @@ impl Gameboy {
             RenderMode::Desktop => {
                 #[cfg(feature = "desktop")]
                 crate::screen::desktop::render(self);
-            },
+            }
             RenderMode::WebAssembly => {
                 // crate::screen::web::render();
             }

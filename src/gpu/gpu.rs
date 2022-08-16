@@ -388,7 +388,7 @@ impl Gpu {
         // because we need the truncation to happen beforehand
         let mapbase = mapbase + ((line % 256) >> 3) * 32;
 
-        println!("{:?} {:?}", self.ly, self.scy);
+        // println!("{:?} {:?}", self.ly, self.scy);
 
         // X and Y location inside the tile itself to paint
         let y = (self.ly + self.scy) % 8;

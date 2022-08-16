@@ -1,13 +1,12 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 
-pub mod gameboy;
-pub mod screen;
-
 mod cpu;
+pub mod gameboy;
 mod gpu;
 mod input;
 mod mmu;
+mod screen;
 
 #[wasm_bindgen(start)]
 pub async fn start() -> Result<(), JsValue> {
