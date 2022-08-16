@@ -15,4 +15,3 @@ bench = false
 
 [dependencies]
 lr35902 = { path = "../../", features = ["desktop"] }
-clap = { version = "3.1.17", features = ["derive"] }

@@ -218,7 +218,7 @@ lr35902 = { version = "0.1.0", features = ["desktop"] }
 2. Import `gameboy` and `renderer::render`:
 
 ```rust
-use lr35902::{ gameboy::Gameboy, screen::desktop };
+use lr35902::gameboy::{Gameboy, RenderMode::Desktop};
 ```
 
 3. Configure it:
@@ -228,11 +228,14 @@ use lr35902::{ gameboy::Gameboy, screen::desktop };
 ```rust
 fn main() {
     let mut gb = Gameboy::new();
-    let rom: Vec<u8> = gb.read_rom_by_filepath("./sample-rom.gb");
-    
-    // Default scale is 1 (160x144) 
-    gb.set_scale(2).load(rom);
-    desktop::render(gb);
+    match gb.load_rom("./sample-rom.gb") {
+        Ok(..) => {
+            gb.render(Desktop);
+        }
+        Err(err) => {
+            println!("{:?}", err);
+        }
+    }
 }
 ```
 

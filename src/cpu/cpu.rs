@@ -47,7 +47,7 @@ impl Cpu {
         }
     }
     pub fn debug(&mut self, op: u8) {
-        Cpu::mut_find_or_insert(&mut self._executed_operations, op);
+        // Cpu::mut_find_or_insert(&mut self._executed_operations, op);
         // println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
         println!("{} {}", op, format!("{:?}", self.registers));
         // println!("{:?}", self._executed_operations);

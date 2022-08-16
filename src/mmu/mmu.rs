@@ -1,5 +1,3 @@
-// Memory Management Unit
-
 use crate::gameboy;
 use crate::gpu::gpu::Gpu;
 use crate::mmu::rtc::Rtc;
@@ -445,7 +443,7 @@ impl Mmu {
             }
 
             _ => {
-                // dpanic!("unimplemented address {:x}", addr);
+                panic!("address {:?} not implemented", addr);
             }
         }
     }
@@ -477,10 +475,6 @@ impl Mmu {
                 0
             }
         }
-    }
-
-    pub fn debug(&mut self) {
-        println!("{:?}", self.rambank);
     }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) {

@@ -140,7 +140,7 @@ pub async fn render() -> Result<(), JsValue> {
     let mut gb = Gameboy::new();
     let rom: Vec<u8> = debug_rom::get_rom();
 
-    gb.load(rom);
+    gb.load_rom_with_u8_vec(rom);
 
     // one CPU loop
 

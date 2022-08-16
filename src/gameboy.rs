@@ -13,16 +13,19 @@ pub struct Gameboy {
 pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
+pub enum RenderMode {
+    Desktop,
+    WebAssembly,
+}
+
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Target {
     GameBoy,
     GameBoyColor,
     SuperGameBoy,
 }
 
-#[warn(dead_code)]
-fn add_yellow_color(text: &str) -> String {
-    format!("{}{}{}", "\x1b[93m", text, "\x1b[0m")
-}
+pub const CYCLES: u32 = 70224;
 
 impl Gameboy {
     pub fn new() -> Gameboy {
@@ -39,39 +42,51 @@ impl Gameboy {
         gb
     }
 
-    pub fn load(&mut self, rom: Vec<u8>) {
+    pub fn load_rom_with_u8_vec(&mut self, rom: Vec<u8>) {
         self.cpu.memory.load_rom(rom);
     }
 
     #[cfg(feature = "desktop")]
-    pub fn read_rom_by_filepath(&mut self, filepath: &str) -> Vec<u8> {
+    pub fn load_rom(&mut self, filepath: &str) -> Result<bool, String> {
         use std::fs::File;
         use std::io::Read;
 
-        let cmd = add_yellow_color("[lr35902]");
         let mut rom = Vec::new();
         if filepath == "" {
-            println!("{} Please provide a rom file", cmd);
-            return rom;
+            return Err(String::from("Please provide a valid filepath"))
         }
 
-        println!("{} ROM Path: {:?}", cmd, filepath);
         let file = File::open(filepath);
         match file.and_then(|mut f| f.read_to_end(&mut rom)) {
             Ok(..) => {}
             Err(e) => {
-                println!("failed to read {}: {}", filepath, e);
+                return Err(format!("Failed to read {}: {}", filepath, e))
             }
         };
 
-        rom
+        self.cpu.memory.load_rom(rom);
+
+        // TODO: return Self to use function render
+        Ok(true)
+    }
+
+    pub fn render(self, render_mode: RenderMode) {
+        match render_mode {
+            RenderMode::Desktop => {
+                #[cfg(feature = "desktop")]
+                crate::screen::desktop::render(self);
+            },
+            RenderMode::WebAssembly => {
+                // crate::screen::web::render();
+            }
+        }
     }
 
     pub fn frame(&mut self) {
-        self.cycles += 70224;
+        self.cycles += CYCLES;
 
-        // while self.cycles <= 70224 {
-        while self.cycles <= 70234 {
+        // Runs two CPU cycles per frame
+        while self.cycles <= CYCLES * 2 {
             let time = self.cpu.exec();
             self.cpu
                 .memory

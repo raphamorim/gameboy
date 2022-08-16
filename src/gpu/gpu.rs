@@ -216,12 +216,6 @@ impl Gpu {
         }
     }
 
-    pub fn white(&mut self) {
-        for slot in self.image_data.iter_mut() {
-            *slot = 0xff;
-        }
-    }
-
     pub fn vram(&self) -> &[u8; VRAM_SIZE] {
         &self.vrambanks[self.vrambank as usize]
     }
@@ -394,6 +388,8 @@ impl Gpu {
         // because we need the truncation to happen beforehand
         let mapbase = mapbase + ((line % 256) >> 3) * 32;
 
+        println!("{:?} {:?}", self.ly, self.scy);
+
         // X and Y location inside the tile itself to paint
         let y = (self.ly + self.scy) % 8;
         let mut x = self.scx % 8;
@@ -407,8 +403,6 @@ impl Gpu {
         // This implies that the indices are treated as signed numbers.
         let mut i = 0;
         let tilebase = if !self.tiledata { 256 } else { 0 };
-
-        // println!("render background from {:x} {} {}", mapbase, self.scx, self.scy);
 
         loop {
             // Backgrounds wrap around, so calculate the offset into the bgmap
@@ -443,7 +437,6 @@ impl Gpu {
                 row = tile[if attrs & 0x40 != 0 { 7 - y } else { y } as usize];
                 bgp = self.cgb.cbgp[attrs & 0x7];
             } else {
-                // Non CGB backgrounds are boring :(
                 row = self.tiles.data[tilebase as usize][y as usize];
                 bgpri = false;
                 hflip = false;
