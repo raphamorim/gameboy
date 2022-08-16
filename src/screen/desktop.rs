@@ -19,7 +19,6 @@ use glutin::window::{Window, WindowBuilder};
 use glutin::ContextWrapper;
 
 struct Glcx {
-    // gl: gl::Gl,
     tex: GLuint,
     program: GLuint,
     frag: GLuint,
@@ -90,10 +89,10 @@ fn process_window(
         glutin::event::WindowEvent::KeyboardInput { input, .. } => {
             if let Some(virt_keycode) = input.virtual_keycode {
                 let button = match virt_keycode {
-                    VirtualKeyCode::Z => Button::A,
-                    VirtualKeyCode::X => Button::B,
-                    VirtualKeyCode::Return => Button::Select,
-                    VirtualKeyCode::Comma => Button::Start,
+                    VirtualKeyCode::A => Button::A,
+                    VirtualKeyCode::B => Button::B,
+                    VirtualKeyCode::Z => Button::Select,
+                    VirtualKeyCode::X => Button::Start,
 
                     VirtualKeyCode::Left => Button::Left,
                     VirtualKeyCode::Right => Button::Right,
@@ -180,7 +179,6 @@ impl Glcx {
                 gl::STATIC_DRAW,
             );
 
-            // Create and compile the vertex shader
             let vert = gl::CreateShader(gl::VERTEX_SHADER);
             let src = CString::new(VERTEX).unwrap();
             gl::ShaderSource(vert, 1, &src.as_ptr(), 0 as *const i32);
@@ -192,20 +190,18 @@ impl Glcx {
             let src = CString::new(FRAGMENT).unwrap();
             gl::ShaderSource(frag, 1, &src.as_ptr(), 0 as *const i32);
             gl::CompileShader(frag);
-            // Glcx::check_shader_compile(&gl, frag);
+            // TODO: check_shader_compile(frag)
 
-            // Link the vertex and fragment shader into a shader program
             let program = gl::CreateProgram();
             gl::AttachShader(program, vert);
             gl::AttachShader(program, frag);
             let buf = CString::new("outColor").unwrap();
             gl::BindFragDataLocation(program, 0, buf.as_ptr());
             gl::LinkProgram(program);
-            // Glcx::check_program_link(&gl, program);
+            // TODO: check_program_link(program)
             assert_eq!(gl::GetError(), 0);
             gl::UseProgram(program);
 
-            // Specify the layout of the vertex data
             let buf = CString::new("position").unwrap();
             let pos_attrib = gl::GetAttribLocation(program, buf.as_ptr());
             gl::EnableVertexAttribArray(pos_attrib as u32);
@@ -257,7 +253,6 @@ impl Glcx {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             Glcx {
-                // gl: gl,
                 tex: tex,
                 program: program,
                 frag: frag,
@@ -268,19 +263,6 @@ impl Glcx {
             }
         }
     }
-
-    // unsafe fn check_shader_compile(gl: &gl::gl, shader: GLuint) {
-    //     let mut status = gl::FALSE as GLint;
-    //     gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut status);
-    //     if status == (gl::TRUE as GLint) { return }
-
-    //     let mut len: GLint = 0;
-    //     gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut len);
-    //     let mut buf = repeat(0u8).take(len as usize).collect::<Vec<_>>();
-    //     gl::GetShaderInfoLog(shader, len, ptr::null_mut(),
-    //                         buf.as_mut_ptr() as *mut GLchar);
-    //     panic!("{}", str::from_utf8(&buf).unwrap());
-    // }
 
     unsafe fn check_program_link(gl: &Glcx, program: GLuint) {
         let mut status = gl::FALSE as GLint;
@@ -319,23 +301,7 @@ impl Glcx {
             );
             assert_eq!(gl::GetError(), 0);
 
-            // Draw a rectangle from the 2 triangles using 6
-            // indices
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const _);
         }
     }
 }
-
-// impl Drop for Glcx {
-//     fn drop(&mut self) {
-//         unsafe {
-//             self.gl::DeleteTextures(1, &self.tex);
-//             self.gl::DeleteProgram(self.program);
-//             self.gl::DeleteShader(self.vert);
-//             self.gl::DeleteShader(self.frag);
-//             self.gl::DeleteBuffers(1, &self.ebo);
-//             self.gl::DeleteBuffers(1, &self.vbo);
-//             self.gl::DeleteVertexArrays(1, &self.vao);
-//         }
-//     }
-// }

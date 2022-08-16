@@ -5,7 +5,7 @@
 
 | WebGL with WebAssembly | Desktop GUI with Rust |
 | --- | --- |
-| ![Demo Web with Assembly](resources/demo-wasm.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
+| ![Demo Web with Assembly](resources/demo-web.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
 | Firefox 102.0.1 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
 | `make web` | `make desktop` |
 
@@ -249,7 +249,8 @@ fn main() {
     - [ ] Web
     - [x] Desktop
 - [ ] Classic gameboy instructions (`.gb`)
-- [ ] Extend screen mod to render on web with WASM
+- [x] Extend screen mod to render on web with WASM
+    - [ ] Render with WebGl
 - [ ] Support `.cgb` rom (Game Boy Color)
 - [ ] `Gameboy::setScale(u8)` for desktop
 - [ ] Audio

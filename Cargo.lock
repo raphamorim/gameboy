@@ -456,7 +456,6 @@ dependencies = [
  "glutin",
  "js-sys",
  "libc",
- "thiserror",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
