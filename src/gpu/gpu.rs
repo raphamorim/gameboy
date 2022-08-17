@@ -9,16 +9,14 @@ const NUM_TILES: usize = 384; // number of in-memory tiles
 pub const HEIGHT: usize = 144;
 pub const WIDTH: usize = 160;
 
-// The palette for the monochrome GB. The possible values are:
-//
-// 0 - white
-// 1 - light gray
-// 2 - dark gray
-// 3 - black
 const PALETTE: [Color; 4] = [
+    // White
     [255, 255, 255, 255],
+    // Light Gray
     [192, 192, 192, 255],
+    // Dark Gray
     [96, 96, 96, 255],
+    // Black
     [0, 0, 0, 255],
 ];
 

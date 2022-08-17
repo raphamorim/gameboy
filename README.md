@@ -9,15 +9,11 @@
 | Firefox 102.0.1 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
 | `make web` | `make desktop` |
 
-> Disclaimer 1.1: There is a lot of missing features. You can track it by checking the TODO section in the end of the README.md.
+> Disclaimer 1.2: Tests need to pass by `ubuntu-20.04`, `macOS-latest` and `windows-latest`. This project was created using rustc 1.62.1 (e092d0b6b 2022-07-16).
 >
-> Disclaimer 1.2: This project was created using rustc 1.62.1 (e092d0b6b 2022-07-16)
+> Disclaimer 1.3: The emulator is not 100% done, you can track it development by [Tests](#tests) and [Todo](#todo).
 >
-> Disclaimer 1.3: Tests need to pass by `ubuntu-20.04`, `macOS-latest` and `windows-latest`
->
-> Disclaimer 1.4: Skip to [usage examples](#usage-examples) .
->
-> Disclaimer 1.5: The emulator is not 100% done, you can track it development by [Tests](#tests) and [Todo](#todo)
+> tl;dr 1.0: Skip to [usage examples](#usage-examples).
 >
 
 ## ●&nbsp;&nbsp;Internals
@@ -267,11 +263,11 @@ Link to the repository: https://github.com/retrio/gb-test-roms.git
 
 | Tests (originally ran in [Openemu](https://openemu.org/)) | Desktop Test | Web Test
 | --- | --- | --- |
-| ![CPU instructions test](resources/tests/cpu-instrs.png) | Passed | Passed |
-| ![Bits Unused test](resources/tests/bits-unused.png) | Passed | Passed |
-| ![Halt Bug test](resources/tests/halt-bug.png) | Passed | Passed |
-| ![Bits bank1 test](resources/tests/bits-bank1.png) | Passed | Passed |
-| ![GGB Sound test](resources/tests/cgb-sound.png) | Passed | Passed |
+| ![CPU instructions test](resources/tests/cpu-instrs.png) | Failing | Failing |
+| ![Bits Unused test](resources/tests/bits-unused.png) | Failing | Failing |
+| ![Halt Bug test](resources/tests/halt-bug.png) | Failing | Failing |
+| ![Bits bank1 test](resources/tests/bits-bank1.png) | Failing | Failing |
+| ![GGB Sound test](resources/tests/cgb-sound.png) | Failing | Failing |
 
 # ●&nbsp;&nbsp;Development Diary
 
@@ -285,9 +281,9 @@ Tthis section is for personal purposes.
 
 # ●&nbsp;&nbsp;Resources & References
 
-- http://bgb.bircd.org/pandocs.htm
-- https://github.com/mvdnes/rboy
-- https://github.com/alexcrichton/jba/tree/rust
+- http://bgb.bircd.org/pandocs.htm 🥇
+- https://github.com/mvdnes/rboy 🥇
+- https://github.com/alexcrichton/jba/tree/rust 🥇
 - https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 - http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
 - http://emubook.emulation64.com/
