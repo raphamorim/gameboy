@@ -19,9 +19,7 @@ pub enum Button {
     Right,
 }
 
-// Enum for which column of inputs is selected. See
-// http://nocash.emubase.de/pandocs.htm#joypadinput for codes and what each
-// column is.
+// http://bgb.bircd.org/pandocs.htm#joypadinput
 #[derive(Debug)]
 pub enum Selected {
     Button = 0x20,
@@ -57,15 +55,6 @@ impl Input {
             _ => {}
         }
     }
-
-    // This is a mapping of key codes to the mask which will be AND'ed into the
-    // correct value. These values are asserted low, so the relevant bit is
-    // cleared. Here's what each bit position is:
-    //
-    // Bit 3 - P13 Input Down or Start (0=Pressed) 0111 = 0x7
-    // Bit 2 - P12 Input Up or Select (0=Pressed) 1011 = 0xb
-    // Bit 1 - P11 Input Left or Button B (0=Pressed) 1101 = 0xd
-    // Bit 0 - P10 Input Right or Button A (0=Pressed) 1110 = 0xe
 
     pub fn keydown(&mut self, key: Button, if_: &mut u8) {
         *if_ |= Interrupt::Joypad as u8;

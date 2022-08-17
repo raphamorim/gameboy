@@ -11,6 +11,7 @@ mod screen;
 #[wasm_bindgen(start)]
 pub async fn start() {
     // screen::web::render().await
+    // TODO: Process GL
 }
 
 // #[cfg(test)]

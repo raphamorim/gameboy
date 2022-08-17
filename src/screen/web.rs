@@ -107,7 +107,7 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
                 // Down
                 40 => gb.keydown(Button::Down),
                 -40 => gb.keyup(Button::Down),
-                _ => ()
+                _ => (),
             }
 
             gb.frame();

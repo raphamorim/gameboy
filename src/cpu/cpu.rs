@@ -409,9 +409,9 @@ impl Cpu {
                 ld::rr_bl(self);
                 1
             }
-            70 => {
+            0x46 => {
                 ld::r_hlm_b(self);
-                1
+                2
             }
             0x47 => {
                 ld::rr_ba(self);
@@ -441,9 +441,9 @@ impl Cpu {
                 ld::rr_cl(self);
                 1
             }
-            78 => {
+            0x4E => {
                 ld::r_hlm_c(self);
-                3
+                2
             }
             79 => {
                 ld::rr_ca(self);
@@ -473,9 +473,9 @@ impl Cpu {
                 ld::rr_dl(self);
                 1
             }
-            86 => {
+            0x56 => {
                 ld::r_hlm_d(self);
-                1
+                2
             }
             87 => {
                 ld::rr_da(self);
@@ -505,9 +505,9 @@ impl Cpu {
                 ld::rr_el(self);
                 1
             }
-            94 => {
+            0x5E => {
                 ld::r_hlm_e(self);
-                1
+                2
             }
             95 => {
                 ld::rr_ea(self);
@@ -517,7 +517,7 @@ impl Cpu {
                 ld::rr_hb(self);
                 1
             }
-            97 => {
+            0x61 => {
                 ld::rr_hc(self);
                 1
             }
@@ -537,9 +537,9 @@ impl Cpu {
                 ld::rr_hl(self);
                 1
             }
-            102 => {
+            0x66 => {
                 ld::r_hlm_h(self);
-                1
+                2
             }
             103 => {
                 ld::rr_ha(self);
@@ -569,9 +569,9 @@ impl Cpu {
                 // ld::rr_ll(self);
                 1
             }
-            110 => {
+            0x6E => {
                 ld::r_hlm_l(self);
-                1
+                2
             }
             111 => {
                 ld::rr_la(self);
