@@ -3,6 +3,10 @@
 > Disclaimer 1.0: This project does not endorse or promote any type of piracy activity. The act of build or install an emulator is not illegal. As many others emulators that have been created over past decades, this *project is just a study case*.
 >
 
+### WebAssembly quick demo
+
+![Quick demo](resources/demo-wasm.gif)
+
 | WebGL with WebAssembly | Desktop GUI with Rust |
 | --- | --- |
 | ![Demo Web with Assembly](resources/demo-web.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
@@ -60,7 +64,7 @@ Power        - DC6V 0.7W (DC3V 0.7W for GB Pocket, DC3V 0.6W for CGB)
 The Game Boy has four operation buttons labeled _"A"_, _"B"_, _"SELECT"_, and _"START"_, and a _directional pad (d-pad)_. There is a volume control dial on the right side of the device and a similar dial on the left side to adjust the contrast. At the top of the Game Boy, a sliding on-off switch and the slot for the Game Boy cartridges are located. The on-off switch includes a physical lockout to prevent users from either inserting or removing a cartridge while the unit is switched on. Nintendo recommends users leave a cartridge in the slot to prevent dust and dirt from entering the system.
 
 ```rust
-pub enum Input {
+pub enum Button {
     A,
     B,
     Left,

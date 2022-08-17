@@ -1,7 +1,6 @@
 extern crate console_error_panic_hook;
 
 use crate::gameboy::Gameboy;
-use crate::screen::debug_rom;
 use core::cell::RefCell;
 
 use std::rc::Rc;
@@ -33,7 +32,8 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
 }
 
 // TODO: Move to WebGL tex2d
-pub async fn render() -> Result<(), JsValue> {
+#[wasm_bindgen]
+pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let document = web_sys::window().unwrap().document().unwrap();
@@ -55,7 +55,6 @@ pub async fn render() -> Result<(), JsValue> {
         .unwrap();
 
     let mut gb = Gameboy::new();
-    let rom: Vec<u8> = debug_rom::get_rom();
 
     gb.load_rom_with_u8_vec(rom);
     let f = Rc::new(RefCell::new(None));

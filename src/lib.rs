@@ -1,16 +1,17 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 
-mod cpu;
 pub mod gameboy;
+
+mod cpu;
 mod gpu;
 mod input;
 mod mmu;
 mod screen;
 
 #[wasm_bindgen(start)]
-pub async fn start() -> Result<(), JsValue> {
-    screen::web::render().await
+pub async fn start() {
+    // screen::web::render().await
 }
 
 // #[cfg(test)]
