@@ -2,16 +2,10 @@
 >
 > Disclaimer 1.0: This project does not endorse or promote any type of piracy activity. The act of build or install an emulator is not illegal. As many others emulators that have been created over past decades, this *project is just a study case*.
 >
-
-### WebAssembly quick demo
+>
+> WebAssembly quick 5s demo
 
 ![Quick demo](resources/demo-wasm.gif)
-
-| WebGL with WebAssembly | Desktop GUI with Rust |
-| --- | --- |
-| ![Demo Web with Assembly](resources/demo-web.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
-| Firefox 102.0.1 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
-| `make web` | `make desktop` |
 
 > Disclaimer 1.2: Tests need to pass by `ubuntu-20.04`, `macOS-latest` and `windows-latest`. This project was created using rustc 1.62.1 (e092d0b6b 2022-07-16).
 >
@@ -19,6 +13,14 @@
 >
 > tl;dr 1.0: Skip to [usage examples](#usage-examples).
 >
+
+## ●&nbsp;&nbsp;Report
+
+| WebGL with WebAssembly | Desktop GUI with Rust |
+| --- | --- |
+| ![Demo Web with Assembly](resources/demo-web.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
+| Firefox 102.0.1 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
+| `make web` | `make desktop` |
 
 ## ●&nbsp;&nbsp;Internals
 
