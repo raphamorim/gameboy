@@ -224,9 +224,9 @@ pub fn retnc(c: &mut Cpu) -> u32 {
         let res = c.memory.rw(c.registers.sp);
         c.registers.sp += 2;
         c.registers.pc = res;
-        5 
-    } else { 
-        2 
+        5
+    } else {
+        2
     }
 }
 pub fn retc(c: &mut Cpu) {

@@ -946,9 +946,7 @@ impl Cpu {
                 stack::rst(self, 0x08);
                 4
             }
-            0xD0 => {
-                stack::retnc(self)
-            }
+            0xD0 => stack::retnc(self),
             0xD1 => {
                 stack::popde(self);
                 3

@@ -58,7 +58,7 @@ impl Timer {
             Speed::Normal => {
                 // ticks / 4
                 ticks
-            },
+            }
             Speed::Double => ticks,
         };
 

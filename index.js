@@ -1,10 +1,10 @@
 import('./pkg')
   .catch(console.error);
 
-import { render } from "./pkg";
+import { render } from './pkg';
 
-const playButton = document.querySelector("#play");
-const file = document.querySelector("#file");
+const playButton = document.querySelector('#play');
+const file = document.querySelector('#file');
 
 let rom = null;
 
@@ -14,6 +14,7 @@ file.addEventListener('change', function readFile() {
 
 playButton.addEventListener('click', function readFile() {
   if (rom) {
+    playButton.style.visibility = 'hidden';
     render(rom);
   }
 });

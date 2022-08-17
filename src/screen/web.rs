@@ -3,7 +3,7 @@ extern crate console_error_panic_hook;
 use crate::gameboy::Gameboy;
 use crate::input::Button;
 
-use core::cell::{RefCell, Ref, RefMut};
+use core::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -61,47 +61,54 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
     let mut gb = Gameboy::new();
 
     gb.load_rom_with_u8_vec(rom);
-    
+
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
-    let mut i = 0;
-    let current_key_code: Rc<RefCell<u32>> = Rc::new(RefCell::new(0));
+    // let mut i = 0;
+    let current_key_code: Rc<RefCell<i32>> = Rc::new(RefCell::new(0));
     gb.frame();
 
-    let current_key_code = current_key_code.clone();
-    
+    {
+        let current_key_code = current_key_code.clone();
         *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-            // Run 20 cycles until wait for input
-            if i >= 20 {
-                let _ = f.borrow_mut().take();
-                return;
-            }
+            // if i >= 10 {
+            //     let _ = f.borrow_mut().take();
+            //     return;
+            // }
 
-            i += 1;
+            // i += 1;
 
-            let mut key: Ref<_> = current_key_code.borrow();
+            let key: RefMut<_> = current_key_code.borrow_mut();
 
-            log_u32(*key);
-            // match key {
-                // // A
-                // 65 => gb.keydown(Button::A),
-                // // S
-                // 83 => gb.keydown(Button::B),
-                // // Z 
-                // 90 => gb.keydown(Button::Select),
-                // // X
-                // 88 => gb.keydown(Button::Start),
+            // log_u32(*key);
+            match *key {
+                // A
+                65 => gb.keydown(Button::A),
+                -65 => gb.keyup(Button::A),
+                // S
+                83 => gb.keydown(Button::B),
+                -83 => gb.keyup(Button::B),
+                // Z
+                90 => gb.keydown(Button::Select),
+                -90 => gb.keyup(Button::Select),
+                // X
+                88 => gb.keydown(Button::Start),
+                -88 => gb.keyup(Button::Start),
 
                 // Left
-                // 37 => gb.keydown(Button::Left),
+                37 => gb.keydown(Button::Left),
+                -37 => gb.keyup(Button::Left),
                 // Right
-                // 39 => gb.keydown(Button::Right),
+                39 => gb.keydown(Button::Right),
+                -39 => gb.keyup(Button::Right),
                 // Up
-                // 38 => gb.keydown(Button::Up),
+                38 => gb.keydown(Button::Up),
+                -38 => gb.keyup(Button::Up),
                 // Down
-                // 40 => gb.keydown(Button::Down),
-                // _ => ()
-            // }
+                40 => gb.keydown(Button::Down),
+                -40 => gb.keyup(Button::Down),
+                _ => ()
+            }
 
             gb.frame();
             let data: &mut [u8] = gb.image_mut();
@@ -120,19 +127,27 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
 
             request_animation_frame(f.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut()>));
-
-        request_animation_frame(g.borrow().as_ref().unwrap());
-    
+    }
     {
+        let current_key_code = current_key_code.clone();
         let closure = Closure::<dyn FnMut(_)>::new(move |event: web_sys::KeyboardEvent| {
             let key = event.key_code();
-            log_u32(key);
-            // let k = current_key_code.borrow_mut();
-            // k = key;
+            *current_key_code.borrow_mut() = key as i32;
         });
-        window().add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref());
+        window().add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
+    {
+        let current_key_code = current_key_code.clone();
+        let closure = Closure::<dyn FnMut(_)>::new(move |event: web_sys::KeyboardEvent| {
+            let key = event.key_code();
+            *current_key_code.borrow_mut() = (key as i32) * -1;
+        });
+        window().add_event_listener_with_callback("keyup", closure.as_ref().unchecked_ref())?;
+        closure.forget();
+    }
+
+    request_animation_frame(g.borrow().as_ref().unwrap());
 
     Ok(())
 }

@@ -256,7 +256,8 @@ pub fn adcn(cpu: &mut Cpu) {
     cpu.registers.flag(Z, r == 0);
     cpu.registers.flag(H, (a & 0xF) + (b & 0xF) + c > 0xF);
     cpu.registers.flag(N, false);
-    cpu.registers.flag(C, (a as u16) + (b as u16) + (c as u16) > 0xFF);
+    cpu.registers
+        .flag(C, (a as u16) + (b as u16) + (c as u16) > 0xFF);
     cpu.registers.a = r;
 }
 pub fn subr_b(cpu: &mut Cpu) {
