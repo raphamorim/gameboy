@@ -145,7 +145,7 @@ impl Cpu {
 
     fn operation(&mut self) -> u32 {
         let op = self.get_byte();
-        self.debug(op);
+        // self.debug(op);
         match op {
             0x00 => 1,
             0x01 => {

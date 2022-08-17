@@ -1,8 +1,9 @@
 extern crate console_error_panic_hook;
 
 use crate::gameboy::Gameboy;
-use core::cell::RefCell;
+use crate::input::Button;
 
+use core::cell::{RefCell, Ref, RefMut};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -21,6 +22,12 @@ extern "C" {
 
 fn window() -> web_sys::Window {
     web_sys::window().expect("no global `window` exists")
+}
+
+fn add_event_listener(listener: &str, f: &Closure<dyn FnMut(web_sys::KeyboardEvent)>) {
+    window()
+        .add_event_listener_with_callback(listener, f.as_ref().unchecked_ref())
+        .expect("should register `add_event_listener` OK");
 }
 
 fn request_animation_frame(f: &Closure<dyn FnMut()>) {
@@ -54,39 +61,78 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
     let mut gb = Gameboy::new();
 
     gb.load_rom_with_u8_vec(rom);
+    
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
-
     let mut i = 0;
+    let current_key_code: Rc<RefCell<u32>> = Rc::new(RefCell::new(0));
     gb.frame();
-    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        // Run 20 cycles until wait for input
-        if i >= 20 {
-            let _ = f.borrow_mut().take();
-            return;
-        }
 
-        i += 1;
-
-        gb.frame();
-        let data: &mut [u8] = gb.image_mut();
-        let _image_data = match ImageData::new_with_u8_clamped_array_and_sh(
-            wasm_bindgen::Clamped(data),
-            160,
-            144,
-        ) {
-            Ok(d) => {
-                context.put_image_data(&d, 0.0, 0.0).ok();
+    let current_key_code = current_key_code.clone();
+    
+        *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+            // Run 20 cycles until wait for input
+            if i >= 20 {
+                let _ = f.borrow_mut().take();
+                return;
             }
-            Err(err) => {
-                log(format!("{:?}", err));
-            }
-        };
 
-        request_animation_frame(f.borrow().as_ref().unwrap());
-    }) as Box<dyn FnMut()>));
+            i += 1;
 
-    request_animation_frame(g.borrow().as_ref().unwrap());
+            let mut key: Ref<_> = current_key_code.borrow();
+
+            log_u32(*key);
+            // match key {
+                // // A
+                // 65 => gb.keydown(Button::A),
+                // // S
+                // 83 => gb.keydown(Button::B),
+                // // Z 
+                // 90 => gb.keydown(Button::Select),
+                // // X
+                // 88 => gb.keydown(Button::Start),
+
+                // Left
+                // 37 => gb.keydown(Button::Left),
+                // Right
+                // 39 => gb.keydown(Button::Right),
+                // Up
+                // 38 => gb.keydown(Button::Up),
+                // Down
+                // 40 => gb.keydown(Button::Down),
+                // _ => ()
+            // }
+
+            gb.frame();
+            let data: &mut [u8] = gb.image_mut();
+            let _image_data = match ImageData::new_with_u8_clamped_array_and_sh(
+                wasm_bindgen::Clamped(data),
+                160,
+                144,
+            ) {
+                Ok(d) => {
+                    context.put_image_data(&d, 0.0, 0.0).ok();
+                }
+                Err(err) => {
+                    log(format!("{:?}", err));
+                }
+            };
+
+            request_animation_frame(f.borrow().as_ref().unwrap());
+        }) as Box<dyn FnMut()>));
+
+        request_animation_frame(g.borrow().as_ref().unwrap());
+    
+    {
+        let closure = Closure::<dyn FnMut(_)>::new(move |event: web_sys::KeyboardEvent| {
+            let key = event.key_code();
+            log_u32(key);
+            // let k = current_key_code.borrow_mut();
+            // k = key;
+        });
+        window().add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref());
+        closure.forget();
+    }
 
     Ok(())
 }

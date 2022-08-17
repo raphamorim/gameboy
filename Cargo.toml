@@ -30,14 +30,14 @@ features = [
   'Document',
   'Element',
   'HtmlCanvasElement',
-  'HtmlInputElement',
   'CanvasRenderingContext2d',
+  'ImageData',
+  'Window',
+  'KeyboardEvent',
+]
+
 #'WebGlBuffer',
 #'WebGlRenderingContext',
 #'ImageBitmap',
-  'ImageData',
 #'WebGlProgram',
 #'WebGlShader',
-  'Window',
-  'File',
-]
