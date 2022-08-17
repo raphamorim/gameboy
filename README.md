@@ -247,8 +247,8 @@ fn main() {
     - [x] Create desktop window
 - [x] Browser
     - [x] Create server using port `3000`
-- [ ] Keyboard handlers
-    - [ ] Web
+- [x] Keyboard handlers
+    - [x] Web
     - [x] Desktop
 - [ ] Classic gameboy instructions (`.gb`)
 - [x] Read ROM on browser and send to WASM (`Gameboy::load_with_u8_vec`)
