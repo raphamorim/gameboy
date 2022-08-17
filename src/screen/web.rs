@@ -7,9 +7,7 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use web_sys::{
-    ImageData, CanvasRenderingContext2d
-};
+use web_sys::{CanvasRenderingContext2d, ImageData};
 
 use std::panic;
 
@@ -37,8 +35,7 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let document = web_sys::window().unwrap().document().unwrap();
-    let game = document
-        .get_element_by_id("game");
+    let game = document.get_element_by_id("game");
 
     let canvas = document
         .create_element("canvas")?
@@ -85,7 +82,7 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
                 log(format!("{:?}", err));
             }
         };
-        
+
         request_animation_frame(f.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 

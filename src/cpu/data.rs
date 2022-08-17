@@ -249,18 +249,15 @@ pub fn adchl(cpu: &mut Cpu) {
     cpu.registers.a &= 255;
 }
 pub fn adcn(cpu: &mut Cpu) {
-    cpu.registers.a += cpu.memory.rb(cpu.registers.pc);
-    cpu.registers.pc += 1;
-    if cpu.registers.f >= 0x10 {
-        cpu.registers.a += 1
-    } else {
-        cpu.registers.a += 0
-    }
-    cpu.fz(cpu.registers.a, 0);
-    if cpu.registers.a > u8::MAX {
-        cpu.registers.f |= 0x10;
-    }
-    cpu.registers.a &= 255;
+    let b = cpu.get_byte();
+    let c = if cpu.registers.getflag(C) { 1 } else { 0 };
+    let a = cpu.registers.a;
+    let r = a.wrapping_add(b).wrapping_add(c);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0xF) + (b & 0xF) + c > 0xF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, (a as u16) + (b as u16) + (c as u16) > 0xFF);
+    cpu.registers.a = r;
 }
 pub fn subr_b(cpu: &mut Cpu) {
     let b = cpu.registers.b;
@@ -640,88 +637,137 @@ pub fn orr_b(cpu: &mut Cpu) {
     cpu.registers.a = r;
 }
 pub fn orr_c(cpu: &mut Cpu) {
-    cpu.registers.a |= cpu.registers.c;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a | cpu.registers.c;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn orr_d(cpu: &mut Cpu) {
-    cpu.registers.a |= cpu.registers.d;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a | cpu.registers.d;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn orr_e(cpu: &mut Cpu) {
-    cpu.registers.a |= cpu.registers.e;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a | cpu.registers.e;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn orr_h(cpu: &mut Cpu) {
-    cpu.registers.a |= cpu.registers.h;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a | cpu.registers.h;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn orr_l(cpu: &mut Cpu) {
-    cpu.registers.a |= cpu.registers.l;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a | cpu.registers.l;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn orr_a(cpu: &mut Cpu) {
-    cpu.registers.a |= cpu.registers.a;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a | cpu.registers.a;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn orhl(cpu: &mut Cpu) {
-    let a = (cpu.registers.h as u16) << 8;
-    let addr: u16 = a + (cpu.registers.l as u16);
-    cpu.registers.a |= cpu.memory.rb(addr);
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let addr = ((cpu.registers.h as u16) << 8) + (cpu.registers.l as u16);
+    let v = cpu.memory.rb(addr);
+    let r = cpu.registers.a | v;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn orn(cpu: &mut Cpu) {
-    cpu.registers.a |= cpu.memory.rb(cpu.registers.pc);
-    cpu.registers.pc += 1;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let b = cpu.get_byte();
+    let r = cpu.registers.a ^ b;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorr_b(cpu: &mut Cpu) {
-    cpu.registers.a ^= cpu.registers.b;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a ^ cpu.registers.b;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorr_c(cpu: &mut Cpu) {
-    cpu.registers.a ^= cpu.registers.c;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a ^ cpu.registers.c;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorr_d(cpu: &mut Cpu) {
-    cpu.registers.a ^= cpu.registers.d;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a ^ cpu.registers.d;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorr_e(cpu: &mut Cpu) {
-    cpu.registers.a ^= cpu.registers.e;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a ^ cpu.registers.e;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorr_h(cpu: &mut Cpu) {
-    cpu.registers.a ^= cpu.registers.h;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a ^ cpu.registers.h;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorr_l(cpu: &mut Cpu) {
-    cpu.registers.a ^= cpu.registers.l;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a ^ cpu.registers.l;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorr_a(cpu: &mut Cpu) {
-    cpu.registers.a ^= cpu.registers.a;
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let r = cpu.registers.a ^ cpu.registers.a;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorhl(cpu: &mut Cpu) {
-    let addr = (cpu.registers.h as u16) << 8 + (cpu.registers.l as u16);
-    cpu.registers.a ^= cpu.memory.rb(addr);
-    cpu.registers.a &= 255;
-    cpu.fz(cpu.registers.a, 0);
+    let addr = ((cpu.registers.h as u16) << 8) + (cpu.registers.l as u16);
+    let v = cpu.memory.rb(addr);
+    let r = cpu.registers.a ^ v;
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, false);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    cpu.registers.a = r;
 }
 pub fn xorn(cpu: &mut Cpu) {
     cpu.registers.a ^= cpu.memory.rb(cpu.registers.pc);

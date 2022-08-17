@@ -50,7 +50,8 @@ pub fn jpnn(c: &mut Cpu) {
     c.registers.pc = c.get_word();
 }
 pub fn jphl(c: &mut Cpu) {
-    c.registers.pc = c.registers.h as u16;
+    let value = ((c.registers.h as u16) << 8) | (c.registers.l as u16);
+    c.registers.pc = value;
 }
 pub fn jpnznn(c: &mut Cpu) -> u32 {
     if !c.registers.getflag(Z) {
@@ -218,10 +219,14 @@ pub fn retz(c: &mut Cpu) -> u32 {
         2
     }
 }
-pub fn retnc(c: &mut Cpu) {
-    if (c.registers.f & 0x10) == 0x00 {
-        c.registers.pc = c.memory.rw(c.registers.sp);
+pub fn retnc(c: &mut Cpu) -> u32 {
+    if !c.registers.getflag(C) {
+        let res = c.memory.rw(c.registers.sp);
         c.registers.sp += 2;
+        c.registers.pc = res;
+        5 
+    } else { 
+        2 
     }
 }
 pub fn retc(c: &mut Cpu) {

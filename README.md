@@ -251,6 +251,7 @@ fn main() {
     - [ ] Web
     - [x] Desktop
 - [ ] Classic gameboy instructions (`.gb`)
+- [x] Read ROM on browser and send to WASM (`Gameboy::load_with_u8_vec`)
 - [x] Extend screen mod to render on web with WASM
     - [ ] Render with WebGl
 - [ ] Support `.cgb` rom (Game Boy Color)
@@ -267,13 +268,13 @@ The tests are based on Blargg's Gameboy hardware test ROMs.
 
 Link to the repository: https://github.com/retrio/gb-test-roms.git
 
-| Tests (originally ran in [Openemu](https://openemu.org/)) | Desktop Test | Web Test
-| --- | --- | --- |
-| ![CPU instructions test](resources/tests/cpu-instrs.png) | Failing | Failing |
-| ![Bits Unused test](resources/tests/bits-unused.png) | Failing | Failing |
-| ![Halt Bug test](resources/tests/halt-bug.png) | Failing | Failing |
-| ![Bits bank1 test](resources/tests/bits-bank1.png) | Failing | Failing |
-| ![GGB Sound test](resources/tests/cgb-sound.png) | Failing | Failing |
+| Tests (originally ran in [Openemu](https://openemu.org/)) | LR35902 Status
+| --- | --- |
+| ![CPU instructions test](resources/tests/cpu-instrs.png) | Failing |
+| ![Bits Unused test](resources/tests/bits-unused.png) | Failing |
+| ![Halt Bug test](resources/tests/halt-bug.png) | Failing |
+| ![Bits bank1 test](resources/tests/bits-bank1.png) | Failing |
+| ![GGB Sound test](resources/tests/cgb-sound.png) | Failing |
 
 # ●&nbsp;&nbsp;Development Diary
 

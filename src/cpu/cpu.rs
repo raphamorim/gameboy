@@ -47,10 +47,10 @@ impl Cpu {
         }
     }
     pub fn debug(&mut self, op: u8) {
-        // Cpu::mut_find_or_insert(&mut self._executed_operations, op);
+        Cpu::mut_find_or_insert(&mut self._executed_operations, op);
         // println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
         println!("{} {}", op, format!("{:?}", self.registers));
-        // println!("{:?}", self._executed_operations);
+        println!("{:?}", self._executed_operations);
     }
     pub fn get_byte(&mut self) -> u8 {
         let pc = self.memory.rb(self.registers.pc);
@@ -145,7 +145,7 @@ impl Cpu {
 
     fn operation(&mut self) -> u32 {
         let op = self.get_byte();
-        // self.debug(op);
+        self.debug(op);
         match op {
             0x00 => 1,
             0x01 => {
@@ -801,35 +801,35 @@ impl Cpu {
                 data::andr_a(self);
                 1
             }
-            168 => {
+            0xA8 => {
                 data::xorr_b(self);
                 1
             }
-            169 => {
+            0xA9 => {
                 data::xorr_c(self);
                 1
             }
-            170 => {
+            0xAA => {
                 data::xorr_d(self);
                 1
             }
-            171 => {
+            0xAB => {
                 data::xorr_e(self);
                 1
             }
-            172 => {
+            0xAC => {
                 data::xorr_h(self);
                 1
             }
-            173 => {
+            0xAD => {
                 data::xorr_l(self);
                 1
             }
-            174 => {
+            0xAE => {
                 data::xorhl(self);
-                1
+                2
             }
-            175 => {
+            0xAF => {
                 data::xorr_a(self);
                 1
             }
@@ -837,31 +837,31 @@ impl Cpu {
                 data::orr_b(self);
                 1
             }
-            177 => {
+            0xB1 => {
                 data::orr_c(self);
                 1
             }
-            178 => {
+            0xB2 => {
                 data::orr_d(self);
                 1
             }
-            179 => {
+            0xB3 => {
                 data::orr_e(self);
                 1
             }
-            180 => {
+            0xB4 => {
                 data::orr_h(self);
                 1
             }
-            181 => {
+            0xB5 => {
                 data::orr_l(self);
                 1
             }
-            182 => {
+            0xB6 => {
                 data::orhl(self);
-                1
+                2
             }
-            183 => {
+            0xB7 => {
                 data::orr_a(self);
                 1
             }
@@ -938,17 +938,16 @@ impl Cpu {
                 stack::callnn(self);
                 6
             }
-            206 => {
+            0xCE => {
                 data::adcn(self);
-                1
+                2
             }
-            207 => {
+            0xCF => {
                 stack::rst(self, 0x08);
-                1
+                4
             }
-            208 => {
-                stack::retnc(self);
-                1
+            0xD0 => {
+                stack::retnc(self)
             }
             0xD1 => {
                 stack::popde(self);
@@ -1020,7 +1019,7 @@ impl Cpu {
                 data::addspn(self);
                 1
             }
-            233 => {
+            0xE9 => {
                 stack::jphl(self);
                 1
             }
@@ -1028,7 +1027,7 @@ impl Cpu {
                 ld::mm_a(self);
                 4
             }
-            238 => {
+            0xEE => {
                 data::orn(self);
                 2
             }
