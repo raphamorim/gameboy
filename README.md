@@ -24,11 +24,11 @@
 
 ## ●&nbsp;&nbsp;Internals
 
-<img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" width="500px" />
+<img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" />
 
 * (c) Jeff Frohwein Source: http://www.devrs.com/gb/hardware.php#hardgb
 
-<img src="resources/dmg-main-board-schematic-circuit.png" alt="GameBoy Internals" width="500px" />
+<img src="resources/dmg-main-board-schematic-circuit.png" alt="GameBoy Internals" />
 
 * A scan of the main logic board for the DMG 01: https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
 
