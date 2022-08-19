@@ -9,7 +9,7 @@
 
 > Disclaimer 1.2: Tests need to pass by `ubuntu-20.04`, `macOS-latest` and `windows-latest`. This project was created using rustc 1.62.1 (e092d0b6b 2022-07-16).
 >
-> Disclaimer 1.3: The emulator is not 100% done, you can track it development by [Tests](#tests) and [Todo](#todo).
+> Disclaimer 1.3: The emulator is still under development, you can track it development by [Tests](#tests) and [Todo](#todo).
 >
 > tl;dr 1.0: Skip to [usage examples](#usage-examples).
 >
@@ -202,9 +202,40 @@ pub const HEIGHT: usize = 144;
 
 > https://github.com/raphamorim/LR35902/blob/main/src/gb.rs#L3-L4
 
+[...] TODO: write here more about the GPU.
+
 # ●&nbsp;&nbsp;Usage examples
 
 ## Web ~ JavaScript/WASM usage:
+
+1. Install lr35902 with Yarn or NPM:
+
+```bash
+npm install lr35902
+# yarn install lr35902
+```
+
+2. Import the render function:
+
+```javascript
+import { render } from 'lr35902';
+```
+
+3. Configure it:
+
+```javascript
+const romFile = document.querySelector('#rom-file');
+romFile.addEventListener('change', function readFile() {
+  loadRom(this.files[0]);
+});
+
+async function loadRom(file) {
+  const { size, name } = file;
+  const arrayBuffer = await file.arrayBuffer();
+  const u8View = new Uint8Array(arrayBuffer);
+  render(rom);
+}
+```
 
 ## Desktop ~ Rust usage:
 
