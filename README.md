@@ -291,8 +291,9 @@ Tthis section is for personal purposes.
 - http://bgb.bircd.org/pandocs.htm 🥇
 - https://github.com/mvdnes/rboy 🥇
 - https://github.com/alexcrichton/jba/tree/rust 🥇
-- https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
+- https://github.com/gbdev/pandocs
 - http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
+- https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 - http://emubook.emulation64.com/
 - https://github.com/jawline/Mimic
 - https://www.youtube.com/watch?v=LqcEg3IVziQ

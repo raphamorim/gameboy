@@ -97,7 +97,7 @@ impl Cpu {
             1
         };
 
-        // See http://nocash.emubase.de/pandocs.htm#interrupts
+        // See http://bgb.bircd.org/pandocs.htm#interrupts
         if self.ime != 0 || self.halt != 0 {
             let ints = self.memory.if_ & self.memory.ie_;
 
