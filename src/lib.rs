@@ -1,8 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 pub mod gameboy;
-
-mod cpu;
+pub mod cpu;
 mod gpu;
 mod input;
 mod mmu;
