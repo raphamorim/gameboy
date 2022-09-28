@@ -15,6 +15,10 @@ crate-type = ["cdylib", "rlib"]
 [features]
 desktop = ["dep:gl", "dep:glutin", "dep:libc"]
 
+[profile.release]
+opt-level = 'z'
+lto = true
+
 [dependencies]
 js-sys = "0.3.59"
 wasm-bindgen = "0.2.82"
