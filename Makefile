@@ -26,12 +26,14 @@ desktop:
 ############################
 web-build:
 	yarn && wasm-pack build --debug
-	
 
 web-publish:
 	yarn && wasm-pack build --release
 	du -k ./pkg
 	npm publish
+
+web-docs:
+	yarn webpack && du -k ./docs
 
 web:
 	yarn serve
