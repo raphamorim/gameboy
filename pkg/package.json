@@ -11,12 +11,12 @@
     "url": "https://github.com/raphamorim/LR35902"
   },
   "files": [
-    "lr35902_bg.wasm",
-    "lr35902.js",
-    "lr35902_bg.js",
-    "lr35902.d.ts"
+    "index_bg.wasm",
+    "index.js",
+    "index_bg.js",
+    "index.d.ts"
   ],
-  "module": "lr35902.js",
-  "types": "lr35902.d.ts",
+  "module": "index.js",
+  "types": "index.d.ts",
   "sideEffects": false
 }
