@@ -1,0 +1,22 @@
+{
+  "name": "lr35902",
+  "collaborators": [
+    "Raphael Amorim <rapha850@gmail.com>"
+  ],
+  "description": "Gameboy emulator written in Rust and WebAssembly",
+  "version": "0.1.2",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raphamorim/LR35902"
+  },
+  "files": [
+    "lr35902_bg.wasm",
+    "lr35902.js",
+    "lr35902_bg.js",
+    "lr35902.d.ts"
+  ],
+  "module": "lr35902.js",
+  "types": "lr35902.d.ts",
+  "sideEffects": false
+}

@@ -1,6 +1,6 @@
 [package]
 name = "lr35902"
-version = "0.1.1"
+version = "0.1.2"
 description = "Gameboy emulator written in Rust and WebAssembly"
 authors = ["Raphael Amorim <rapha850@gmail.com>"]
 repository = "https://github.com/raphamorim/LR35902"
@@ -18,6 +18,8 @@ desktop = ["dep:gl", "dep:glutin", "dep:libc"]
 [profile.release]
 opt-level = 'z'
 lto = true
+# The Rust compiler splits your crate into multiple codegen units to parallelize (and thus speed up) compilation. However, this might cause it to miss some potential optimizations.
+codegen-units = 1
 
 [dependencies]
 js-sys = "0.3.59"
