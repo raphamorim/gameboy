@@ -4,26 +4,22 @@
 
 all: build install
 
-# cargo install cargo-watch
 watch:
 	cargo watch -- make run
 
 lint:
 	cargo fmt --check
-# 	cargo clippy --all-targets -- -D warnings
+
+build-wasm:
+	cargo build --release --target wasm32-unknown-unknown
+	wasm-opt -O4 ./target/wasm32-unknown-unknown/release/lr35902.wasm -o gameboy.wasm && du -h gameboy.wasm
 
 test:
 	cargo test --release
 
-############################
-######## Desktop ###########
-############################
 desktop:
 	cd ./examples/desktop && make desktop-build && RUST_BACKTRACE=1 make desktop
 
-############################
-######## Web ###############
-############################
 web-build:
 	yarn && wasm-pack build --debug
 
@@ -33,7 +29,7 @@ web-publish:
 	npm publish
 
 web-docs:
-	yarn webpack && du -k ./docs
+	yarn webpack && du -h ./docs
 
 web:
 	yarn serve

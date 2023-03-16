@@ -2,49 +2,21 @@ name: CI
 
 on: [push, pull_request]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
-
 jobs:
   lint:
-    name: Lint
-    runs-on: ubuntu-20.04
+    name: Lint & Test
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: "1.62.1"
-          override: true
-
-      # make sure all code has been formatted with rustfmt
-      - run: rustup component add rustfmt
-      - name: check rustfmt
-        run: cargo fmt -- --check --color always
-
-      # run clippy to verify we have no warnings
-      # - run: rustup component add clippy
-      # - run: cargo fetch
-      # - name: cargo clippy
-      #   run: cargo clippy --all-targets -- -D warnings
-  
-  test:
-    name: Test
-    strategy:
-      matrix:
-        os: [ubuntu-20.04, macOS-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2
+      - run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }}
+      - run: rustup component add rustfmt clippy
       - run: cargo fetch
+      - run: cargo fmt -- --check --color always
+      - run: cargo clippy --all-targets --all-features -- -D warnings
       - name: cargo test build
         run: cargo build --tests --release
       - name: cargo test
         run: cargo test --release
       - name: Make desktop build
         run: cd ./examples/desktop && make desktop-build
-  

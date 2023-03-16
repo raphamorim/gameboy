@@ -16,7 +16,7 @@ crate-type = ["cdylib", "rlib"]
 desktop = ["dep:gl", "dep:glutin", "dep:libc"]
 
 [profile.release]
-opt-level = 'z'
+opt-level = 's'
 lto = true
 # The Rust compiler splits your crate into multiple codegen units to parallelize (and thus speed up) compilation. However, this might cause it to miss some potential optimizations.
 codegen-units = 1
