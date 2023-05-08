@@ -38,17 +38,15 @@ pub fn rlca(cpu: &mut Cpu) {
     cpu.registers.f = (cpu.registers.f & 0xEF) + co;
 }
 pub fn rra(cpu: &mut Cpu) {
-    let mut ci = 0;
-    let mut co = 0;
-    if (cpu.registers.f & 0x10) > 0 {
-        ci = 0x80;
-    }
-    if (cpu.registers.a & 1) > 0 {
-        co = 0x10;
-    }
-
-    cpu.registers.a = (cpu.registers.a >> 1) + ci;
-    cpu.registers.f = (cpu.registers.f & 0xEF) + co;
+    let a = cpu.registers.a;
+    let c = a & 0x01 == 0x01;
+    let r = (a >> 1) | (if cpu.registers.getflag(C) { 0x80 } else { 0 });
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(N, false);
+    // cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(C, c);
+    cpu.registers.a = r;
+    cpu.registers.flag(Z, false);
 }
 pub fn rrca(cpu: &mut Cpu) {
     let mut ci = 0;

@@ -153,13 +153,15 @@ pub fn callnn(c: &mut Cpu) {
     c.memory.ww(c.registers.sp, c.registers.pc + 2);
     c.registers.pc = c.get_word();
 }
-pub fn callnznn(c: &mut Cpu) {
-    if (c.registers.f & 0x80) == 0x00 {
+pub fn callnznn(c: &mut Cpu) -> u32 {
+    if !c.registers.getflag(Z) {
         c.registers.sp -= 2;
         c.memory.ww(c.registers.sp, c.registers.pc + 2);
-        c.registers.pc = c.memory.rw(c.registers.pc);
+        c.registers.pc = c.get_word();
+        6
     } else {
         c.registers.pc += 2;
+        3
     }
 }
 pub fn callznn(c: &mut Cpu) -> u32 {

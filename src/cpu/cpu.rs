@@ -269,7 +269,7 @@ impl Cpu {
                 ld::rr_e(self);
                 2
             }
-            31 => {
+            0x1F => {
                 misc::rra(self);
                 1
             }
@@ -311,17 +311,17 @@ impl Cpu {
                 data::dechl(self);
                 1
             }
-            44 => {
+            0x2C => {
                 data::incr_l(self);
                 1
             }
-            45 => {
+            0x2D => {
                 data::decr_l(self);
                 1
             }
-            46 => {
+            0x2E => {
                 ld::rr_l(self);
-                1
+                2
             }
             0x2F => {
                 data::cpl(self);
@@ -605,7 +605,7 @@ impl Cpu {
                 self.halt = 1;
                 1
             }
-            119 => {
+            0x77 => {
                 ld::hlmr_a(self);
                 2
             }
@@ -613,23 +613,23 @@ impl Cpu {
                 ld::rr_ab(self);
                 1
             }
-            121 => {
+            0x79 => {
                 ld::rr_ac(self);
                 1
             }
-            122 => {
+            0x7A => {
                 ld::rr_ad(self);
                 1
             }
-            123 => {
+            0x7B => {
                 ld::rr_ae(self);
                 1
             }
-            124 => {
+            0x7C => {
                 ld::rr_ah(self);
                 1
             }
-            125 => {
+            0x7D => {
                 ld::rr_al(self);
                 1
             }
@@ -910,10 +910,7 @@ impl Cpu {
                 stack::jpnn(self);
                 4
             }
-            196 => {
-                stack::callnznn(self);
-                1
-            }
+            0xC4 => stack::callnznn(self),
             0xC5 => {
                 stack::pushbc(self);
                 4
