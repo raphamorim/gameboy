@@ -929,10 +929,10 @@ pub fn incsp(cpu: &mut Cpu) {
     cpu.registers.sp = cpu.registers.sp + 1;
 }
 pub fn decbc(cpu: &mut Cpu) {
-    cpu.registers.c = (cpu.registers.c - 1) & 255;
-    if cpu.registers.c == 255 {
-        cpu.registers.b = (cpu.registers.b - 1) & 255;
-    }
+    let mut val = ((cpu.registers.b as u16) << 8) | (cpu.registers.c as u16);
+    val = val.wrapping_sub(1);
+    cpu.registers.b = (val >> 8) as u8;
+    cpu.registers.c = (val & 0x00FF) as u8;
 }
 pub fn decde(cpu: &mut Cpu) {
     cpu.registers.e = (cpu.registers.e - 1) & 255;

@@ -117,11 +117,9 @@ pub fn ahli(cpu: &mut Cpu) {
 }
 pub fn hld_a(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
+    cpu.registers.h = (addr - 1 >> 8) as u8;
+    cpu.registers.l = (addr - 1 & 0x00FF) as u8;
     cpu.memory.wb(addr, cpu.registers.a);
-    cpu.registers.l = (cpu.registers.l - 1) & 255;
-    if cpu.registers.l == 255 {
-        cpu.registers.h = (cpu.registers.h - 1) & 255;
-    }
 }
 pub fn ahld(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;

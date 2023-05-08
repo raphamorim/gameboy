@@ -249,7 +249,7 @@ impl Cpu {
                 data::addhlde(self);
                 2
             }
-            26 => {
+            0x1A => {
                 ld::adem(self);
                 2
             }
@@ -332,9 +332,9 @@ impl Cpu {
                 ld::spnn(self);
                 3
             }
-            50 => {
+            0x32 => {
                 ld::hld_a(self);
-                1
+                2
             }
             51 => {
                 data::incsp(self);
@@ -348,9 +348,9 @@ impl Cpu {
                 data::dechlm(self);
                 3
             }
-            54 => {
+            0x36 => {
                 ld::hlmn(self);
-                1
+                3
             }
             0x37 => {
                 data::scf(self);
@@ -607,7 +607,7 @@ impl Cpu {
             }
             119 => {
                 ld::hlmr_a(self);
-                1
+                2
             }
             0x78 => {
                 ld::rr_ab(self);
