@@ -22,13 +22,14 @@ pub fn addr_c(cpu: &mut Cpu) {
     cpu.registers.a = r;
 }
 pub fn addr_d(cpu: &mut Cpu) {
-    panic!("fix f attribution");
-    cpu.registers.a += cpu.registers.d;
-    cpu.fz(cpu.registers.a, 0);
-    if cpu.registers.a > u8::MAX {
-        cpu.registers.f |= 0x10;
-    }
-    cpu.registers.a &= 255;
+    let b = cpu.registers.d;
+    let a = cpu.registers.a;
+    let r = a.wrapping_add(b);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0xF) + (b & 0xF) > 0xF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, (a as u16) + (b as u16) > 0xFF);
+    cpu.registers.a = r;
 }
 pub fn addr_e(cpu: &mut Cpu) {
     let e = cpu.registers.e;
@@ -41,41 +42,45 @@ pub fn addr_e(cpu: &mut Cpu) {
     cpu.registers.a = r;
 }
 pub fn addr_h(cpu: &mut Cpu) {
-    panic!("fix f attribution");
-    cpu.registers.a += cpu.registers.h;
-    cpu.fz(cpu.registers.a, 0);
-    if cpu.registers.a > u8::MAX {
-        cpu.registers.f |= 0x10;
-    }
-    cpu.registers.a &= 255;
+    let e = cpu.registers.h;
+    let a = cpu.registers.a;
+    let r = a.wrapping_add(e);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0xF) + (e & 0xF) > 0xF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, (a as u16) + (e as u16) > 0xFF);
+    cpu.registers.a = r;
 }
 pub fn addr_l(cpu: &mut Cpu) {
-    panic!("fix f attribution");
-    cpu.registers.a += cpu.registers.l;
-    cpu.fz(cpu.registers.a, 0);
-    if cpu.registers.a > u8::MAX {
-        cpu.registers.f |= 0x10;
-    }
-    cpu.registers.a &= 255;
+    let e = cpu.registers.l;
+    let a = cpu.registers.a;
+    let r = a.wrapping_add(e);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0xF) + (e & 0xF) > 0xF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, (a as u16) + (e as u16) > 0xFF);
+    cpu.registers.a = r;
 }
 pub fn addr_a(cpu: &mut Cpu) {
-    panic!("fix f attribution");
-    cpu.registers.a += cpu.registers.a;
-    cpu.fz(cpu.registers.a, 0);
-    if cpu.registers.a > u8::MAX {
-        cpu.registers.f |= 0x10;
-    }
-    cpu.registers.a &= 255;
+    let e = cpu.registers.a;
+    let a = cpu.registers.a;
+    let r = a.wrapping_add(e);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0xF) + (e & 0xF) > 0xF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, (a as u16) + (e as u16) > 0xFF);
+    cpu.registers.a = r;
 }
 pub fn addhl(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
-    panic!("fix f attribution");
-    cpu.registers.a += cpu.memory.rb(addr);
-    cpu.fz(cpu.registers.a, 0);
-    if cpu.registers.a > u8::MAX {
-        cpu.registers.f |= 0x10;
-    }
-    cpu.registers.a &= 255;
+    let e = cpu.memory.rb(addr);
+    let a = cpu.registers.a;
+    let r = a.wrapping_add(e);
+    cpu.registers.flag(Z, r == 0);
+    cpu.registers.flag(H, (a & 0xF) + (e & 0xF) > 0xF);
+    cpu.registers.flag(N, false);
+    cpu.registers.flag(C, (a as u16) + (e as u16) > 0xFF);
+    cpu.registers.a = r;
 }
 pub fn addn(cpu: &mut Cpu) {
     let b = cpu.get_byte();

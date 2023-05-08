@@ -649,7 +649,7 @@ impl Cpu {
                 data::addr_c(self);
                 1
             }
-            130 => {
+            0x82 => {
                 data::addr_d(self);
                 1
             }
@@ -657,17 +657,17 @@ impl Cpu {
                 data::addr_e(self);
                 1
             }
-            132 => {
+            0x84 => {
                 data::addr_h(self);
                 1
             }
-            133 => {
+            0x85 => {
                 data::addr_l(self);
                 1
             }
-            134 => {
+            0x86 => {
                 data::addhl(self);
-                1
+                2
             }
             135 => {
                 data::addr_a(self);
