@@ -5,7 +5,8 @@ use lr35902::gameboy::{load_rom, Gameboy, RenderMode::Desktop};
 fn main() {
     // let gb = Gameboy::new("./../../tests/cpu_instrs/cpu_instrs.gb");
     if let Ok((data, filepath)) = load_rom("./../pokemon-blue.gb") {
-        let gb = Gameboy::new(data, filepath);
+        // let gb = Gameboy::new(data, Some(filepath));
+        let gb = Gameboy::new(data, None);
         gb.render(Desktop);
     } else {
         println!("error loading rom");

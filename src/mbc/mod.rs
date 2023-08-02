@@ -37,7 +37,13 @@ pub trait MBC: Send {
     }
 }
 
-pub fn get_mbc(data: Vec<u8>, file: path::PathBuf) -> StrResult<Box<dyn MBC + 'static>> {
+pub fn get_mbc(data: Vec<u8>, filepath: Option<path::PathBuf>) -> StrResult<Box<dyn MBC + 'static>> {
+    if filepath.is_none() {
+        return mbc1::MBC1::new_without_save(data).map(|v| Box::new(v) as Box<dyn MBC>);
+    }
+
+    let file = filepath.unwrap();
+
     match data[0x147] {
         0x00 => mbc0::MBC0::new(data).map(|v| Box::new(v) as Box<dyn MBC>),
         0x01..=0x03 => mbc1::MBC1::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),

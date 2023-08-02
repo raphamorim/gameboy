@@ -47,7 +47,7 @@ pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String>
 pub const CYCLES: u32 = 70224;
 
 impl<'a> Gameboy {
-    pub fn new(data: Vec<u8>, filepath: std::path::PathBuf) -> Gameboy {
+    pub fn new(data: Vec<u8>, filepath: Option<std::path::PathBuf>) -> Gameboy {
         // let rom = load_rom();
 
         let gb = Gameboy {
@@ -62,7 +62,7 @@ impl<'a> Gameboy {
     pub fn render(self, render_mode: RenderMode) {
         match render_mode {
             RenderMode::Desktop => {
-                // #[cfg(feature = "desktop")]
+                #[cfg(feature = "desktop")]
                 self.render_desktop();
             }
             RenderMode::WebAssembly => {
@@ -71,7 +71,7 @@ impl<'a> Gameboy {
         }
     }
 
-    // #[cfg(feature = "desktop")]
+    #[cfg(feature = "desktop")]
     pub fn render_desktop(mut self) {
         use crate::screen::desktop::*;
 

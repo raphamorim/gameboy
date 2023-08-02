@@ -30,7 +30,7 @@ pub struct Cpu<'a> {
 }
 
 impl Cpu<'_> {
-    pub fn new(data: Vec<u8>, file: std::path::PathBuf) -> Self {
+    pub fn new(data: Vec<u8>, file: Option<std::path::PathBuf>) -> Self {
         let cpu_mmu = MMU::new_cgb(data, file).unwrap();
         let registers = Registers::new(cpu_mmu.gbmode);
 

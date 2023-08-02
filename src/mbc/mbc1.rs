@@ -40,6 +40,30 @@ impl MBC1 {
         res.loadram().map(|_| res)
     }
 
+    pub fn new_without_save(data: Vec<u8>) -> StrResult<MBC1> {
+        let (svpath, rambanks) = match data[0x147] {
+            0x02 => (None, ram_banks(data[0x149])),
+            0x03 => (None, ram_banks(data[0x149])),
+            _ => (None, 0),
+        };
+        let rombanks = rom_banks(data[0x148]);
+        let ramsize = rambanks * 0x2000;
+
+        let res = MBC1 {
+            rom: data,
+            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram_on: false,
+            banking_mode: 0,
+            rombank: 1,
+            rambank: 0,
+            savepath: svpath,
+            rombanks: rombanks,
+            rambanks: rambanks,
+        };
+        // res.loadram().map(|_| res)
+        Ok(res)
+    }
+
     fn loadram(&mut self) -> StrResult<()> {
         match self.savepath {
             None => Ok(()),

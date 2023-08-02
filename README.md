@@ -297,7 +297,7 @@ Link to the repository: https://github.com/retrio/gb-test-roms.git
 
 | Tests (originally ran in [Openemu](https://openemu.org/)) | LR35902 Status
 | --- | --- |
-| ![CPU instructions test](resources/tests/cpu-instrs.png) | Failing |
+| ![CPU instructions test](resources/tests/cpu-instrs.png) | ✅ |
 | ![Bits Unused test](resources/tests/bits-unused.png) | Failing |
 | ![Halt Bug test](resources/tests/halt-bug.png) | Failing |
 | ![Bits bank1 test](resources/tests/bits-bank1.png) | Failing |

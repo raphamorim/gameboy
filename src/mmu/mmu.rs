@@ -56,7 +56,7 @@ fn fill_random(slice: &mut [u8], start: u32) {
 }
 
 impl<'a> MMU<'a> {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MMU<'a>> {
+    pub fn new(data: Vec<u8>, file: Option<path::PathBuf>) -> StrResult<MMU<'a>> {
         let mmu_mbc = mbc::get_mbc(data, file)?;
         let serial = Serial::new();
         let mut res = MMU {
@@ -89,7 +89,7 @@ impl<'a> MMU<'a> {
         Ok(res)
     }
 
-    pub fn new_cgb(data: Vec<u8>, file: path::PathBuf) -> StrResult<MMU<'a>> {
+    pub fn new_cgb(data: Vec<u8>, file: Option<path::PathBuf>) -> StrResult<MMU<'a>> {
         let mmu_mbc = mbc::get_mbc(data, file)?;
         let serial = Serial::new();
         let mut res = MMU {
