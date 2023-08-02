@@ -22,6 +22,7 @@ pub struct Mmu {
     pub if_: u8,
     pub ie_: u8,
     // pub inte: u8,
+    // pub intf: u8
     // Flag indicating BIOS is mapped in
     // BIOS is unmapped with the first instruction above 0x00FF
     // _inbios: u16,

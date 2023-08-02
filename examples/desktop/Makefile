@@ -9,6 +9,7 @@ d:
 	make desktop-build && RUST_BACKTRACE=1 make desktop
 
 dl:
+# 	rm ./log
 	make desktop-build && RUST_BACKTRACE=1 make desktop >> log
 
 desktop-build:
@@ -16,4 +17,4 @@ desktop-build:
 
 # Runs with a demo
 desktop:
-	./target/debug/desktop ./sample-rom.gb
+	./target/debug/desktop ./../../tests/cpu_instrs/cpu_instrs.gb

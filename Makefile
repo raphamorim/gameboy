@@ -18,7 +18,7 @@ test:
 	cargo test --release
 
 desktop:
-	cd ./examples/desktop && make desktop-build && RUST_BACKTRACE=1 make desktop
+	cd ./examples/desktop && RUST_BACKTRACE=1 make dl
 
 web-build:
 	yarn && wasm-pack build --debug
