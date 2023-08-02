@@ -64,7 +64,7 @@ impl Cpu<'_> {
     }
 
     pub fn do_cycle(&mut self) -> u32 {
-        let ticks = self.do_cycle() * 4;
+        let ticks = self.exec() * 4;
         return self.memory.do_cycle(ticks);
     }
 

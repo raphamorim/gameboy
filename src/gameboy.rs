@@ -1,28 +1,12 @@
-use std::sync::mpsc::Receiver;
 use crate::mode::GbMode;
 use crate::cpu::cpu::Cpu;
 use crate::input::KeypadKey;
-use crate::mmu::mmu::MMU;
+use std::sync::mpsc::{Receiver};
 
 pub struct Gameboy {
     cpu: Cpu<'static>,
-    cycles: u32,
-    scale: u8,
     pub width: u32,
     pub height: u32,
-}
-
-fn timer_periodic(ms: u64) -> Receiver<()> {
-    let (tx, rx) = std::sync::mpsc::sync_channel(1);
-    std::thread::spawn(move || {
-        loop {
-            std::thread::sleep(std::time::Duration::from_millis(ms));
-            if tx.send(()).is_err() {
-                break;
-            }
-        }
-    });
-    rx
 }
 
 pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
@@ -46,8 +30,6 @@ impl<'a> Gameboy {
     pub fn new(filepath: &str) -> Gameboy {
         let gb = Gameboy {
             cpu: Cpu::new(GbMode::Classic, filepath),
-            cycles: 0,
-            scale: 1,
             width: 160,
             height: 144,
         };
@@ -95,7 +77,6 @@ impl<'a> Gameboy {
     pub fn render_desktop(mut self) {
         use crate::screen::desktop::*;
 
-        let mut ratio = 1 + (self.height / 10);
         let event_loop: glutin::event_loop::EventLoop<()> =
             glutin::event_loop::EventLoop::with_user_event();
         let inner_size = glutin::dpi::LogicalSize {
@@ -105,7 +86,7 @@ impl<'a> Gameboy {
         let window_builder = glutin::window::WindowBuilder::new()
             .with_title("LR35902")
             .with_inner_size(inner_size)
-            .with_resizable(false);
+            .with_resizable(true);
         let gl_window = glutin::ContextBuilder::new()
             .build_windowed(window_builder, &event_loop)
             .unwrap();
@@ -147,45 +128,20 @@ impl<'a> Gameboy {
         result
     }
 
-    pub fn get_gpu_data(&self) -> &[u8] {
-        &self.cpu.memory.gpu.data
-    }
-
     pub fn frame(&mut self) {
-        let periodic = timer_periodic(16);
-        let mut limit_speed = true;
-        let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
+        // let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
+        let waitticks = CYCLES;
         let mut ticks = 0;
 
         'outer: loop {
             while ticks < waitticks {
                 ticks += self.cpu.do_cycle();
                 if self.check_and_reset_gpu_updated() {
-                    let data = self.get_gpu_data().to_vec();
-                    // if let Err(TrySendError::Disconnected(..)) = sender.try_send(data) {
-                        break 'outer;
-                    // }
+                    break 'outer;
                 }
             }
 
             ticks -= waitticks;
-
-            // 'recv: loop {
-            //     match receiver.try_recv() {
-            //         Ok(event) => {
-            //             match event {
-            //                 GBEvent::KeyUp(key) => cpu.keyup(key),
-            //                 GBEvent::KeyDown(key) => cpu.keydown(key),
-            //                 GBEvent::SpeedUp => limit_speed = false,
-            //                 GBEvent::SpeedDown => { limit_speed = true; cpu.sync_audio(); }
-            //             }
-            //         },
-            //         Err(TryRecvError::Empty) => break 'recv,
-            //         Err(TryRecvError::Disconnected) => break 'outer,
-            //     }
-            // }
-
-            if limit_speed { let _ = periodic.recv(); }
         }
     }
 
@@ -195,13 +151,6 @@ impl<'a> Gameboy {
 
     pub fn image_mut(&mut self) -> &mut [u8] {
         &mut *self.cpu.memory.gpu.data
-    }
-
-    pub fn set_scale(&mut self, scale: u8) {
-        self.scale = scale;
-        self.width *= scale as u32;
-        self.height *= scale as u32;
-        // self
     }
 
     pub fn keydown(&mut self, key: KeypadKey) {

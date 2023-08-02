@@ -1,7 +1,7 @@
 // extern crate console_error_panic_hook;
 
 // use crate::gameboy::Gameboy;
-// use crate::input::Button;
+// use crate::input::KeypadKey;
 
 // use core::cell::{Ref, RefCell, RefMut};
 // use std::rc::Rc;
@@ -83,30 +83,30 @@
 //             // log_u32(*key);
 //             match *key {
 //                 // A
-//                 65 => gb.keydown(Button::A),
-//                 -65 => gb.keyup(Button::A),
+//                 65 => gb.keydown(KeypadKey::A),
+//                 -65 => gb.keyup(KeypadKey::A),
 //                 // S
-//                 83 => gb.keydown(Button::B),
-//                 -83 => gb.keyup(Button::B),
+//                 83 => gb.keydown(KeypadKey::B),
+//                 -83 => gb.keyup(KeypadKey::B),
 //                 // Z
-//                 90 => gb.keydown(Button::Select),
-//                 -90 => gb.keyup(Button::Select),
+//                 90 => gb.keydown(KeypadKey::Select),
+//                 -90 => gb.keyup(KeypadKey::Select),
 //                 // X
-//                 88 => gb.keydown(Button::Start),
-//                 -88 => gb.keyup(Button::Start),
+//                 88 => gb.keydown(KeypadKey::Start),
+//                 -88 => gb.keyup(KeypadKey::Start),
 
 //                 // Left
-//                 37 => gb.keydown(Button::Left),
-//                 -37 => gb.keyup(Button::Left),
+//                 37 => gb.keydown(KeypadKey::Left),
+//                 -37 => gb.keyup(KeypadKey::Left),
 //                 // Right
-//                 39 => gb.keydown(Button::Right),
-//                 -39 => gb.keyup(Button::Right),
+//                 39 => gb.keydown(KeypadKey::Right),
+//                 -39 => gb.keyup(KeypadKey::Right),
 //                 // Up
-//                 38 => gb.keydown(Button::Up),
-//                 -38 => gb.keyup(Button::Up),
+//                 38 => gb.keydown(KeypadKey::Up),
+//                 -38 => gb.keyup(KeypadKey::Up),
 //                 // Down
-//                 40 => gb.keydown(Button::Down),
-//                 -40 => gb.keyup(Button::Down),
+//                 40 => gb.keydown(KeypadKey::Down),
+//                 -40 => gb.keyup(KeypadKey::Down),
 //                 _ => (),
 //             }
 
@@ -152,52 +152,52 @@
 //     Ok(())
 // }
 
-// // pub fn compile_shader(
-// //     context: &WebGlRenderingContext,
-// //     shader_type: u32,
-// //     source: &str,
-// // ) -> Result<WebGlShader, String> {
-// //     let shader = context
-// //         .create_shader(shader_type)
-// //         .ok_or_else(|| String::from("Unable to create shader object"))?;
-// //     context.shader_source(&shader, source);
-// //     context.compile_shader(&shader);
+// pub fn compile_shader(
+//     context: &WebGlRenderingContext,
+//     shader_type: u32,
+//     source: &str,
+// ) -> Result<WebGlShader, String> {
+//     let shader = context
+//         .create_shader(shader_type)
+//         .ok_or_else(|| String::from("Unable to create shader object"))?;
+//     context.shader_source(&shader, source);
+//     context.compile_shader(&shader);
 
-// //     if context
-// //         .get_shader_parameter(&shader, WebGlRenderingContext::COMPILE_STATUS)
-// //         .as_bool()
-// //         .unwrap_or(false)
-// //     {
-// //         Ok(shader)
-// //     } else {
-// //         Err(context
-// //             .get_shader_info_log(&shader)
-// //             .unwrap_or_else(|| String::from("Unknown error creating shader")))
-// //     }
-// // }
+//     if context
+//         .get_shader_parameter(&shader, WebGlRenderingContext::COMPILE_STATUS)
+//         .as_bool()
+//         .unwrap_or(false)
+//     {
+//         Ok(shader)
+//     } else {
+//         Err(context
+//             .get_shader_info_log(&shader)
+//             .unwrap_or_else(|| String::from("Unknown error creating shader")))
+//     }
+// }
 
-// // pub fn link_program(
-// //     context: &WebGlRenderingContext,
-// //     vert_shader: &WebGlShader,
-// //     frag_shader: &WebGlShader,
-// // ) -> Result<WebGlProgram, String> {
-// //     let program = context
-// //         .create_program()
-// //         .ok_or_else(|| String::from("Unable to create shader object"))?;
+// pub fn link_program(
+//     context: &WebGlRenderingContext,
+//     vert_shader: &WebGlShader,
+//     frag_shader: &WebGlShader,
+// ) -> Result<WebGlProgram, String> {
+//     let program = context
+//         .create_program()
+//         .ok_or_else(|| String::from("Unable to create shader object"))?;
 
-// //     context.attach_shader(&program, vert_shader);
-// //     context.attach_shader(&program, frag_shader);
-// //     context.link_program(&program);
+//     context.attach_shader(&program, vert_shader);
+//     context.attach_shader(&program, frag_shader);
+//     context.link_program(&program);
 
-// //     if context
-// //         .get_program_parameter(&program, WebGlRenderingContext::LINK_STATUS)
-// //         .as_bool()
-// //         .unwrap_or(false)
-// //     {
-// //         Ok(program)
-// //     } else {
-// //         Err(context
-// //             .get_program_info_log(&program)
-// //             .unwrap_or_else(|| String::from("Unknown error creating program object")))
-// //     }
-// // }
+//     if context
+//         .get_program_parameter(&program, WebGlRenderingContext::LINK_STATUS)
+//         .as_bool()
+//         .unwrap_or(false)
+//     {
+//         Ok(program)
+//     } else {
+//         Err(context
+//             .get_program_info_log(&program)
+//             .unwrap_or_else(|| String::from("Unknown error creating program object")))
+//     }
+// }

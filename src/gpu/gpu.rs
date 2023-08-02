@@ -3,8 +3,8 @@ use crate::mode::GbMode;
 
 const VRAM_SIZE: usize = 0x4000;
 const VOAM_SIZE: usize = 0xA0;
-pub const SCREEN_W: usize = 160;
-pub const SCREEN_H: usize = 144;
+pub const HEIGHT: usize = 144;
+pub const WIDTH: usize = 160;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 enum PrioType {
@@ -52,8 +52,8 @@ pub struct GPU {
     csprit_ind: u8,
     csprit: [[[u8; 3]; 4]; 8],
     vrambank: usize,
-    pub data: Vec<u8>,
-    bgprio: [PrioType; SCREEN_W],
+    pub data: Box<[u8; WIDTH * HEIGHT * 4]>,
+    bgprio: [PrioType; WIDTH],
     pub updated: bool,
     pub interrupt: u8,
     pub gbmode: GbMode,
@@ -93,8 +93,8 @@ impl GPU {
             pal1: [0; 4],
             vram: [0; VRAM_SIZE],
             voam: [0; VOAM_SIZE],
-            data: vec![0; SCREEN_W * SCREEN_H * 3],
-            bgprio: [PrioType::Normal; SCREEN_W],
+            data: Box::new([0; HEIGHT * WIDTH * 4]),
+            bgprio: [PrioType::Normal; WIDTH],
             updated: false,
             interrupt: 0,
             gbmode: GbMode::Classic,
@@ -352,7 +352,7 @@ impl GPU {
     }
 
     fn renderscan(&mut self) {
-        for x in 0 .. SCREEN_W {
+        for x in 0 .. WIDTH {
             self.setcolor(x, 255);
             self.bgprio[x] = PrioType::Normal;
         }
@@ -361,16 +361,16 @@ impl GPU {
     }
 
     fn setcolor(&mut self, x: usize, color: u8) {
-        self.data[self.line as usize * SCREEN_W * 3 + x * 3 + 0] = color;
-        self.data[self.line as usize * SCREEN_W * 3 + x * 3 + 1] = color;
-        self.data[self.line as usize * SCREEN_W * 3 + x * 3 + 2] = color;
+        self.data[self.line as usize * WIDTH * 4 + x * 4 + 0] = color;
+        self.data[self.line as usize * WIDTH * 4 + x * 4 + 1] = color;
+        self.data[self.line as usize * WIDTH * 4 + x * 4 + 2] = color;
     }
 
     fn setrgb(&mut self, x: usize, r: u8, g: u8, b: u8) {
         // Gameboy Color RGB correction
         // Taken from the Gambatte emulator
         // assume r, g and b are between 0 and 1F
-        let baseidx = self.line as usize * SCREEN_W * 3 + x * 3;
+        let baseidx = self.line as usize * WIDTH * 4 + x * 4;
 
         let r = r as u32;
         let g = g as u32;
@@ -402,7 +402,7 @@ impl GPU {
         let bgy = self.scy.wrapping_add(self.line);
         let bgtiley = (bgy as u16 >> 3) & 31;
 
-        for x in 0 .. SCREEN_W {
+        for x in 0 .. WIDTH {
             let winx = - ((self.winx as i32) - 7) + (x as i32);
             let bgx = self.scx as u32 + x as u32;
 
@@ -502,7 +502,7 @@ impl GPU {
         }
 
         for &(spritex, spritey, i) in &sprites_to_draw[..sidx] {
-            if spritex < -7 || spritex >= (SCREEN_W as i32) { continue }
+            if spritex < -7 || spritex >= (WIDTH as i32) { continue }
 
             let spriteaddr = 0xFE00 + (i as u16) * 4;
             let tilenum = (self.rb(spriteaddr + 2) & (if self.sprite_size == 16 { 0xFE } else { 0xFF })) as u16;
@@ -528,7 +528,7 @@ impl GPU {
             };
 
             'xloop: for x in 0 .. 8 {
-                if spritex + x < 0 || spritex + x >= (SCREEN_W as i32) { continue }
+                if spritex + x < 0 || spritex + x >= (WIDTH as i32) { continue }
 
                 let xbit = 1 << (if xflip { x } else { 7 - x } as u32);
                 let colnr = (if b1 & xbit != 0 { 1 } else { 0 }) |
