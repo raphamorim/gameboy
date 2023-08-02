@@ -3,10 +3,10 @@ use wasm_bindgen::prelude::*;
 pub mod cpu;
 pub mod gameboy;
 mod gpu;
-mod mbc;
-mod mode;
 mod input;
+mod mbc;
 mod mmu;
+mod mode;
 mod screen;
 
 #[wasm_bindgen(start)]

@@ -1,7 +1,7 @@
 use std::io::prelude::*;
-use std::{path, fs, io};
+use std::{fs, io, path};
 
-use crate::mbc::{MBC, rom_banks};
+use crate::mbc::{rom_banks, MBC};
 pub type StrResult<T> = Result<T, &'static str>;
 
 pub struct MBC2 {
@@ -38,13 +38,15 @@ impl MBC2 {
             None => Ok(()),
             Some(ref savepath) => {
                 let mut data = vec![];
-                match fs::File::open(savepath).and_then(|mut f| f.read_to_end(&mut data))
-                {
+                match fs::File::open(savepath).and_then(|mut f| f.read_to_end(&mut data)) {
                     Err(ref e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
                     Err(_) => Err("Could not open save file"),
-                    Ok(..) => { self.ram = data; Ok(()) },
+                    Ok(..) => {
+                        self.ram = data;
+                        Ok(())
+                    }
                 }
-            },
+            }
         }
     }
 }
@@ -52,50 +54,47 @@ impl MBC2 {
 impl Drop for MBC2 {
     fn drop(&mut self) {
         match self.savepath {
-            None => {},
-            Some(ref path) =>
-            {
+            None => {}
+            Some(ref path) => {
                 let _ = fs::File::create(path).and_then(|mut f| f.write_all(&*self.ram));
-            },
+            }
         };
     }
 }
 
 impl MBC for MBC2 {
     fn readrom(&self, a: u16) -> u8 {
-        let bank = if a < 0x4000 {
-            0
-        }
-        else {
-            self.rombank
-        };
+        let bank = if a < 0x4000 { 0 } else { self.rombank };
         let idx = bank * 0x4000 | ((a as usize) & 0x3FFF);
         *self.rom.get(idx).unwrap_or(&0xFF)
     }
     fn readram(&self, a: u16) -> u8 {
-        if !self.ram_on { return 0xFF }
+        if !self.ram_on {
+            return 0xFF;
+        }
         self.ram[(a as usize) & 0x1FF] | 0xF0
     }
 
     fn writerom(&mut self, a: u16, v: u8) {
         match a {
-            0x0000 ..= 0x3FFF => {
+            0x0000..=0x3FFF => {
                 if a & 0x100 == 0 {
                     self.ram_on = v & 0xF == 0xA;
-                }
-                else {
+                } else {
                     self.rombank = match (v as usize) & 0x0F {
                         0 => 1,
                         n => n,
                     } % self.rombanks;
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
     fn writeram(&mut self, a: u16, v: u8) {
-        if !self.ram_on { return }
+        if !self.ram_on {
+            return;
+        }
         self.ram[(a as usize) & 0x1FF] = v | 0xF0;
     }
 }

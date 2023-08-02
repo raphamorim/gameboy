@@ -1,7 +1,7 @@
-use crate::mode::GbMode;
 use crate::cpu::cpu::Cpu;
 use crate::input::KeypadKey;
-use std::sync::mpsc::{Receiver};
+use crate::mode::GbMode;
+use std::sync::mpsc::Receiver;
 
 pub struct Gameboy {
     cpu: Cpu<'static>,
@@ -24,43 +24,40 @@ pub enum Target {
     SuperGameBoy,
 }
 
+// #[cfg(feature = "desktop")]
+pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String> {
+    use std::fs::File;
+    use std::io::Read;
+
+    let mut rom = Vec::new();
+    if filepath == "" {
+        return Err(String::from("Please provide a valid filepath"));
+    }
+
+    let file = File::open(filepath);
+    let filepath = Default::default();
+    match file.and_then(|mut f| f.read_to_end(&mut rom)) {
+        Ok(mut filepath) => filepath = filepath,
+        Err(e) => return Err(format!("Failed to read {:?}: {}", filepath, e)),
+    };
+
+    Ok((rom, filepath))
+}
+
 pub const CYCLES: u32 = 70224;
 
 impl<'a> Gameboy {
-    pub fn new(filepath: &str) -> Gameboy {
+    pub fn new(data: Vec<u8>, filepath: std::path::PathBuf) -> Gameboy {
+        // let rom = load_rom();
+
         let gb = Gameboy {
-            cpu: Cpu::new(GbMode::Classic, filepath),
+            cpu: Cpu::new(data, filepath),
             width: 160,
             height: 144,
         };
 
         gb
     }
-
-    // pub fn load_rom_with_u8_vec(&mut self, rom: Vec<u8>) {
-    //     self.cpu.memory.load_rom(rom);
-    // }
-
-    // #[cfg(feature = "desktop")]
-    // pub fn load_rom(&mut self, filepath: &str) -> Result<bool, String> {
-    //     use std::fs::File;
-    //     use std::io::Read;
-
-    //     let mut rom = Vec::new();
-    //     if filepath == "" {
-    //         return Err(String::from("Please provide a valid filepath"));
-    //     }
-
-    //     let file = File::open(filepath);
-    //     match file.and_then(|mut f| f.read_to_end(&mut rom)) {
-    //         Ok(..) => {}
-    //         Err(e) => return Err(format!("Failed to read {}: {}", filepath, e)),
-    //     };
-
-    //     self.cpu.load_rom(rom);
-
-    //     Ok(true)
-    // }
 
     pub fn render(self, render_mode: RenderMode) {
         match render_mode {
@@ -74,6 +71,7 @@ impl<'a> Gameboy {
         }
     }
 
+    // #[cfg(feature = "desktop")]
     pub fn render_desktop(mut self) {
         use crate::screen::desktop::*;
 

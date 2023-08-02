@@ -29,9 +29,13 @@ impl Timer {
             0xFF05 => self.counter,
             0xFF06 => self.modulo,
             0xFF07 => {
-                0xF8 |
-                (if self.enabled { 0x4 } else { 0 }) |
-                (match self.step { 16 => 1, 64 => 2, 256 => 3, _ => 0 })
+                0xF8 | (if self.enabled { 0x4 } else { 0 })
+                    | (match self.step {
+                        16 => 1,
+                        64 => 2,
+                        256 => 3,
+                        _ => 0,
+                    })
             }
             _ => panic!("Timer does not handler read {:4X}", a),
         }
@@ -39,13 +43,24 @@ impl Timer {
 
     pub fn wb(&mut self, a: u16, v: u8) {
         match a {
-            0xFF04 => { self.divider = 0; },
-            0xFF05 => { self.counter = v; },
-            0xFF06 => { self.modulo = v; },
+            0xFF04 => {
+                self.divider = 0;
+            }
+            0xFF05 => {
+                self.counter = v;
+            }
+            0xFF06 => {
+                self.modulo = v;
+            }
             0xFF07 => {
                 self.enabled = v & 0x4 != 0;
-                self.step = match v & 0x3 { 1 => 16, 2 => 64, 3 => 256, _ => 1024 };
-            },
+                self.step = match v & 0x3 {
+                    1 => 16,
+                    2 => 64,
+                    3 => 256,
+                    _ => 1024,
+                };
+            }
             _ => panic!("Timer does not handler write {:4X}", a),
         };
     }
@@ -71,4 +86,3 @@ impl Timer {
         }
     }
 }
-

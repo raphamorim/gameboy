@@ -1,10 +1,10 @@
-use crate::mmu::serial::{Serial, SerialCallback};
-use crate::mmu::timer::Timer;
-use crate::input::Keypad;
 use crate::gpu::gpu::GPU;
+use crate::input::Keypad;
+use crate::mmu::serial::Serial;
+use crate::mmu::timer::Timer;
 // use crate::sound::Sound;
-use crate::mode::{GbMode, GbSpeed};
 use crate::mbc;
+use crate::mode::{GbMode, GbSpeed};
 use std::path;
 
 pub type StrResult<T> = Result<T, &'static str>;
@@ -35,18 +35,18 @@ pub struct MMU<'a> {
     hdma_dst: u16,
     hdma_len: u8,
     wrambank: usize,
-    pub mbc: Box<dyn mbc::MBC+'static>,
+    pub mbc: Box<dyn mbc::MBC + 'static>,
     pub gbmode: GbMode,
     gbspeed: GbSpeed,
     speed_switch_req: bool,
-    undocumented_cgb_regs: [u8; 3],  // 0xFF72, 0xFF73, 0xFF75
+    undocumented_cgb_regs: [u8; 3], // 0xFF72, 0xFF73, 0xFF75
 }
 
 fn fill_random(slice: &mut [u8], start: u32) {
     // Simple LCG to generate (non-cryptographic) random values
     // Each distinct invocation should use a different start value
-    const A : u32 = 1103515245;
-    const C : u32 = 12345;
+    const A: u32 = 1103515245;
+    const C: u32 = 12345;
 
     let mut x = start;
     for v in slice.iter_mut() {
@@ -56,12 +56,9 @@ fn fill_random(slice: &mut [u8], start: u32) {
 }
 
 impl<'a> MMU<'a> {
-    pub fn new(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
-        let mmu_mbc = mbc::get_mbc(path::PathBuf::from(romname), skip_checksum)?;
-        let serial = match serial_callback {
-            Some(cb) => Serial::new_with_callback(cb),
-            None => Serial::new(),
-        };
+    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MMU<'a>> {
+        let mmu_mbc = mbc::get_mbc(data, file)?;
+        let serial = Serial::new();
         let mut res = MMU {
             wram: [0; WRAM_SIZE],
             zram: [0; ZRAM_SIZE],
@@ -92,12 +89,9 @@ impl<'a> MMU<'a> {
         Ok(res)
     }
 
-    pub fn new_cgb(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
-        let mmu_mbc = mbc::get_mbc(path::PathBuf::from(romname), skip_checksum)?;
-        let serial = match serial_callback {
-            Some(cb) => Serial::new_with_callback(cb),
-            None => Serial::new(),
-        };
+    pub fn new_cgb(data: Vec<u8>, file: path::PathBuf) -> StrResult<MMU<'a>> {
+        let mmu_mbc = mbc::get_mbc(data, file)?;
+        let serial = Serial::new();
         let mut res = MMU {
             wram: [0; WRAM_SIZE],
             zram: [0; ZRAM_SIZE],
@@ -199,29 +193,41 @@ impl<'a> MMU<'a> {
 
     pub fn rb(&mut self, address: u16) -> u8 {
         match address {
-            0x0000 ..= 0x7FFF => self.mbc.readrom(address),
-            0x8000 ..= 0x9FFF => self.gpu.rb(address),
-            0xA000 ..= 0xBFFF => self.mbc.readram(address),
-            0xC000 ..= 0xCFFF | 0xE000 ..= 0xEFFF => self.wram[address as usize & 0x0FFF],
-            0xD000 ..= 0xDFFF | 0xF000 ..= 0xFDFF => self.wram[(self.wrambank * 0x1000) | address as usize & 0x0FFF],
-            0xFE00 ..= 0xFE9F => self.gpu.rb(address),
+            0x0000..=0x7FFF => self.mbc.readrom(address),
+            0x8000..=0x9FFF => self.gpu.rb(address),
+            0xA000..=0xBFFF => self.mbc.readram(address),
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF],
+            0xD000..=0xDFFF | 0xF000..=0xFDFF => {
+                self.wram[(self.wrambank * 0x1000) | address as usize & 0x0FFF]
+            }
+            0xFE00..=0xFE9F => self.gpu.rb(address),
             0xFF00 => self.keypad.rb(),
-            0xFF01 ..= 0xFF02 => self.serial.rb(address),
-            0xFF04 ..= 0xFF07 => self.timer.rb(address),
+            0xFF01..=0xFF02 => self.serial.rb(address),
+            0xFF04..=0xFF07 => self.timer.rb(address),
             0xFF0F => self.intf | 0b11100000,
-            0xFF10 ..= 0xFF3F => {0xFF},
-                // self.sound.as_mut().map_or(0xFF, |s| s.rb(address)),
-            0xFF4D | 0xFF4F | 0xFF51 ..= 0xFF55 | 0xFF6C | 0xFF70 if self.gbmode != GbMode::Color => { 0xFF },
-            0xFF72 ..= 0xFF73 | 0xFF75 ..= 0xFF77 if self.gbmode == GbMode::Classic => { 0xFF },
-            0xFF4D => 0b01111110 | (if self.gbspeed == GbSpeed::Double { 0x80 } else { 0 }) | (if self.speed_switch_req { 1 } else { 0 }),
-            0xFF40 ..= 0xFF4F => self.gpu.rb(address),
-            0xFF51 ..= 0xFF55 => self.hdma_read(address),
-            0xFF68 ..= 0xFF6B => self.gpu.rb(address),
+            0xFF10..=0xFF3F => 0xFF,
+            // self.sound.as_mut().map_or(0xFF, |s| s.rb(address)),
+            0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70 if self.gbmode != GbMode::Color => {
+                0xFF
+            }
+            0xFF72..=0xFF73 | 0xFF75..=0xFF77 if self.gbmode == GbMode::Classic => 0xFF,
+            0xFF4D => {
+                0b01111110
+                    | (if self.gbspeed == GbSpeed::Double {
+                        0x80
+                    } else {
+                        0
+                    })
+                    | (if self.speed_switch_req { 1 } else { 0 })
+            }
+            0xFF40..=0xFF4F => self.gpu.rb(address),
+            0xFF51..=0xFF55 => self.hdma_read(address),
+            0xFF68..=0xFF6B => self.gpu.rb(address),
             0xFF70 => self.wrambank as u8,
-            0xFF72 ..= 0xFF73 => self.undocumented_cgb_regs[address as usize - 0xFF72],
+            0xFF72..=0xFF73 => self.undocumented_cgb_regs[address as usize - 0xFF72],
             0xFF75 => self.undocumented_cgb_regs[2] | 0b10001111,
-            0xFF76 ..= 0xFF77 => 0x00,  // CGB PCM registers. Not yet implemented.
-            0xFF80 ..= 0xFFFE => self.zram[address as usize & 0x007F],
+            0xFF76..=0xFF77 => 0x00, // CGB PCM registers. Not yet implemented.
+            0xFF80..=0xFFFE => self.zram[address as usize & 0x007F],
             0xFFFF => self.inte,
             _ => 0xFF,
         }
@@ -233,31 +239,43 @@ impl<'a> MMU<'a> {
 
     pub fn wb(&mut self, address: u16, value: u8) {
         match address {
-            0x0000 ..= 0x7FFF => self.mbc.writerom(address, value),
-            0x8000 ..= 0x9FFF => self.gpu.wb(address, value),
-            0xA000 ..= 0xBFFF => self.mbc.writeram(address, value),
-            0xC000 ..= 0xCFFF | 0xE000 ..= 0xEFFF => self.wram[address as usize & 0x0FFF] = value,
-            0xD000 ..= 0xDFFF | 0xF000 ..= 0xFDFF => self.wram[(self.wrambank * 0x1000) | (address as usize & 0x0FFF)] = value,
-            0xFE00 ..= 0xFE9F => self.gpu.wb(address, value),
+            0x0000..=0x7FFF => self.mbc.writerom(address, value),
+            0x8000..=0x9FFF => self.gpu.wb(address, value),
+            0xA000..=0xBFFF => self.mbc.writeram(address, value),
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF] = value,
+            0xD000..=0xDFFF | 0xF000..=0xFDFF => {
+                self.wram[(self.wrambank * 0x1000) | (address as usize & 0x0FFF)] = value
+            }
+            0xFE00..=0xFE9F => self.gpu.wb(address, value),
             0xFF00 => self.keypad.wb(value),
-            0xFF01 ..= 0xFF02 => self.serial.wb(address, value),
-            0xFF04 ..= 0xFF07 => self.timer.wb(address, value),
-            0xFF10 ..= 0xFF3F => {},
-                // self.sound.as_mut().map_or((), |s| s.wb(address, value)),
+            0xFF01..=0xFF02 => self.serial.wb(address, value),
+            0xFF04..=0xFF07 => self.timer.wb(address, value),
+            0xFF10..=0xFF3F => {}
+            // self.sound.as_mut().map_or((), |s| s.wb(address, value)),
             0xFF46 => self.oamdma(value),
-            0xFF4D | 0xFF4F | 0xFF51 ..= 0xFF55 | 0xFF6C | 0xFF70 | 0xFF76 ..= 0xFF77 if self.gbmode != GbMode::Color => {},
-            0xFF72 ..= 0xFF73 | 0xFF75 ..= 0xFF77 if self.gbmode == GbMode::Classic => {},
-            0xFF4D => if value & 0x1 == 0x1 { self.speed_switch_req = true; },
-            0xFF40 ..= 0xFF4F => self.gpu.wb(address, value),
-            0xFF51 ..= 0xFF55 => self.hdma_write(address, value),
-            0xFF68 ..= 0xFF6B => self.gpu.wb(address, value),
+            0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70 | 0xFF76..=0xFF77
+                if self.gbmode != GbMode::Color => {}
+            0xFF72..=0xFF73 | 0xFF75..=0xFF77 if self.gbmode == GbMode::Classic => {}
+            0xFF4D => {
+                if value & 0x1 == 0x1 {
+                    self.speed_switch_req = true;
+                }
+            }
+            0xFF40..=0xFF4F => self.gpu.wb(address, value),
+            0xFF51..=0xFF55 => self.hdma_write(address, value),
+            0xFF68..=0xFF6B => self.gpu.wb(address, value),
             0xFF0F => self.intf = value,
-            0xFF70 => { self.wrambank = match value & 0x7 { 0 => 1, n => n as usize }; },
-            0xFF72 ..= 0xFF73 => self.undocumented_cgb_regs[address as usize - 0xFF72] = value,
+            0xFF70 => {
+                self.wrambank = match value & 0x7 {
+                    0 => 1,
+                    n => n as usize,
+                };
+            }
+            0xFF72..=0xFF73 => self.undocumented_cgb_regs[address as usize - 0xFF72] = value,
             0xFF75 => self.undocumented_cgb_regs[2] = value,
-            0xFF80 ..= 0xFFFE => self.zram[address as usize & 0x007F] = value,
+            0xFF80..=0xFFFE => self.zram[address as usize & 0x007F] = value,
             0xFFFF => self.inte = value,
-            _ => {},
+            _ => {}
         };
     }
 
@@ -279,7 +297,7 @@ impl<'a> MMU<'a> {
 
     fn oamdma(&mut self, value: u8) {
         let base = (value as u16) << 8;
-        for i in 0 .. 0xA0 {
+        for i in 0..0xA0 {
             let b = self.rb(base + i);
             self.wb(0xFE00 + i, b);
         }
@@ -287,8 +305,15 @@ impl<'a> MMU<'a> {
 
     fn hdma_read(&self, a: u16) -> u8 {
         match a {
-            0xFF51 ..= 0xFF54 => { self.hdma[(a - 0xFF51) as usize] },
-            0xFF55 => self.hdma_len | if self.hdma_status == DMAType::NoDMA { 0x80 } else { 0 },
+            0xFF51..=0xFF54 => self.hdma[(a - 0xFF51) as usize],
+            0xFF55 => {
+                self.hdma_len
+                    | if self.hdma_status == DMAType::NoDMA {
+                        0x80
+                    } else {
+                        0
+                    }
+            }
             _ => panic!("The address {:04X} should not be handled by hdma_read", a),
         }
     }
@@ -301,21 +326,27 @@ impl<'a> MMU<'a> {
             0xFF54 => self.hdma[3] = v & 0xF0,
             0xFF55 => {
                 if self.hdma_status == DMAType::HDMA {
-                    if v & 0x80 == 0 { self.hdma_status = DMAType::NoDMA; };
+                    if v & 0x80 == 0 {
+                        self.hdma_status = DMAType::NoDMA;
+                    };
                     return;
                 }
                 let src = ((self.hdma[0] as u16) << 8) | (self.hdma[1] as u16);
                 let dst = ((self.hdma[2] as u16) << 8) | (self.hdma[3] as u16) | 0x8000;
-                if !(src <= 0x7FF0 || (src >= 0xA000 && src <= 0xDFF0)) { panic!("HDMA transfer with illegal start address {:04X}", src); }
+                if !(src <= 0x7FF0 || (src >= 0xA000 && src <= 0xDFF0)) {
+                    panic!("HDMA transfer with illegal start address {:04X}", src);
+                }
 
                 self.hdma_src = src;
                 self.hdma_dst = dst;
                 self.hdma_len = v & 0x7F;
 
-                self.hdma_status =
-                    if v & 0x80 == 0x80 { DMAType::HDMA }
-                    else { DMAType::GDMA };
-            },
+                self.hdma_status = if v & 0x80 == 0x80 {
+                    DMAType::HDMA
+                } else {
+                    DMAType::GDMA
+                };
+            }
             _ => panic!("The address {:04X} should not be handled by hdma_write", a),
         };
     }
@@ -334,14 +365,16 @@ impl<'a> MMU<'a> {
         }
 
         self.perform_vramdma_row();
-        if self.hdma_len == 0x7F { self.hdma_status = DMAType::NoDMA; }
+        if self.hdma_len == 0x7F {
+            self.hdma_status = DMAType::NoDMA;
+        }
 
         return 8;
     }
 
     fn perform_gdma(&mut self) -> u32 {
         let len = self.hdma_len as u32 + 1;
-        for _i in 0 .. len {
+        for _i in 0..len {
             self.perform_vramdma_row();
         }
 
@@ -351,7 +384,7 @@ impl<'a> MMU<'a> {
 
     fn perform_vramdma_row(&mut self) {
         let mmu_src = self.hdma_src;
-        for j in 0 .. 0x10 {
+        for j in 0..0x10 {
             let b: u8 = self.rb(mmu_src + j);
             self.gpu.wb(self.hdma_dst + j, b);
         }
@@ -360,8 +393,7 @@ impl<'a> MMU<'a> {
 
         if self.hdma_len == 0 {
             self.hdma_len = 0x7F;
-        }
-        else {
+        } else {
             self.hdma_len -= 1;
         }
     }
