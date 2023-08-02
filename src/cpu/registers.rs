@@ -1,4 +1,4 @@
-// use crate::gbmode::GbMode;
+use crate::mode::GbMode;
 
 #[derive(Copy, Debug, Clone)]
 pub struct Registers {
@@ -24,10 +24,10 @@ pub enum CpuFlag
 }
 
 impl Registers {
-    pub fn new() -> Registers {
+    pub fn new(mode: GbMode) -> Registers {
         use CpuFlag::*;
-        // match mode {
-            // GbMode::Classic => {
+        match mode {
+            GbMode::Classic => {
                 Registers {
                     a: 0x01,
                     f: C as u8 | H as u8 | Z as u8,
@@ -40,36 +40,36 @@ impl Registers {
                     pc: 0x0100,
                     sp: 0xFFFE,
                 }
-        //     },
-        //     GbMode::ColorAsClassic => {
-        //         Registers {
-        //             a: 0x11,
-        //             f: Z as u8,
-        //             b: 0x00,
-        //             c: 0x00,
-        //             d: 0x00,
-        //             e: 0x08,
-        //             h: 0x00,
-        //             l: 0x7C,
-        //             pc: 0x0100,
-        //             sp: 0xFFFE,
-        //         }
-        //     },
-        //     GbMode::Color => {
-        //         Registers {
-        //             a: 0x11,
-        //             f: Z as u8,
-        //             b: 0x00,
-        //             c: 0x00,
-        //             d: 0xFF,
-        //             e: 0x56,
-        //             h: 0x00,
-        //             l: 0x0D,
-        //             pc: 0x0100,
-        //             sp: 0xFFFE,
-        //         }
-        //     },
-        // }
+            },
+            GbMode::ColorAsClassic => {
+                Registers {
+                    a: 0x11,
+                    f: Z as u8,
+                    b: 0x00,
+                    c: 0x00,
+                    d: 0x00,
+                    e: 0x08,
+                    h: 0x00,
+                    l: 0x7C,
+                    pc: 0x0100,
+                    sp: 0xFFFE,
+                }
+            },
+            GbMode::Color => {
+                Registers {
+                    a: 0x11,
+                    f: Z as u8,
+                    b: 0x00,
+                    c: 0x00,
+                    d: 0xFF,
+                    e: 0x56,
+                    h: 0x00,
+                    l: 0x0D,
+                    pc: 0x0100,
+                    sp: 0xFFFE,
+                }
+            },
+        }
     }
 
     pub fn af(&self) -> u16 {
@@ -136,15 +136,14 @@ impl Registers {
 #[cfg(test)]
 mod test
 {
-    // use crate::gbmode::GbMode;
+    use crate::mode::GbMode;
     use super::Registers;
     use super::CpuFlag::{C, H, N, Z};
 
     #[test]
     fn wide_registers()
     {
-        // let mut reg = Registers::new(GbMode::Classic);
-        let mut reg = Registers::new();
+        let mut reg = Registers::new(GbMode::Classic);
         reg.a = 0x12;
         reg.setf(0x23);
         reg.b = 0x34;
@@ -171,8 +170,7 @@ mod test
     #[test]
     fn flags()
     {
-        // let mut reg = Registers::new(GbMode::Classic);
-        let mut reg = Registers::new();
+        let mut reg = Registers::new(GbMode::Classic);
         let flags = [C, H, N, Z];
 
         // Check if initially the flags are good
@@ -193,8 +191,7 @@ mod test
     #[test]
     fn hl_special()
     {
-        // let mut reg = Registers::new(GbMode::Classic);
-        let mut reg = Registers::new();
+        let mut reg = Registers::new(GbMode::Classic);
         reg.sethl(0x1234);
         assert_eq!(reg.hl(), 0x1234);
         assert_eq!(reg.hld(), 0x1234);

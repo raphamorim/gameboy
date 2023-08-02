@@ -1,106 +1,132 @@
-use crate::gameboy;
-use crate::gpu::gpu::Gpu;
-use crate::mmu::rtc::Rtc;
-use std::iter::repeat;
-
+use crate::mmu::serial::{Serial, SerialCallback};
 use crate::mmu::timer::Timer;
+use crate::input::Keypad;
+use crate::gpu::gpu::GPU;
+// use crate::sound::Sound;
+use crate::mode::{GbMode, GbSpeed};
+use crate::mbc;
+use std::path;
 
-use crate::input;
+pub type StrResult<T> = Result<T, &'static str>;
 
-pub const WRAM_SIZE: usize = 32 << 10; // CGB has 32K (8 banks * 4 KB/bank), GB has 8K
-pub const HIRAM_SIZE: usize = 0x7f;
+const WRAM_SIZE: usize = 0x8000;
+const ZRAM_SIZE: usize = 0x7F;
 
-#[derive(Copy, Debug, Clone)]
-pub enum Speed {
-    Normal,
-    Double,
+#[derive(PartialEq)]
+enum DMAType {
+    NoDMA,
+    GDMA,
+    HDMA,
 }
 
-#[derive(Debug)]
-pub struct Mmu {
-    // memory: u32,
-    pub if_: u8,
-    pub ie_: u8,
-    // pub inte: u8,
-    // pub intf: u8
-    // Flag indicating BIOS is mapped in
-    // BIOS is unmapped with the first instruction above 0x00FF
-    // _inbios: u16,
-
-    // Memory regions (initialised at reset time)
-    // Heap
-    wram: Box<[u8; WRAM_SIZE]>,
-    hiram: Box<[u8; HIRAM_SIZE]>,
-    battery: bool,
-    ram: Vec<u8>,
-    rom: Vec<u8>,
-    rombank: u16,
-    target: gameboy::Target,
-    rambank: u8,
-    wrambank: u8,
-    mode: bool,
-    ramon: bool,
-    /// The speed that the gameboy is operating at and whether a switch has been
-    /// requested
-    pub speed: Speed,
-    pub speedswitch: bool,
-    sound: bool,
-    mbc: Mbc,
-    /// Flag if this is a CGB cartridge or not
-    is_cgb: bool,
-    /// Flag if this is a SGB cartridge or not
-    is_sgb: bool,
-    // _bios: [],
-    // _eram: [],
-    pub input: Box<input::Input>,
-    pub gpu: Box<Gpu>,
-    pub timer: Box<Timer>,
-    pub rtc: Box<Rtc>,
-    // pub sgb: Option<Box<Sgb>>,
+pub struct MMU<'a> {
+    wram: [u8; WRAM_SIZE],
+    zram: [u8; ZRAM_SIZE],
+    hdma: [u8; 4],
+    pub inte: u8,
+    pub intf: u8,
+    pub serial: Serial<'a>,
+    pub timer: Timer,
+    pub keypad: Keypad,
+    pub gpu: GPU,
+    // pub sound: Option<Sound>,
+    hdma_status: DMAType,
+    hdma_src: u16,
+    hdma_dst: u16,
+    hdma_len: u8,
+    wrambank: usize,
+    pub mbc: Box<dyn mbc::MBC+'static>,
+    pub gbmode: GbMode,
+    gbspeed: GbSpeed,
+    speed_switch_req: bool,
+    undocumented_cgb_regs: [u8; 3],  // 0xFF72, 0xFF73, 0xFF75
 }
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
-enum Mbc {
-    Unknown,
-    Omitted,
-    Mbc1,
-    Mbc2,
-    Mbc3,
-    Mbc5,
+fn fill_random(slice: &mut [u8], start: u32) {
+    // Simple LCG to generate (non-cryptographic) random values
+    // Each distinct invocation should use a different start value
+    const A : u32 = 1103515245;
+    const C : u32 = 12345;
+
+    let mut x = start;
+    for v in slice.iter_mut() {
+        x = x.wrapping_mul(A).wrapping_add(C);
+        *v = ((x >> 23) & 0xFF) as u8;
+    }
 }
 
-impl Mmu {
-    pub fn new(target: gameboy::Target) -> Mmu {
-        Mmu {
-            target: target,
-            rom: Vec::new(),
-            ram: Vec::new(),
-            wram: Box::new([0; WRAM_SIZE]),
-            hiram: Box::new([0; HIRAM_SIZE]),
-            input: Box::new(input::Input::new()),
-            rtc: Box::new(Rtc::new()),
-            timer: Box::new(Timer::new()),
-            gpu: Box::new(Gpu::new()),
-            is_cgb: false,
-            is_sgb: false,
-            rombank: 1,
-            battery: false,
-            mode: false,
-            speed: Speed::Normal,
-            speedswitch: false,
-            sound: false,
-            ie_: 0,
-            if_: 0,
-            mbc: Mbc::Unknown,
-            rambank: 0,
-            wrambank: 0,
-            ramon: false,
-            // sgb: None,
+impl<'a> MMU<'a> {
+    pub fn new(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
+        let mmu_mbc = mbc::get_mbc(path::PathBuf::from(romname), skip_checksum)?;
+        let serial = match serial_callback {
+            Some(cb) => Serial::new_with_callback(cb),
+            None => Serial::new(),
+        };
+        let mut res = MMU {
+            wram: [0; WRAM_SIZE],
+            zram: [0; ZRAM_SIZE],
+            hdma: [0; 4],
+            wrambank: 1,
+            inte: 0,
+            intf: 0,
+            serial: serial,
+            timer: Timer::new(),
+            keypad: Keypad::new(),
+            gpu: GPU::new(),
+            // sound: None,
+            mbc: mmu_mbc,
+            gbmode: GbMode::Classic,
+            gbspeed: GbSpeed::Single,
+            speed_switch_req: false,
+            hdma_src: 0,
+            hdma_dst: 0,
+            hdma_status: DMAType::NoDMA,
+            hdma_len: 0xFF,
+            undocumented_cgb_regs: [0; 3],
+        };
+        fill_random(&mut res.wram, 42);
+        if res.rb(0x0143) == 0xC0 {
+            return Err("This game does not work in Classic mode");
         }
+        res.set_initial();
+        Ok(res)
     }
 
-    pub fn power_on(&mut self) {
-        // See http://nocash.emubase.de/pandocs.htm#powerupsequence
+    pub fn new_cgb(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
+        let mmu_mbc = mbc::get_mbc(path::PathBuf::from(romname), skip_checksum)?;
+        let serial = match serial_callback {
+            Some(cb) => Serial::new_with_callback(cb),
+            None => Serial::new(),
+        };
+        let mut res = MMU {
+            wram: [0; WRAM_SIZE],
+            zram: [0; ZRAM_SIZE],
+            wrambank: 1,
+            hdma: [0; 4],
+            inte: 0,
+            intf: 0,
+            serial: serial,
+            timer: Timer::new(),
+            keypad: Keypad::new(),
+            gpu: GPU::new_cgb(),
+            // sound: None,
+            mbc: mmu_mbc,
+            gbmode: GbMode::Color,
+            gbspeed: GbSpeed::Single,
+            speed_switch_req: false,
+            hdma_src: 0,
+            hdma_dst: 0,
+            hdma_status: DMAType::NoDMA,
+            hdma_len: 0xFF,
+            undocumented_cgb_regs: [0; 3],
+        };
+        fill_random(&mut res.wram, 42);
+        res.determine_mode();
+        res.set_initial();
+        Ok(res)
+    }
+
+    fn set_initial(&mut self) {
         self.wb(0xFF05, 0);
         self.wb(0xFF06, 0);
         self.wb(0xFF07, 0);
@@ -134,420 +160,209 @@ impl Mmu {
         self.wb(0xFF4B, 0);
     }
 
-    // Read 8-bit byte from a given address
-    pub fn nop(&mut self, address: u16) -> u8 {
-        address as u8
+    fn determine_mode(&mut self) {
+        let mode = match self.rb(0x0143) & 0x80 {
+            0x80 => GbMode::Color,
+            _ => GbMode::ColorAsClassic,
+        };
+        self.gbmode = mode;
+        self.gpu.gbmode = mode;
     }
 
-    /// Reads a byte at the given address
-    pub fn rb(&self, addr: u16) -> u8 {
-        // println!("-> getting... {:#06x}", addr);
+    pub fn do_cycle(&mut self, ticks: u32) -> u32 {
+        let cpudivider = match self.gbspeed {
+            GbSpeed::Single => 1,
+            GbSpeed::Double => 2,
+        };
+        let vramticks = self.perform_vramdma();
+        let gputicks = ticks / cpudivider + vramticks;
+        let cputicks = ticks + vramticks * cpudivider;
 
-        match addr >> 12 {
-            // Always mapped in as first bank of cartridge
-            0x0 | 0x1 | 0x2 | 0x3 => self.rom[addr as usize],
+        self.timer.do_cycle(cputicks);
+        self.intf |= self.timer.interrupt;
+        self.timer.interrupt = 0;
 
-            // Swappable banks of ROM, there may be a total of more than 2^16
-            // bytes in the ROM, so we use u32 here.
-            0x4 | 0x5 | 0x6 | 0x7 => {
-                self.rom[(((self.rombank as u32) << 14) | ((addr as u32) & 0x3fff)) as usize]
-            }
+        self.intf |= self.keypad.interrupt;
+        self.keypad.interrupt = 0;
 
-            0x8 | 0x9 => self.gpu.vram()[(addr & 0x1FFF) as usize],
+        self.gpu.do_cycle(gputicks);
+        self.intf |= self.gpu.interrupt;
+        self.gpu.interrupt = 0;
 
-            0xa | 0xb => {
-                // Swappable banks of RAM
-                if self.ramon {
-                    if self.rtc.current & 0x08 != 0 {
-                        self.rtc.regs[(self.rtc.current & 0x7) as usize]
-                    } else {
-                        self.ram[(((self.rambank as u16) << 12) | (addr & 0x1FFF)) as usize]
-                    }
-                } else {
-                    0xff
-                }
-            }
+        // self.sound.as_mut().map_or((), |s| s.do_cycle(gputicks));
 
-            // e000-fdff same as c000-ddff
-            0xe | 0xc => self.wram[(addr & 0x1FFF) as usize],
-            0xd => self.wram[(((self.rombank as u16) << 12) | (addr & 0x1FFF)) as usize],
+        self.intf |= self.serial.interrupt;
+        self.serial.interrupt = 0;
 
-            0xf => {
-                if addr < 0xfe00 {
-                    // mirrored RAM
-                    // self.rb(addr & 0xdfff)
-                    self.wram[(addr & 0x1FFF) as usize]
-                } else if addr < 0xFEA0 {
-                    // sprite attribute table (oam)
-                    self.gpu.oam[(addr & 0xFF) as usize]
-                } else if addr < 0xff00 {
-                    // unusable ram
-                    0
-                } else if addr < 0xff80 {
-                    // I/O ports
-                    self.ioreg_rb(addr)
-                } else if addr < 0xffff {
-                    // High RAM
-                    self.hiram[(addr & 0x7f) as usize]
-                } else {
-                    // 0xff
-                    self.ie_
-                }
-            }
+        return gputicks;
+    }
 
-            _ => 0,
+    pub fn rb(&mut self, address: u16) -> u8 {
+        match address {
+            0x0000 ..= 0x7FFF => self.mbc.readrom(address),
+            0x8000 ..= 0x9FFF => self.gpu.rb(address),
+            0xA000 ..= 0xBFFF => self.mbc.readram(address),
+            0xC000 ..= 0xCFFF | 0xE000 ..= 0xEFFF => self.wram[address as usize & 0x0FFF],
+            0xD000 ..= 0xDFFF | 0xF000 ..= 0xFDFF => self.wram[(self.wrambank * 0x1000) | address as usize & 0x0FFF],
+            0xFE00 ..= 0xFE9F => self.gpu.rb(address),
+            0xFF00 => self.keypad.rb(),
+            0xFF01 ..= 0xFF02 => self.serial.rb(address),
+            0xFF04 ..= 0xFF07 => self.timer.rb(address),
+            0xFF0F => self.intf | 0b11100000,
+            0xFF10 ..= 0xFF3F => {0xFF},
+                // self.sound.as_mut().map_or(0xFF, |s| s.rb(address)),
+            0xFF4D | 0xFF4F | 0xFF51 ..= 0xFF55 | 0xFF6C | 0xFF70 if self.gbmode != GbMode::Color => { 0xFF },
+            0xFF72 ..= 0xFF73 | 0xFF75 ..= 0xFF77 if self.gbmode == GbMode::Classic => { 0xFF },
+            0xFF4D => 0b01111110 | (if self.gbspeed == GbSpeed::Double { 0x80 } else { 0 }) | (if self.speed_switch_req { 1 } else { 0 }),
+            0xFF40 ..= 0xFF4F => self.gpu.rb(address),
+            0xFF51 ..= 0xFF55 => self.hdma_read(address),
+            0xFF68 ..= 0xFF6B => self.gpu.rb(address),
+            0xFF70 => self.wrambank as u8,
+            0xFF72 ..= 0xFF73 => self.undocumented_cgb_regs[address as usize - 0xFF72],
+            0xFF75 => self.undocumented_cgb_regs[2] | 0b10001111,
+            0xFF76 ..= 0xFF77 => 0x00,  // CGB PCM registers. Not yet implemented.
+            0xFF80 ..= 0xFFFE => self.zram[address as usize & 0x007F],
+            0xFFFF => self.inte,
+            _ => 0xFF,
         }
     }
 
-    /// Reads a value from a known IO type register
-    fn ioreg_rb(&self, addr: u16) -> u8 {
-        match (addr >> 4) & 0xf {
-            // joypad data, http://nocash.emubase.de/pandocs.htm#joypadinput
-            // interrupts, http://nocash.emubase.de/pandocs.htm#interrupts
-            // timer, http://nocash.emubase.de/pandocs.htm#timeranddividerregisters
-            //
-            // TODO: serial data transfer
-            // http://nocash.emubase.de/pandocs.htm#serialdatatransferlinkcable
-            0x0 => match addr & 0xf {
-                0x0 => self.input.rb(addr),
-                0x4 => self.timer.div,
-                0x5 => self.timer.tima,
-                0x6 => self.timer.tma,
-                0x7 => self.timer.tac,
-                0xf => self.if_,
-                _ => 0xff,
-            },
-
-            // Sound info: http://nocash.emubase.de/pandocs.htm#soundcontroller
-            0x1 | 0x2 | 0x3 => 0xff,
-
-            0x4 => {
-                if addr == 0xff4d {
-                    let b = match self.speed {
-                        Speed::Normal => 0x00,
-                        Speed::Double => 0x80,
-                    };
-                    b | (self.speedswitch as u8)
-                } else {
-                    self.gpu.rb(addr)
-                }
-            }
-            0x5 | 0x6 => self.gpu.rb(addr),
-
-            0x7 => {
-                if addr == 0xff70 {
-                    self.wrambank as u8
-                } else {
-                    0xff
-                }
-            }
-
-            _ => 0xff,
-        }
-    }
-
-    // Read 16-bit word from a given address
     pub fn rw(&mut self, address: u16) -> u16 {
         (self.rb(address) as u16) | ((self.rb(address + 1) as u16) << 8)
     }
 
-    /// Writes a byte at the given address
-    pub fn wb(&mut self, addr: u16, val: u8) {
-        // More information about mappings can be found online at
-        //      http://nocash.emubase.de/pandocs.htm#memorymap
-        // println!("<- saving... {:#06x} {}" ,addr, val);
-        match addr >> 12 {
-            0x0 | 0x1 => match self.mbc {
-                Mbc::Mbc1 | Mbc::Mbc3 | Mbc::Mbc5 => {
-                    self.ramon = val & 0xf == 0xa;
-                }
-                Mbc::Mbc2 => {
-                    if addr & 0x100 == 0 {
-                        self.ramon = !self.ramon;
-                    }
-                }
-                Mbc::Unknown | Mbc::Omitted => {}
-            },
-
-            0x2 | 0x3 => {
-                let val = val as u16;
-                match self.mbc {
-                    Mbc::Mbc1 => {
-                        self.rombank = (self.rombank & 0x60) | (val & 0x1f);
-                        if self.rombank == 0 {
-                            self.rombank = 1;
-                        }
-                    }
-                    Mbc::Mbc2 => {
-                        if addr & 0x100 != 0 {
-                            self.rombank = val & 0xf;
-                        }
-                    }
-                    Mbc::Mbc3 => {
-                        let val = val & 0x7f;
-                        self.rombank = val + if val != 0 { 0 } else { 1 };
-                    }
-                    Mbc::Mbc5 => {
-                        if addr >> 12 == 0x2 {
-                            self.rombank = (self.rombank & 0xff00) | val;
-                        } else {
-                            let val = (val & 1) << 8;
-                            self.rombank = (self.rombank & 0x00ff) | val;
-                        }
-                    }
-                    Mbc::Unknown | Mbc::Omitted => {}
-                }
-            }
-
-            0x4 | 0x5 => {
-                match self.mbc {
-                    Mbc::Mbc1 => {
-                        if !self.mode {
-                            // ROM banking mode
-                            self.rombank = (self.rombank & 0x1f) | (((val as u16) & 0x3) << 5);
-                        } else {
-                            // RAM banking mode
-                            self.rambank = val & 0x3;
-                        }
-                    }
-                    Mbc::Mbc3 => {
-                        self.rtc.current = val & 0xf;
-                        self.rambank = val & 0x3
-                    }
-                    Mbc::Mbc5 => {
-                        self.rambank = val & 0xf;
-                    }
-                    Mbc::Unknown | Mbc::Omitted | Mbc::Mbc2 => {}
-                }
-            }
-
-            0x6 | 0x7 => match self.mbc {
-                Mbc::Mbc1 => {
-                    self.mode = val & 0x1 != 0;
-                }
-                Mbc::Mbc3 => {
-                    self.rtc.latch(val);
-                }
-                _ => {}
-            },
-
-            0x8 | 0x9 => {
-                self.gpu.vram_mut()[(addr & 0x1fff) as usize] = val;
-                if addr < 0x9800 {
-                    self.gpu.update_tile(addr);
-                }
-            }
-
-            0xa | 0xb => {
-                if self.ramon {
-                    if self.rtc.current & 0x8 != 0 {
-                        self.rtc.wb(addr, val);
-                    } else {
-                        let val = if self.mbc == Mbc::Mbc2 {
-                            val & 0xf
-                        } else {
-                            val
-                        };
-                        self.ram[(((self.rambank as u16) << 12) | (addr & 0x1fff)) as usize] = val;
-                    }
-                }
-            }
-
-            0xc | 0xe => {
-                self.wram[(addr & 0xfff) as usize] = val;
-            }
-            0xd => {
-                self.wram[(((self.wrambank as u16) << 12) | (addr & 0xfff)) as usize] = val;
-            }
-
-            0xf => {
-                if addr < 0xfe00 {
-                    self.wb(addr & 0xdfff, val); // mirrored RAM
-                } else if addr < 0xfea0 {
-                    self.gpu.oam[(addr & 0xff) as usize] = val;
-                } else if addr < 0xff00 {
-                    // unusable ram
-                } else if addr < 0xff80 {
-                    self.ioreg_wb(addr, val);
-                } else if addr < 0xffff {
-                    self.hiram[(addr & 0x7f) as usize] = val;
-                } else {
-                    self.ie_ = val;
-                }
-            }
-
-            _ => {}
-        }
-    }
-
-    fn ioreg_wb(&mut self, addr: u16, val: u8) {
-        // debug!("ioreg_wb {:x} {:x}", addr, val);
-        match (addr >> 4) & 0xf {
-            // TODO: serial data transfer
-            // http://nocash.emubase.de/pandocs.htm#serialdatatransferlinkcable
-            0x0 => match addr & 0xf {
-                0x0 => {
-                    self.input.wb(addr, val);
-                }
-                0x4 => {
-                    self.timer.div = 0;
-                }
-                0x5 => {
-                    self.timer.tima = val;
-                }
-                0x6 => {
-                    self.timer.tma = val;
-                }
-                0x7 => {
-                    self.timer.tac = val;
-                    self.timer.update();
-                }
-                0xf => {
-                    self.if_ = val;
-                }
-                _ => {}
-            },
-
-            // Sound info: http://nocash.emubase.de/pandocs.htm#soundcontroller
-            // TODO: sound registers
-            0x1 | 0x2 | 0x3 => {
-                if addr == 0xff26 {
-                    self.sound = val != 0;
-                }
-            }
-
-            0x4 | 0x5 | 0x6 => {
-                // See http://nocash.emubase.de/pandocs.htm#cgbregisters
-                match addr {
-                    0xff46 => Gpu::oam_dma_transfer(self, val),
-                    0xff55 => Gpu::hdma_dma_transfer(self, val),
-                    0xff4d => {
-                        if self.is_cgb {
-                            if val & 0x01 != 0 {
-                                self.speedswitch = true;
-                            } else {
-                                self.speedswitch = false;
-                            }
-                        }
-                    }
-                    _ => self.gpu.wb(addr, val),
-                }
-            }
-
-            // WRAM banks only for CGB mode, see
-            //      http://nocash.emubase.de/pandocs.htm#cgbregisters
-            0x7 => {
-                if addr == 0xff70 {
-                    let val = val & 0x7; /* only bits 0-2 are used */
-                    self.wrambank = if val != 0 { val } else { 1 };
-                }
-            }
-
-            _ => {
-                panic!("address {:?} not implemented", addr);
-            }
-        }
-    }
-
-    pub fn switch_speed(&mut self) {
-        self.speedswitch = false;
-        self.speed = match self.speed {
-            Speed::Normal => Speed::Double,
-            Speed::Double => Speed::Normal,
+    pub fn wb(&mut self, address: u16, value: u8) {
+        match address {
+            0x0000 ..= 0x7FFF => self.mbc.writerom(address, value),
+            0x8000 ..= 0x9FFF => self.gpu.wb(address, value),
+            0xA000 ..= 0xBFFF => self.mbc.writeram(address, value),
+            0xC000 ..= 0xCFFF | 0xE000 ..= 0xEFFF => self.wram[address as usize & 0x0FFF] = value,
+            0xD000 ..= 0xDFFF | 0xF000 ..= 0xFDFF => self.wram[(self.wrambank * 0x1000) | (address as usize & 0x0FFF)] = value,
+            0xFE00 ..= 0xFE9F => self.gpu.wb(address, value),
+            0xFF00 => self.keypad.wb(value),
+            0xFF01 ..= 0xFF02 => self.serial.wb(address, value),
+            0xFF04 ..= 0xFF07 => self.timer.wb(address, value),
+            0xFF10 ..= 0xFF3F => {},
+                // self.sound.as_mut().map_or((), |s| s.wb(address, value)),
+            0xFF46 => self.oamdma(value),
+            0xFF4D | 0xFF4F | 0xFF51 ..= 0xFF55 | 0xFF6C | 0xFF70 | 0xFF76 ..= 0xFF77 if self.gbmode != GbMode::Color => {},
+            0xFF72 ..= 0xFF73 | 0xFF75 ..= 0xFF77 if self.gbmode == GbMode::Classic => {},
+            0xFF4D => if value & 0x1 == 0x1 { self.speed_switch_req = true; },
+            0xFF40 ..= 0xFF4F => self.gpu.wb(address, value),
+            0xFF51 ..= 0xFF55 => self.hdma_write(address, value),
+            0xFF68 ..= 0xFF6B => self.gpu.wb(address, value),
+            0xFF0F => self.intf = value,
+            0xFF70 => { self.wrambank = match value & 0x7 { 0 => 1, n => n as usize }; },
+            0xFF72 ..= 0xFF73 => self.undocumented_cgb_regs[address as usize - 0xFF72] = value,
+            0xFF75 => self.undocumented_cgb_regs[2] = value,
+            0xFF80 ..= 0xFFFE => self.zram[address as usize & 0x007F] = value,
+            0xFFFF => self.inte = value,
+            _ => {},
         };
     }
 
-    // Write 16-bit byte to a given address
     pub fn ww(&mut self, address: u16, value: u16) {
         self.wb(address, (value & 0xFF) as u8);
         self.wb(address + 1, (value >> 8) as u8);
     }
 
-    pub fn ram_size(&self) -> usize {
-        // See http://nocash.emubase.de/pandocs.htm#thecartridgeheader
-        match self.rom[0x0149] {
-            0x00 => 0,
-            0x01 => 2 << 10,  // 2KB
-            0x02 => 8 << 10,  // 8KB
-            0x03 => 32 << 10, // 32KB
-            _ => {
-                panic!("Unknown ram size");
-                #[allow(unreachable_code)]
-                0
+    pub fn switch_speed(&mut self) {
+        if self.speed_switch_req {
+            if self.gbspeed == GbSpeed::Double {
+                self.gbspeed = GbSpeed::Single;
+            } else {
+                self.gbspeed = GbSpeed::Double;
             }
+        }
+        self.speed_switch_req = false;
+    }
+
+    fn oamdma(&mut self, value: u8) {
+        let base = (value as u16) << 8;
+        for i in 0 .. 0xA0 {
+            let b = self.rb(base + i);
+            self.wb(0xFE00 + i, b);
         }
     }
 
-    pub fn load_rom(&mut self, rom: Vec<u8>) {
-        self.rom = rom;
-        self.battery = true;
-        self.mbc = Mbc::Unknown;
-        match self.rom[0x0147] {
-            0x00 |      // rom only
-            0x08 => {   // rom + ram
-                self.battery = false;
-                self.mbc = Mbc::Omitted;
-            }
+    fn hdma_read(&self, a: u16) -> u8 {
+        match a {
+            0xFF51 ..= 0xFF54 => { self.hdma[(a - 0xFF51) as usize] },
+            0xFF55 => self.hdma_len | if self.hdma_status == DMAType::NoDMA { 0x80 } else { 0 },
+            _ => panic!("The address {:04X} should not be handled by hdma_read", a),
+        }
+    }
 
-            0x09 => {   // rom + ram + battery
-                self.mbc = Mbc::Omitted;
-            }
+    fn hdma_write(&mut self, a: u16, v: u8) {
+        match a {
+            0xFF51 => self.hdma[0] = v,
+            0xFF52 => self.hdma[1] = v & 0xF0,
+            0xFF53 => self.hdma[2] = v & 0x1F,
+            0xFF54 => self.hdma[3] = v & 0xF0,
+            0xFF55 => {
+                if self.hdma_status == DMAType::HDMA {
+                    if v & 0x80 == 0 { self.hdma_status = DMAType::NoDMA; };
+                    return;
+                }
+                let src = ((self.hdma[0] as u16) << 8) | (self.hdma[1] as u16);
+                let dst = ((self.hdma[2] as u16) << 8) | (self.hdma[3] as u16) | 0x8000;
+                if !(src <= 0x7FF0 || (src >= 0xA000 && src <= 0xDFF0)) { panic!("HDMA transfer with illegal start address {:04X}", src); }
 
-            0x01 |      // rom + mbc1
-            0x02 => {   // rom + mbc1 + ram
-                self.battery = false;
-                self.mbc = Mbc::Mbc1;
-            }
-            0x03 => {   // rom + mbc1 + ram + batt
-                self.mbc = Mbc::Mbc1;
-            }
+                self.hdma_src = src;
+                self.hdma_dst = dst;
+                self.hdma_len = v & 0x7F;
 
-            0x05 => {   // rom + mbc2
-                self.battery = false;
-                self.mbc = Mbc::Mbc2;
-            }
-            0x06 => {   // rom + mbc2 + batt
-                self.mbc = Mbc::Mbc2;
-            }
+                self.hdma_status =
+                    if v & 0x80 == 0x80 { DMAType::HDMA }
+                    else { DMAType::GDMA };
+            },
+            _ => panic!("The address {:04X} should not be handled by hdma_write", a),
+        };
+    }
 
-            0x11 |      // rom + mbc3
-            0x12 => {   // rom + mbc3 + ram
-                self.battery = false;
-                self.mbc = Mbc::Mbc3;
-            }
-            0x0f |      // rom + mbc3 + timer + batt
-            0x10 |      // rom + mbc3 + timer + ram + batt
-            0x13 => {   // rom + mbc3 + ram + batt
-                self.mbc = Mbc::Mbc3;
-            }
+    fn perform_vramdma(&mut self) -> u32 {
+        match self.hdma_status {
+            DMAType::NoDMA => 0,
+            DMAType::GDMA => self.perform_gdma(),
+            DMAType::HDMA => self.perform_hdma(),
+        }
+    }
 
-            0x19 |      // <>
-            0x1a |      // ram
-            0x1c |      // rumble
-            0x1d => {   // rumble + ram
-                self.battery = false;
-                self.mbc = Mbc::Mbc5;
-            }
-            0x1b |      // ram + battery
-            0x1e => {   // rumble + ram + batter
-                self.mbc = Mbc::Mbc5;
-            }
-
-            n => { panic!("unknown cartridge inserted: {:x}", n); }
+    fn perform_hdma(&mut self) -> u32 {
+        if self.gpu.may_hdma() == false {
+            return 0;
         }
 
-        self.ram = repeat(0u8).take(self.ram_size()).collect();
-        if self.target == gameboy::GameBoyColor {
-            self.is_cgb = self.rom[0x0143] & 0x80 != 0;
-            self.gpu.is_cgb = self.is_cgb;
+        self.perform_vramdma_row();
+        if self.hdma_len == 0x7F { self.hdma_status = DMAType::NoDMA; }
+
+        return 8;
+    }
+
+    fn perform_gdma(&mut self) -> u32 {
+        let len = self.hdma_len as u32 + 1;
+        for _i in 0 .. len {
+            self.perform_vramdma_row();
         }
 
-        if self.target == gameboy::SuperGameBoy || self.target == gameboy::GameBoyColor {
-            // self.is_sgb = self.rom[0x0146] == 0x03;
-            // if self.is_sgb {
-            //     self.sgb = Some(Box::new(Sgb::new()));
-            //     self.gpu.is_sgb = self.is_sgb;
-            // }
+        self.hdma_status = DMAType::NoDMA;
+        return len * 8;
+    }
+
+    fn perform_vramdma_row(&mut self) {
+        let mmu_src = self.hdma_src;
+        for j in 0 .. 0x10 {
+            let b: u8 = self.rb(mmu_src + j);
+            self.gpu.wb(self.hdma_dst + j, b);
+        }
+        self.hdma_src += 0x10;
+        self.hdma_dst += 0x10;
+
+        if self.hdma_len == 0 {
+            self.hdma_len = 0x7F;
+        }
+        else {
+            self.hdma_len -= 1;
         }
     }
 }

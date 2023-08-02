@@ -1,964 +1,573 @@
-use crate::cpu::cpu::Interrupt;
-use crate::mmu::mmu::Mmu;
+use std::cmp::Ordering;
+use crate::mode::GbMode;
 
-const VRAM_SIZE: usize = 8 << 10; // 8K
-const OAM_SIZE: usize = 0xa0; // 0xffe00 - 0xffe9f is OAM
-const CGB_BP_SIZE: usize = 64; // 64 bytes of extra memory
-const NUM_TILES: usize = 384; // number of in-memory tiles
+const VRAM_SIZE: usize = 0x4000;
+const VOAM_SIZE: usize = 0xA0;
+pub const SCREEN_W: usize = 160;
+pub const SCREEN_H: usize = 144;
 
-pub const HEIGHT: usize = 144;
-pub const WIDTH: usize = 160;
-
-const PALETTE: [Color; 4] = [
-    // White
-    [255, 255, 255, 255],
-    // Light Gray
-    [192, 192, 192, 255],
-    // Dark Gray
-    [96, 96, 96, 255],
-    // Black
-    [0, 0, 0, 255],
-];
-
-pub type Color = [u8; 4];
+#[derive(PartialEq, Debug, Copy, Clone)]
+enum PrioType {
+    Color0,
+    PrioFlag,
+    Normal,
+}
 
 #[derive(Debug)]
-pub struct Gpu {
-    pub oam: [u8; OAM_SIZE],
-
-    pub image_data: Box<[u8; WIDTH * HEIGHT * 4]>,
-
-    pub is_cgb: bool,
-    pub is_sgb: bool,
-
-    mode: Mode,
-
-    // CGB supports only 2 banks of vram
-    vrambanks: Box<[[u8; VRAM_SIZE]; 2]>,
-    // Selected vram bank
-    vrambank: u8,
-
-    clock: u32,
-
-    // Registers used by the GPU
-
-    // 0xff40 - LCD control (LCDC) - in order from most to least significant bit
-    pub lcdon: bool,    // LCD monitor turned on or off?
-    winmap: bool,       // Window Tile Map Display (0=9800-9BFF, 1=9C00-9FFF)
-    winon: bool,        // Window Display Enable   (0=Off, 1=On)
-    pub tiledata: bool, // BG & Window Tile Data   (0=8800-97FF, 1=8000-8FFF)
-    bgmap: bool,        // BG Tile Map Display     (0=9800-9BFF, 1=9C00-9FFF)
-    objsize: bool,      // OBJ (Sprite) Size       (0=8x8, 1=8x16)
-    objon: bool,        // OBJ (Sprite) Display    (0=Off, 1=On)
-    bgon: bool,         // BG Display              (0=Off, 1=On)
-
-    // 0xff41 - STAT - LCDC Status - starts with bit 6
-    lycly: bool,    // LYC=LY Coincidence Interrupt (1=Enable)
-    mode2int: bool, // Mode 2 OAM Interrupt         (1=Enable)
-    mode1int: bool, // Mode 1 V-Blank Interrupt     (1=Enable)
-    mode0int: bool, // Mode 0 H-Blank Interrupt     (1=Enable)
-
-    // 0xff42 - SCY - Scroll Y
-    scy: u8,
-    // 0xff43 - SCX - Scroll X
-    scx: u8,
-    // 0xff44 - LY - LCDC Y-Coordinate
-    ly: u8,
-    // 0xff45 - LYC - LY Compare
+pub struct GPU {
+    mode: u8,
+    modeclock: u32,
+    line: u8,
     lyc: u8,
-
-    // 0xff47 - BGP - BG Palette Data
-    bgp: u8,
-    // 0xff48 - OBP0 - Object Palette 0 Data
-    obp0: u8,
-    // 0xff49 - OBP1 - Object Palette 1Data
-    obp1: u8,
-    // 0xff4a - WY - Window Y Position
-    wy: u8,
-    // 0xff4b - WX - Window X Position minus 7
-    wx: u8,
-
-    // CGB VRAM DMA transfer, more info at:
-    // http://nocash.emubase.de/pandocs.htm#lcdvramdmatransferscgbonly
-    hdma_src: u16,
-    hdma_dst: u16,
-    hdma5: u8,
-
-    // Compiled palettes. These are updated when writing to BGP/OBP0/OBP1. Meant
-    // for non CGB use only. Each palette is an array of 4 color schemes. Each
-    // color scheme is one in PALETTE.
-    pal: Box<Palette>,
-
-    // Compiled tiles
-    tiles: Box<Tiles>,
-
-    // When in CGB mode, the BGP and OBP memory is stored internally and is only
-    // accessible through some I/O registers. Each section of memory is 64 bytes
-    // and defines 8 palettes of 4 colors each
-    cgb: Box<CgbData>,
-
-    // Data related to SGB operation
-    pub sgb: Box<SgbData>,
+    lcd_on: bool,
+    win_tilemap: u16,
+    win_on: bool,
+    tilebase: u16,
+    bg_tilemap: u16,
+    sprite_size: u32,
+    sprite_on: bool,
+    lcdc0: bool,
+    lyc_inte: bool,
+    m0_inte: bool,
+    m1_inte: bool,
+    m2_inte: bool,
+    scy: u8,
+    scx: u8,
+    winy: u8,
+    winx: u8,
+    wy_trigger: bool,
+    wy_pos: i32,
+    palbr: u8,
+    pal0r: u8,
+    pal1r: u8,
+    palb: [u8; 4],
+    pal0: [u8; 4],
+    pal1: [u8; 4],
+    pub vram: [u8; VRAM_SIZE],
+    pub voam: [u8; VOAM_SIZE],
+    cbgpal_inc: bool,
+    cbgpal_ind: u8,
+    cbgpal: [[[u8; 3]; 4]; 8],
+    csprit_inc: bool,
+    csprit_ind: u8,
+    csprit: [[[u8; 3]; 4]; 8],
+    vrambank: usize,
+    pub data: Vec<u8>,
+    bgprio: [PrioType; SCREEN_W],
+    pub updated: bool,
+    pub interrupt: u8,
+    pub gbmode: GbMode,
+    hblanking: bool,
 }
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
-enum Mode {
-    HBlank = 0x00, // mode 0
-    VBlank = 0x01, // mode 1
-    RdOam = 0x02,  // mode 2
-    RdVram = 0x03, // mode 3
-}
-
-#[derive(Debug)]
-struct Palette {
-    bg: [Color; 4],
-    obp0: [Color; 4],
-    obp1: [Color; 4],
-}
-
-#[derive(Debug)]
-struct Tiles {
-    data: [[[u8; 8]; 8]; NUM_TILES * 2],
-    need_update: bool,
-    to_update: [bool; NUM_TILES * 2],
-}
-
-#[derive(Debug)]
-struct CgbData {
-    // Raw memory
-    bgp: [u8; CGB_BP_SIZE],
-    obp: [u8; CGB_BP_SIZE],
-    // Index registers into memory
-    bgpi: u8,
-    obpi: u8,
-    // Compiled palettes
-    cbgp: [[Color; 4]; 8],
-    cobp: [[Color; 4]; 8],
-}
-
-#[derive(Debug)]
-pub struct SgbData {
-    // This is a 20x18 array which maps palettes to locations on the screen.
-    // Each element defines an 8x8 block on the GB screen which should be mapped
-    // through these palettes instead of using the normal grayscale.
-    pub atf: [u8; 20 * 18],
-
-    // Actual compiled palettes where each palette is an array of 4 colors where
-    // each color has 4 components
-    pub pal: [[Color; 4]; 4],
-}
-
-impl Gpu {
-    pub fn new() -> Gpu {
-        Gpu {
-            vrambanks: Box::new([[0; VRAM_SIZE]; 2]),
-            vrambank: 0,
-            oam: [0; OAM_SIZE],
-            is_cgb: false,
-            is_sgb: false,
-            image_data: Box::new([0; HEIGHT * WIDTH * 4]),
-
-            mode: Mode::RdOam,
-            wx: 0,
-            wy: 0,
-            obp1: 0,
-            obp0: 0,
-            bgp: 0,
+impl GPU {
+    pub fn new() -> GPU {
+        GPU {
+            mode: 0,
+            modeclock: 0,
+            line: 0,
             lyc: 0,
-            ly: 0,
-            scx: 0,
+            lcd_on: false,
+            win_tilemap: 0x9C00,
+            win_on: false,
+            tilebase: 0x8000,
+            bg_tilemap: 0x9C00,
+            sprite_size: 8,
+            sprite_on: false,
+            lcdc0: false,
+            lyc_inte: false,
+            m2_inte: false,
+            m1_inte: false,
+            m0_inte: false,
             scy: 0,
-            mode0int: false,
-            mode1int: false,
-            mode2int: false,
-            lycly: false,
-            bgon: false,
-            objon: false,
-            objsize: false,
-            bgmap: false,
-            tiledata: false,
-            winon: false,
-            winmap: false,
-            lcdon: false,
-
-            clock: 0,
-            hdma_src: 0,
-            hdma_dst: 0,
-            hdma5: 0,
-
-            pal: Box::new(Palette {
-                bg: [[0; 4]; 4],
-                obp0: [[0; 4]; 4],
-                obp1: [[0; 4]; 4],
-            }),
-
-            tiles: Box::new(Tiles {
-                need_update: false,
-                to_update: [false; NUM_TILES * 2],
-                data: [[[0; 8]; 8]; NUM_TILES * 2],
-            }),
-
-            cgb: Box::new(CgbData {
-                bgp: [255; CGB_BP_SIZE],
-                obp: [0; CGB_BP_SIZE],
-                bgpi: 0,
-                obpi: 0,
-                cbgp: [[[255, 255, 255, 255]; 4]; 8],
-                cobp: [[[0, 0, 0, 255]; 4]; 8],
-            }),
-
-            sgb: Box::new(SgbData {
-                atf: [0; 20 * 18],
-                pal: [[[0, 0, 0, 255]; 4]; 4],
-            }),
+            scx: 0,
+            winy: 0,
+            winx: 0,
+            wy_trigger: false,
+            wy_pos: -1,
+            palbr: 0,
+            pal0r: 0,
+            pal1r: 1,
+            palb: [0; 4],
+            pal0: [0; 4],
+            pal1: [0; 4],
+            vram: [0; VRAM_SIZE],
+            voam: [0; VOAM_SIZE],
+            data: vec![0; SCREEN_W * SCREEN_H * 3],
+            bgprio: [PrioType::Normal; SCREEN_W],
+            updated: false,
+            interrupt: 0,
+            gbmode: GbMode::Classic,
+            cbgpal_inc: false,
+            cbgpal_ind: 0,
+            cbgpal: [[[0u8; 3]; 4]; 8],
+            csprit_inc: false,
+            csprit_ind: 0,
+            csprit: [[[0u8; 3]; 4]; 8],
+            vrambank: 0,
+            hblanking: false,
         }
     }
 
-    pub fn vram(&self) -> &[u8; VRAM_SIZE] {
-        &self.vrambanks[self.vrambank as usize]
-    }
-    pub fn vram_mut(&mut self) -> &mut [u8; VRAM_SIZE] {
-        &mut self.vrambanks[self.vrambank as usize]
+    pub fn new_cgb() -> GPU {
+        GPU::new()
     }
 
-    fn switch(&mut self, mode: Mode, if_: &mut u8) {
+    pub fn do_cycle(&mut self, ticks: u32) {
+        if !self.lcd_on { return }
+        self.hblanking = false;
+
+        let mut ticksleft = ticks;
+
+        while ticksleft > 0 {
+            let curticks = if ticksleft >= 80 { 80 } else { ticksleft };
+            self.modeclock += curticks;
+            ticksleft -= curticks;
+
+            // Full line takes 114 ticks
+            if self.modeclock >= 456 {
+                self.modeclock -= 456;
+                self.line = (self.line + 1) % 154;
+                self.check_interrupt_lyc();
+
+                // This is a VBlank line
+                if self.line >= 144 && self.mode != 1 {
+                    self.change_mode(1);
+                }
+            }
+
+            // This is a normal line
+            if self.line < 144 {
+                if self.modeclock <= 80 {
+                    if self.mode != 2 { self.change_mode(2); }
+                } else if self.modeclock <= (80 + 172) { // 252 cycles
+                    if self.mode != 3 { self.change_mode(3); }
+                } else { // the remaining 204
+                    if self.mode != 0 { self.change_mode(0); }
+                }
+            }
+        }
+    }
+
+    fn check_interrupt_lyc(&mut self) {
+        if self.lyc_inte && self.line == self.lyc {
+            self.interrupt |= 0x02;
+        }
+    }
+
+    fn change_mode(&mut self, mode: u8) {
         self.mode = mode;
-        match mode {
-            Mode::HBlank => {
-                self.render_line();
-                if self.mode0int {
-                    *if_ |= Interrupt::LCDStat as u8;
+
+        if match self.mode {
+            0 => {
+                self.renderscan();
+                self.hblanking = true;
+                self.m0_inte
+            },
+            1 => { // Vertical blank
+                self.wy_trigger = false;
+                self.interrupt |= 0x01;
+                self.updated = true;
+                self.m1_inte
+            },
+            2 => self.m2_inte,
+            3 => {
+                if self.win_on && self.wy_trigger == false && self.line == self.winy {
+                    self.wy_trigger = true;
+                    self.wy_pos = -1;
                 }
+                false
             }
-            Mode::VBlank => {
-                // TODO: a frame is ready, it should be put on screen at this
-                // point
-                *if_ |= Interrupt::Vblank as u8;
-                if self.mode1int {
-                    *if_ |= Interrupt::LCDStat as u8;
-                }
-            }
-            Mode::RdOam => {
-                if self.mode2int {
-                    *if_ |= Interrupt::LCDStat as u8;
-                }
-            }
-            Mode::RdVram => {}
+            _ => false,
+        } {
+            self.interrupt |= 0x02;
         }
     }
 
-    // Step the GPU a number of clock cycles forward. The GPU's screen is
-    // synchronized with the CPU clock because in a real GB, the two are
-    // matched up on the same clock.
-    //
-    // This function mostly doesn't do anything except for incrementing its own
-    // internal counter of clock cycles that have passed. It's a state machine
-    // between a few different states. In one state, however, the rendering of a
-    // screen occurs, but that doesn't always happen when calling this function.
-    pub fn step(&mut self, clocks: u32, if_: &mut u8) {
-        // Timings located here:
-        //      http://nocash.emubase.de/pandocs.htm#lcdstatusregister
-        self.clock += clocks;
-
-        // If clock >= 456, then we've completed an entire line. This line might
-        // have been part of a vblank or part of a scanline.
-        if self.clock >= 456 {
-            self.clock -= 456;
-            self.ly = (self.ly + 1) % 154; // 144 lines tall, 10 for a vblank
-
-            if self.ly >= 144 && self.mode != Mode::VBlank {
-                self.switch(Mode::VBlank, if_);
-            }
-
-            if self.ly == self.lyc && self.lycly {
-                *if_ |= Interrupt::LCDStat as u8;
-            }
-        }
-
-        // Hop between modes if we're not in vblank
-        if self.ly < 144 {
-            if self.clock <= 80 {
-                // RDOAM takes 80 cycles
-                if self.mode != Mode::RdOam {
-                    self.switch(Mode::RdOam, if_);
-                }
-            } else if self.clock <= 252 {
-                // RDVRAM takes 172 cycles
-                if self.mode != Mode::RdVram {
-                    self.switch(Mode::RdVram, if_);
-                }
-            } else {
-                // HBLANK takes rest of time before line rendered
-                if self.mode != Mode::HBlank {
-                    self.switch(Mode::HBlank, if_);
-                }
-            }
-        }
-    }
-
-    fn render_line(&mut self) {
-        if !self.lcdon {
-            return;
-        }
-
-        let mut scanline = [0u8; WIDTH];
-
-        if self.tiles.need_update {
-            self.update_tileset();
-            self.tiles.need_update = false;
-        }
-
-        if self.bgon {
-            self.render_background(&mut scanline);
-        }
-        if self.winon {
-            self.render_window(&mut scanline);
-        }
-        if self.objon {
-            self.render_sprites(&mut scanline);
-        }
-    }
-
-    fn update_tileset(&mut self) {
-        let tiles = &mut *self.tiles;
-        let iter = tiles.to_update.iter_mut();
-        for (i, slot) in iter.enumerate().filter(|&(_, &mut i)| i) {
-            *slot = false;
-
-            // Each tile is 16 bytes long. Each pair of bytes represents a line
-            // of pixels (making 8 lines). The first byte is the LSB of the
-            // color number and the second byte is the MSB of the color.
-            //
-            // For example, for:
-            //      byte 0 : 01011011
-            //      byte 1 : 01101010
-            //
-            // The colors are [0, 2, 2, 1, 3, 0, 3, 1]
-            for j in 0..8 {
-                let addr = ((i % NUM_TILES) * 16) + j * 2;
-                // All tiles are located 0x8000-0x97ff => 0x0000-0x17ff in VRAM
-                // meaning that the index is simply an index into raw VRAM
-                let (mut lsb, mut msb) = if i < NUM_TILES {
-                    (self.vrambanks[0][addr], self.vrambanks[0][addr + 1])
+    pub fn rb(&self, a: u16) -> u8 {
+        match a {
+            0x8000 ..= 0x9FFF => self.vram[(self.vrambank * 0x2000) | (a as usize & 0x1FFF)],
+            0xFE00 ..= 0xFE9F => self.voam[a as usize - 0xFE00],
+            0xFF40 => {
+                (if self.lcd_on { 0x80 } else { 0 }) |
+                (if self.win_tilemap == 0x9C00 { 0x40 } else { 0 }) |
+                (if self.win_on { 0x20 } else { 0 }) |
+                (if self.tilebase == 0x8000 { 0x10 } else { 0 }) |
+                (if self.bg_tilemap == 0x9C00 { 0x08 } else { 0 }) |
+                (if self.sprite_size == 16 { 0x04 } else { 0 }) |
+                (if self.sprite_on { 0x02 } else { 0 }) |
+                (if self.lcdc0 { 0x01 } else { 0 })
+            },
+            0xFF41 => {
+                0x80 |
+                (if self.lyc_inte { 0x40 } else { 0 }) |
+                (if self.m2_inte { 0x20 } else { 0 }) |
+                (if self.m1_inte { 0x10 } else { 0 }) |
+                (if self.m0_inte { 0x08 } else { 0 }) |
+                (if self.line == self.lyc { 0x04 } else { 0 }) |
+                self.mode
+            },
+            0xFF42 => self.scy,
+            0xFF43 => self.scx,
+            0xFF44 => self.line,
+            0xFF45 => self.lyc,
+            0xFF46 => 0, // Write only
+            0xFF47 => self.palbr,
+            0xFF48 => self.pal0r,
+            0xFF49 => self.pal1r,
+            0xFF4A => self.winy,
+            0xFF4B => self.winx,
+            0xFF4C => 0xFF,
+            0xFF4E => 0xFF,
+            0xFF4F ..= 0xFF6B if self.gbmode != GbMode::Color => { 0xFF },
+            0xFF4F => self.vrambank as u8 | 0xFE,
+            0xFF68 => { 0x40 | self.cbgpal_ind | (if self.cbgpal_inc { 0x80 } else { 0 }) },
+            0xFF69 => {
+                let palnum = (self.cbgpal_ind >> 3) as usize;
+                let colnum = ((self.cbgpal_ind >> 1) & 0x3) as usize;
+                if self.cbgpal_ind & 0x01 == 0x00 {
+                    self.cbgpal[palnum][colnum][0] | ((self.cbgpal[palnum][colnum][1] & 0x07) << 5)
                 } else {
-                    (self.vrambanks[1][addr], self.vrambanks[1][addr + 1])
-                };
-
-                // LSB is the right-most pixel.
-                for k in (0..8).rev() {
-                    tiles.data[i][j][k] = ((msb & 1) << 1) | (lsb & 1);
-                    lsb >>= 1;
-                    msb >>= 1;
+                    ((self.cbgpal[palnum][colnum][1] & 0x18) >> 3) | (self.cbgpal[palnum][colnum][2] << 2)
                 }
-            }
-        }
-    }
-
-    pub fn add_tilei(&self, base: usize, tilei: u8) -> usize {
-        // tiledata = 0 => tilei is a signed byte, so fix it here
-        if self.tiledata {
-            base + tilei as usize
-        } else {
-            (base as isize + (tilei as i8 as isize)) as usize
-        }
-    }
-
-    pub fn bgbase(&self) -> usize {
-        // vram is from 0x8000-0x9fff
-        // self.bgmap: 0=9800-9bff, 1=9c00-9fff
-        //
-        // Each map is a 32x32 (1024) array of bytes. Each byte is an index into
-        // the tile map. Each tile is an 8x8 block of pixels.
-        if self.bgmap {
-            0x1c00
-        } else {
-            0x1800
-        }
-    }
-
-    fn render_background(&mut self, scanline: &mut [u8; WIDTH]) {
-        let mapbase = self.bgbase();
-        let line = self.ly as usize + self.scy as usize;
-
-        // Now offset from the base to the right location. We divide by 8
-        // because each tile is 8 pixels high. We then multiply by 32
-        // because each row is 32 bytes long. We can't just multiply by 4
-        // because we need the truncation to happen beforehand
-        let mapbase = mapbase + ((line % 256) >> 3) * 32;
-
-        // println!("{:?} {:?}", self.ly, self.scy);
-
-        // X and Y location inside the tile itself to paint
-        let y = (self.ly + self.scy) % 8;
-        let mut x = self.scx % 8;
-
-        // Offset into the canvas to draw. line * width * 4 colors
-        let mut coff = (self.ly as usize) * WIDTH * 4;
-
-        // this.tiledata is a flag to determine which tile data table to use
-        // 0=8800-97FF, 1=8000-8FFF. For some odd reason, if tiledata = 0, then
-        // (&tiles[0]) == 0x9000, where if tiledata = 1, (&tiles[0]) = 0x8000.
-        // This implies that the indices are treated as signed numbers.
-        let mut i = 0;
-        let tilebase = if !self.tiledata { 256 } else { 0 };
-
-        loop {
-            // Backgrounds wrap around, so calculate the offset into the bgmap
-            // each loop to check for wrapping
-            let mapoff = ((i as usize + self.scx as usize) % 256) >> 3;
-            let tilei = self.vrambanks[0][mapbase + mapoff];
-
-            // tiledata = 0 => tilei is a signed byte, so fix it here
-            let tilebase = self.add_tilei(tilebase, tilei);
-
-            let row;
-            let bgpri;
-            let hflip;
-            let bgp;
-            if self.is_cgb {
-                // See http://nocash.emubase.de/pandocs.htm#vrambackgroundmaps
-                // for what the attribute byte all maps to
-                //
-                // Summary of attributes bits:
-                //  Bit 0-2  Background Palette number  (BGP0-7)
-                //  Bit 3    Tile VRAM Bank number      (0=Bank 0, 1=Bank 1)
-                //  Bit 4    Not used
-                //  Bit 5    Horizontal Flip       (0=Normal, 1=Mirror)
-                //  Bit 6    Vertical Flip         (0=Normal, 1=Mirror)
-                //  Bit 7    BG-to-OAM Priority    (0=OAM, 1=BG)
-
-                let attrs = self.vrambanks[1][mapbase + mapoff as usize] as usize;
-
-                let tile = self.tiles.data[tilebase + ((attrs >> 3) & 1) * NUM_TILES];
-                bgpri = attrs & 0x80 != 0;
-                hflip = attrs & 0x20 != 0;
-                row = tile[if attrs & 0x40 != 0 { 7 - y } else { y } as usize];
-                bgp = self.cgb.cbgp[attrs & 0x7];
-            } else {
-                row = self.tiles.data[tilebase as usize][y as usize];
-                bgpri = false;
-                hflip = false;
-                bgp = self.pal.bg;
-            }
-
-            while x < 8 && i < WIDTH as u8 {
-                let colori = row[if hflip { 7 - x } else { x } as usize];
-                let color;
-                if self.is_sgb && !self.is_cgb {
-                    let sgbaddr = (i >> 3) as usize + (self.ly as usize >> 3) * 20;
-                    let mapped = self.sgb.atf[sgbaddr] as usize;
-                    match bgp[colori as usize][0] {
-                        0 => {
-                            color = self.sgb.pal[mapped][3];
-                        }
-                        96 => {
-                            color = self.sgb.pal[mapped][2];
-                        }
-                        192 => {
-                            color = self.sgb.pal[mapped][1];
-                        }
-                        255 => {
-                            color = self.sgb.pal[mapped][0];
-                        }
-
-                        // not actually reachable
-                        _ => {
-                            color = [0, 0, 0, 0];
-                        }
-                    }
+            },
+            0xFF6A => { 0x40 | self.csprit_ind | (if self.csprit_inc { 0x80 } else { 0 }) },
+            0xFF6B => {
+                let palnum = (self.csprit_ind >> 3) as usize;
+                let colnum = ((self.csprit_ind >> 1) & 0x3) as usize;
+                if self.csprit_ind & 0x01 == 0x00 {
+                    self.csprit[palnum][colnum][0] | ((self.csprit[palnum][colnum][1] & 0x07) << 5)
                 } else {
-                    color = bgp[colori as usize];
+                    ((self.csprit[palnum][colnum][1] & 0x18) >> 3) | (self.csprit[palnum][colnum][2] << 2)
                 }
-                // To indicate bg priority, list a color >= 4
-                scanline[i as usize] = if bgpri { 4 } else { colori };
-
-                self.image_data[coff] = color[0];
-                self.image_data[coff + 1] = color[1];
-                self.image_data[coff + 2] = color[2];
-                self.image_data[coff + 3] = color[3];
-
-                x += 1;
-                i += 1;
-                coff += 4;
-            }
-
-            x = 0;
-            if i >= WIDTH as u8 {
-                break;
-            }
+            },
+            _ => 0xFF,
         }
     }
 
-    fn render_window(&mut self, scanline: &mut [u8; WIDTH]) {
-        // If our current line is less than the windows initial offset, then
-        // there's no window to draw
-        if self.ly < self.wy {
-            return;
+    fn rbvram0(&self, a: u16) -> u8 {
+        if a < 0x8000 || a >= 0xA000 { panic!("Shouldn't have used rbvram0"); }
+        self.vram[a as usize & 0x1FFF]
+    }
+    fn rbvram1(&self, a: u16) -> u8 {
+        if a < 0x8000 || a >= 0xA000 { panic!("Shouldn't have used rbvram1"); }
+        self.vram[0x2000 + (a as usize & 0x1FFF)]
+    }
+
+    pub fn wb(&mut self, a: u16, v: u8) {
+        match a {
+            0x8000 ..= 0x9FFF => self.vram[(self.vrambank * 0x2000) | (a as usize & 0x1FFF)] = v,
+            0xFE00 ..= 0xFE9F => self.voam[a as usize - 0xFE00] = v,
+            0xFF40 => {
+                let orig_lcd_on = self.lcd_on;
+                self.lcd_on = v & 0x80 == 0x80;
+                self.win_tilemap = if v & 0x40 == 0x40 { 0x9C00 } else { 0x9800 };
+                self.win_on = v & 0x20 == 0x20;
+                self.tilebase = if v & 0x10 == 0x10 { 0x8000 } else { 0x8800 };
+                self.bg_tilemap = if v & 0x08 == 0x08 { 0x9C00 } else { 0x9800 };
+                self.sprite_size = if v & 0x04 == 0x04 { 16 } else { 8 };
+                self.sprite_on = v & 0x02 == 0x02;
+                self.lcdc0 = v & 0x01 == 0x01;
+                if orig_lcd_on && !self.lcd_on {
+                    self.modeclock = 0;
+                    self.line = 0;
+                    self.mode = 0;
+                    self.wy_trigger = false;
+                    self.clear_screen();
+                }
+                if !orig_lcd_on && self.lcd_on { self.change_mode(2); self.modeclock = 4; }
+            },
+            0xFF41 => {
+                self.lyc_inte = v & 0x40 == 0x40;
+                self.m2_inte = v & 0x20 == 0x20;
+                self.m1_inte = v & 0x10 == 0x10;
+                self.m0_inte = v & 0x08 == 0x08;
+            },
+            0xFF42 => self.scy = v,
+            0xFF43 => self.scx = v,
+            0xFF44 => {}, // Read-only
+            0xFF45 => self.lyc = v,
+            0xFF46 => panic!("0xFF46 should be handled by MMU"),
+            0xFF47 => { self.palbr = v; self.update_pal(); },
+            0xFF48 => { self.pal0r = v; self.update_pal(); },
+            0xFF49 => { self.pal1r = v; self.update_pal(); },
+            0xFF4A => self.winy = v,
+            0xFF4B => self.winx = v,
+            0xFF4C => {},
+            0xFF4E => {},
+            0xFF4F ..= 0xFF6B if self.gbmode != GbMode::Color => {},
+            0xFF4F => self.vrambank = (v & 0x01) as usize,
+            0xFF68 => { self.cbgpal_ind = v & 0x3F; self.cbgpal_inc = v & 0x80 == 0x80; },
+            0xFF69 => {
+                let palnum = (self.cbgpal_ind >> 3) as usize;
+                let colnum = ((self.cbgpal_ind >> 1) & 0x03) as usize;
+                if self.cbgpal_ind & 0x01 == 0x00 {
+                    self.cbgpal[palnum][colnum][0] = v & 0x1F;
+                    self.cbgpal[palnum][colnum][1] = (self.cbgpal[palnum][colnum][1] & 0x18) | (v >> 5);
+                } else {
+                    self.cbgpal[palnum][colnum][1] = (self.cbgpal[palnum][colnum][1] & 0x07) | ((v & 0x3) << 3);
+                    self.cbgpal[palnum][colnum][2] = (v >> 2) & 0x1F;
+                }
+                if self.cbgpal_inc { self.cbgpal_ind = (self.cbgpal_ind + 1) & 0x3F; };
+            },
+            0xFF6A => { self.csprit_ind = v & 0x3F; self.csprit_inc = v & 0x80 == 0x80; },
+            0xFF6B => {
+                let palnum = (self.csprit_ind >> 3) as usize;
+                let colnum = ((self.csprit_ind >> 1) & 0x03) as usize;
+                if self.csprit_ind & 0x01 == 0x00 {
+                    self.csprit[palnum][colnum][0] = v & 0x1F;
+                    self.csprit[palnum][colnum][1] = (self.csprit[palnum][colnum][1] & 0x18) | (v >> 5);
+                } else {
+                    self.csprit[palnum][colnum][1] = (self.csprit[palnum][colnum][1] & 0x07) | ((v & 0x3) << 3);
+                    self.csprit[palnum][colnum][2] = (v >> 2) & 0x1F;
+                }
+                if self.csprit_inc { self.csprit_ind = (self.csprit_ind + 1) & 0x3F; };
+            },
+            _ => panic!("GPU does not handle write {:04X}", a),
         }
+    }
 
-        // The window's x position is actually at (wx - 7), so if the wx
-        // register is greater than WIDTH + 7, then there's nothing to do
-        if self.wx >= WIDTH as u8 + 7 {
-            return;
+    fn clear_screen(&mut self) {
+        for v in self.data.iter_mut() {
+            *v = 255;
         }
+        self.updated = true;
+    }
 
-        let mapbase = if self.winmap { 0x1c00 } else { 0x1800 };
-        let mapbase = mapbase + ((self.ly as usize - self.wy as usize) >> 3) * 32;
+    fn update_pal(&mut self) {
+        for i in 0 .. 4 {
+            self.palb[i] = GPU::get_monochrome_pal_val(self.palbr, i);
+            self.pal0[i] = GPU::get_monochrome_pal_val(self.pal0r, i);
+            self.pal1[i] = GPU::get_monochrome_pal_val(self.pal1r, i);
+        }
+    }
 
-        // X and Y location inside the tile itself to paint
-        //
-        // The Y location is offset by the window's offset (as with the above
-        // mapbase calculation), and the X location takes into account that the
-        // actual offset is wx - 7 (and is careful to avoid overflow).
-        let y = (self.ly - self.wy) % 8;
-        let (mut x, mut i) = if self.wx < 7 {
-            (7 - self.wx, 0)
-        } else {
-            ((self.wx - 7) % 8, self.wx - 7)
+    fn get_monochrome_pal_val(value: u8, index: usize) -> u8 {
+        match (value >> 2*index) & 0x03 {
+            0 => 255,
+            1 => 192,
+            2 => 96,
+            _ => 0
+        }
+    }
+
+    fn renderscan(&mut self) {
+        for x in 0 .. SCREEN_W {
+            self.setcolor(x, 255);
+            self.bgprio[x] = PrioType::Normal;
+        }
+        self.draw_bg();
+        self.draw_sprites();
+    }
+
+    fn setcolor(&mut self, x: usize, color: u8) {
+        self.data[self.line as usize * SCREEN_W * 3 + x * 3 + 0] = color;
+        self.data[self.line as usize * SCREEN_W * 3 + x * 3 + 1] = color;
+        self.data[self.line as usize * SCREEN_W * 3 + x * 3 + 2] = color;
+    }
+
+    fn setrgb(&mut self, x: usize, r: u8, g: u8, b: u8) {
+        // Gameboy Color RGB correction
+        // Taken from the Gambatte emulator
+        // assume r, g and b are between 0 and 1F
+        let baseidx = self.line as usize * SCREEN_W * 3 + x * 3;
+
+        let r = r as u32;
+        let g = g as u32;
+        let b = b as u32;
+
+        self.data[baseidx + 0] = ((r * 13 + g * 2 + b) >> 1) as u8;
+        self.data[baseidx + 1] = ((g * 3 + b) << 1) as u8;
+        self.data[baseidx + 2] = ((r * 3 + g * 2 + b * 11) >> 1) as u8;
+    }
+
+    fn draw_bg(&mut self) {
+        let drawbg = self.gbmode == GbMode::Color || self.lcdc0;
+
+        let wx_trigger = self.winx <= 166;
+        let winy = if self.win_on && self.wy_trigger && wx_trigger {
+            self.wy_pos += 1;
+            self.wy_pos
+        }
+        else {
+            -1
         };
 
-        // Offset into the canvas to draw. (line * width + xoff) * 4 colors
-        let mut coff = (self.ly as usize * WIDTH + i as usize) * 4;
+        if winy < 0 && drawbg == false {
+            return;
+        }
 
-        // this.tiledata is a flag to determine which tile data table to use
-        // 0=8800-97FF, 1=8000-8FFF. For some odd reason, if tiledata = 0, then
-        // (&tiles[0]) == 0x9000, where if tiledata = 1, (&tiles[0]) = 0x8000.
-        // This implies that the indices are treated as signed numbers.
-        let tilebase = if !self.tiledata { 256 } else { 0 };
+        let wintiley = (winy as u16 >> 3) & 31;
 
-        let mut mapoff = 0;
-        loop {
-            let tilei = self.vrambanks[0][mapbase + mapoff as usize];
-            mapoff += 1;
+        let bgy = self.scy.wrapping_add(self.line);
+        let bgtiley = (bgy as u16 >> 3) & 31;
 
-            // tiledata = 0 => tilei is a signed byte, so fix it here
-            let tilebase = self.add_tilei(tilebase, tilei);
+        for x in 0 .. SCREEN_W {
+            let winx = - ((self.winx as i32) - 7) + (x as i32);
+            let bgx = self.scx as u32 + x as u32;
 
-            let row;
-            let bgpri;
-            let hflip;
-            let bgp;
-            if self.is_cgb {
-                let attrs = self.vrambanks[1][mapbase + mapoff as usize - 1] as usize;
-
-                let tile = self.tiles.data[tilebase + ((attrs >> 3) & 1) * NUM_TILES];
-                bgpri = attrs & 0x80 != 0;
-                hflip = attrs & 0x20 != 0;
-                row = tile[if attrs & 0x40 != 0 { 7 - y } else { y } as usize];
-                bgp = self.cgb.cbgp[attrs & 0x7];
+            let (tilemapbase, tiley, tilex, pixely, pixelx) = if winy >= 0 && winx >= 0 {
+                (self.win_tilemap,
+                wintiley,
+                (winx as u16 >> 3),
+                winy as u16 & 0x07,
+                winx as u8 & 0x07)
+            } else if drawbg {
+                (self.bg_tilemap,
+                bgtiley,
+                (bgx as u16 >> 3) & 31,
+                bgy as u16 & 0x07,
+                bgx as u8 & 0x07)
             } else {
-                row = self.tiles.data[tilebase as usize][y as usize];
-                bgpri = false;
-                hflip = false;
-                bgp = self.pal.bg;
+                continue;
+            };
+
+            let tilenr: u8 = self.rbvram0(tilemapbase + tiley * 32 + tilex);
+
+            let (palnr, vram1, xflip, yflip, prio) = if self.gbmode == GbMode::Color {
+                let flags = self.rbvram1(tilemapbase + tiley * 32 + tilex) as usize;
+                (flags & 0x07,
+                flags & (1 << 3) != 0,
+                flags & (1 << 5) != 0,
+                flags & (1 << 6) != 0,
+                flags & (1 << 7) != 0)
+            } else {
+                (0, false, false, false, false)
+            };
+
+            let tileaddress = self.tilebase
+            + (if self.tilebase == 0x8000 {
+                tilenr as u16
+            } else {
+                (tilenr as i8 as i16 + 128) as u16
+            }) * 16;
+
+            let a0 = match yflip {
+                false => tileaddress + (pixely * 2),
+                true => tileaddress + (14 - (pixely * 2)),
+            };
+
+            let (b1, b2) = match vram1 {
+                false => (self.rbvram0(a0), self.rbvram0(a0 + 1)),
+                true => (self.rbvram1(a0), self.rbvram1(a0 + 1)),
+            };
+
+            let xbit = match xflip {
+                true => pixelx,
+                false => 7 - pixelx,
+            } as u32;
+            let colnr = if b1 & (1 << xbit) != 0 { 1 } else { 0 }
+                | if b2 & (1 << xbit) != 0 { 2 } else { 0 };
+
+            self.bgprio[x] =
+                if colnr == 0 { PrioType::Color0 }
+                else if prio { PrioType::PrioFlag }
+                else { PrioType::Normal };
+            if self.gbmode == GbMode::Color {
+                let r = self.cbgpal[palnr][colnr][0];
+                let g = self.cbgpal[palnr][colnr][1];
+                let b = self.cbgpal[palnr][colnr][2];
+                self.setrgb(x as usize, r, g, b);
+            } else {
+                let color = self.palb[colnr];
+                self.setcolor(x, color);
             }
+        }
+    }
 
-            while x < 8 && i < WIDTH as u8 {
-                let colori = row[if hflip { 7 - x } else { x } as usize];
-                let color;
-                if self.is_sgb && !self.is_cgb {
-                    let sgbaddr = (i >> 3) + (self.ly >> 3) * 20;
-                    let mapped = self.sgb.atf[sgbaddr as usize] as usize;
-                    match bgp[colori as usize][0] {
-                        0 => {
-                            color = self.sgb.pal[mapped][3];
-                        }
-                        96 => {
-                            color = self.sgb.pal[mapped][2];
-                        }
-                        192 => {
-                            color = self.sgb.pal[mapped][1];
-                        }
-                        255 => {
-                            color = self.sgb.pal[mapped][0];
-                        }
+    fn draw_sprites(&mut self) {
+        if !self.sprite_on { return }
 
-                        // not actually reachable
-                        _ => {
-                            color = [0, 0, 0, 0];
-                        }
-                    }
-                } else {
-                    color = bgp[colori as usize];
-                }
-                // To indicate bg priority, list a color >= 4
-                scanline[i as usize] = if bgpri { 4 } else { colori };
+        let line = self.line as i32;
+        let sprite_size = self.sprite_size as i32;
 
-                self.image_data[coff] = color[0];
-                self.image_data[coff + 1] = color[1];
-                self.image_data[coff + 2] = color[2];
-                self.image_data[coff + 3] = color[3];
-
-                x += 1;
-                i += 1;
-                coff += 4;
-            }
-
-            x = 0;
-            if i >= 160 {
+        let mut sprites_to_draw = [(0, 0, 0); 10];
+        let mut sidx = 0;
+        for index in 0 .. 40 {
+            let spriteaddr = 0xFE00 + (index as u16) * 4;
+            let spritey = self.rb(spriteaddr + 0) as u16 as i32 - 16;
+            if line < spritey || line >= spritey + sprite_size { continue }
+            let spritex = self.rb(spriteaddr + 1) as u16 as i32 - 8;
+            sprites_to_draw[sidx] = (spritex, spritey, index);
+            sidx += 1;
+            if sidx >= 10 {
                 break;
             }
         }
-    }
+        if self.gbmode == GbMode::Color {
+            sprites_to_draw[..sidx].sort_unstable_by(cgb_sprite_order);
+        }
+        else {
+            sprites_to_draw[..sidx].sort_unstable_by(dmg_sprite_order);
+        }
 
-    fn render_sprites(&mut self, scanline: &mut [u8; WIDTH]) {
-        // More information about sprites is located at:
-        // http://nocash.emubase.de/pandocs.htm#vramspriteattributetableoam
+        for &(spritex, spritey, i) in &sprites_to_draw[..sidx] {
+            if spritex < -7 || spritex >= (SCREEN_W as i32) { continue }
 
-        let line = self.ly as i32;
-        let ysize = if self.objsize { 16 } else { 8 };
+            let spriteaddr = 0xFE00 + (i as u16) * 4;
+            let tilenum = (self.rb(spriteaddr + 2) & (if self.sprite_size == 16 { 0xFE } else { 0xFF })) as u16;
+            let flags = self.rb(spriteaddr + 3) as usize;
+            let usepal1: bool = flags & (1 << 4) != 0;
+            let xflip: bool = flags & (1 << 5) != 0;
+            let yflip: bool = flags & (1 << 6) != 0;
+            let belowbg: bool = flags & (1 << 7) != 0;
+            let c_palnr = flags & 0x07;
+            let c_vram1: bool = flags & (1 << 3) != 0;
 
-        // All sprits are located in OAM
-        // There are 40 sprites in total, each is 4 bytes wide
-        for sprite in self.oam.chunks(4) {
-            let mut yoff = (sprite[0] as i32) - 16;
-            let xoff = (sprite[1] as i32) - 8;
-            let mut tile = sprite[2] as usize;
-            let flags = sprite[3];
-
-            // First make sure that this sprite even lands on the current line
-            // being rendered. The y value in the sprite is the top left corner,
-            // so if that is below the scanline or the bottom of the sprite
-            // (which is 8 pixels high) lands below the scanline, this sprite
-            // doesn't need to be rendered right now
-            if yoff > line || yoff + ysize <= line || xoff <= -8 || xoff >= WIDTH as i32 {
-                continue;
-            }
-
-            // 8x16 tiles always use adjacent tile indices. If we're in 8x16
-            // mode and this sprite needs the second tile, add 1 to the tile
-            // index and change yoff so it looks like we're rendering that tile
-            if ysize == 16 {
-                tile &= 0xfe; // ignore the lowest bit
-                if line - yoff >= 8 {
-                    tile |= 1;
-                    yoff += 8;
-                }
-            }
-
-            // 160px/line, 4 entries/px
-            let mut coff = (WIDTH as i32 * line + xoff) * 4;
-
-            // All sprite tile palettes are at 0x8000-0x8fff => start of vram.
-            // If we're in CGB mode, then we get our palette from the spite
-            // flags. We also need to take into account the tile being in a
-            // different bank. Otherwise, we just use the tile index as a raw
-            // index.
-            let pal;
-            let tiled;
-            if self.is_cgb {
-                tiled = self.tiles.data[((flags as usize >> 3) & 1 * NUM_TILES) + tile as usize];
-                pal = self.cgb.cobp[(flags & 0x3) as usize];
+            let tiley: u16 = if yflip {
+                (sprite_size - 1 - (line - spritey)) as u16
             } else {
-                // bit4 is the palette number. 0 = obp0, 1 = obp1
-                pal = if flags & 0x10 != 0 {
-                    self.pal.obp1
-                } else {
-                    self.pal.obp0
-                };
-                tiled = self.tiles.data[tile as usize];
-            }
-
-            // bit6 is the vertical flip bit
-            let row = if flags & 0x40 != 0 {
-                tiled[(7 - (line - yoff)) as usize]
-            } else {
-                tiled[(line - yoff) as usize]
+                (line - spritey) as u16
             };
 
-            for x in 0..8 {
-                coff += 4;
+            let tileaddress = 0x8000u16 + tilenum * 16 + tiley * 2;
+            let (b1, b2) = if c_vram1 && self.gbmode == GbMode::Color {
+                (self.rbvram1(tileaddress), self.rbvram1(tileaddress + 1))
+            } else {
+                (self.rbvram0(tileaddress), self.rbvram0(tileaddress + 1))
+            };
 
-                // If these pixels are off screen, don't bother drawing
-                // anything. Also, if the background tile at this pixel has
-                // priority, don't render this sprite at all.
-                if xoff + x < 0 || xoff + x >= WIDTH as i32 || scanline[(x + xoff) as usize] > 3 {
-                    continue;
-                }
-                // bit5 is the horizontal flip flag
-                let colori = row[if flags & 0x20 != 0 { 7 - x } else { x } as usize];
+            'xloop: for x in 0 .. 8 {
+                if spritex + x < 0 || spritex + x >= (SCREEN_W as i32) { continue }
 
-                // A color index of 0 for sprites means transparent
-                if colori == 0 {
-                    continue;
-                }
+                let xbit = 1 << (if xflip { x } else { 7 - x } as u32);
+                let colnr = (if b1 & xbit != 0 { 1 } else { 0 }) |
+                    (if b2 & xbit != 0 { 2 } else { 0 });
+                if colnr == 0 { continue }
 
-                // bit7 0=OBJ Above BG, 1=OBJ Behind BG color 1-3. So if this
-                // sprite has this flag set and the data at this location
-                // already contains data (nonzero), then don't render this
-                // sprite
-                if flags & 0x80 != 0 && scanline[(xoff + x) as usize] != 0 {
-                    continue;
-                }
-
-                let color;
-                if self.is_sgb && !self.is_cgb {
-                    let sgbaddr = ((xoff as usize + x as usize) >> 3) + (line as usize >> 3) * 20;
-                    let mapped = self.sgb.atf[sgbaddr as usize];
-                    match pal[colori as usize][0] {
-                        0 => {
-                            color = self.sgb.pal[mapped as usize][3];
-                        }
-                        96 => {
-                            color = self.sgb.pal[mapped as usize][2];
-                        }
-                        192 => {
-                            color = self.sgb.pal[mapped as usize][1];
-                        }
-                        255 => {
-                            color = self.sgb.pal[mapped as usize][0];
-                        }
-
-                        // not actually reachable
-                        _ => {
-                            color = [0, 0, 0, 0];
-                        }
+                if self.gbmode == GbMode::Color {
+                    if self.lcdc0 && (self.bgprio[(spritex + x) as usize] == PrioType::PrioFlag || (belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0)) {
+                        continue 'xloop
                     }
+                    let r = self.csprit[c_palnr][colnr][0];
+                    let g = self.csprit[c_palnr][colnr][1];
+                    let b = self.csprit[c_palnr][colnr][2];
+                    self.setrgb((spritex + x) as usize, r, g, b);
                 } else {
-                    color = pal[colori as usize];
-                }
-
-                self.image_data[(coff - 4) as usize] = color[0];
-                self.image_data[(coff - 3) as usize] = color[1];
-                self.image_data[(coff - 2) as usize] = color[2];
-                self.image_data[(coff - 1) as usize] = color[3];
-            }
-        }
-    }
-
-    pub fn rb(&self, addr: u16) -> u8 {
-        match addr & 0xff {
-            0x40 => {
-                ((self.lcdon as u8) << 7)
-                    | ((self.winmap as u8) << 6)
-                    | ((self.winon as u8) << 5)
-                    | ((self.tiledata as u8) << 4)
-                    | ((self.bgmap as u8) << 3)
-                    | ((self.objsize as u8) << 2)
-                    | ((self.objon as u8) << 1)
-                    | ((self.bgon as u8) << 0)
-            }
-
-            0x41 => {
-                // 4
-                ((self.lycly as u8) << 6)
-                    | ((self.mode2int as u8) << 5)
-                    | ((self.mode1int as u8) << 4)
-                    | ((self.mode0int as u8) << 3)
-                    | ((if self.lycly as u8 == self.ly { 1 } else { 0 } as u8) << 2)
-                    | ((self.mode as u8) << 0)
-            }
-
-            0x42 => self.scy,
-            0x43 => self.scx,
-            0x44 => self.ly,
-            0x45 => self.lyc,
-            // 0x46 is DMA transfer, can't read
-            0x47 => self.bgp,
-            0x48 => self.obp0,
-            0x49 => self.obp1,
-            0x4a => self.wy,
-            0x4b => self.wx,
-            0x4f => self.vrambank,
-
-            // http://nocash.emubase.de/pandocs.htm#lcdvramdmatransferscgbonly
-            0x51 => (self.hdma_src >> 8) as u8,
-            0x52 => self.hdma_src as u8,
-            0x53 => (self.hdma_dst >> 8) as u8,
-            0x54 => self.hdma_dst as u8,
-            0x55 => self.hdma5,
-
-            // http://nocash.emubase.de/pandocs.htm#lcdcolorpalettescgbonly
-            0x68 => self.cgb.bgpi,
-            0x69 => self.cgb.bgp[(self.cgb.bgpi & 0x3f) as usize],
-            0x6a => self.cgb.obpi,
-            0x6b => self.cgb.obp[(self.cgb.obpi & 0x3f) as usize],
-
-            _ => 0xff,
-        }
-    }
-
-    pub fn wb(&mut self, addr: u16, val: u8) {
-        match addr & 0xff {
-            0x40 => {
-                let before = self.lcdon;
-                self.lcdon = (val >> 7) & 1 != 0;
-                self.winmap = (val >> 6) & 1 != 0;
-                self.winon = (val >> 5) & 1 != 0;
-                self.tiledata = (val >> 4) & 1 != 0;
-                self.bgmap = (val >> 3) & 1 != 0;
-                self.objsize = (val >> 2) & 1 != 0;
-                self.objon = (val >> 1) & 1 != 0;
-                self.bgon = (val >> 0) & 1 != 0;
-                if !before && self.lcdon {
-                    self.clock = 4; // ??? why 4?!
-                    self.ly = 0;
+                    if belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0 { continue 'xloop }
+                    let color = if usepal1 { self.pal1[colnr] } else { self.pal0[colnr] };
+                    self.setcolor((spritex + x) as usize, color);
                 }
             }
-
-            0x41 => {
-                self.lycly = (val >> 6) & 1 != 0;
-                self.mode2int = (val >> 5) & 1 != 0;
-                self.mode1int = (val >> 4) & 1 != 0;
-                self.mode0int = (val >> 3) & 1 != 0;
-                // The other bits of this register are mode and lycly, but thse
-                // are read-only and won't be modified
-            }
-
-            0x42 => {
-                self.scy = val;
-            }
-            0x43 => {
-                self.scx = val;
-            }
-            // 0x44 self.ly is read-only
-            0x45 => {
-                self.lyc = val;
-            }
-            // 0x46 handled in mem
-            0x47 => {
-                self.bgp = val;
-                update_pal(&mut self.pal.bg, val);
-            }
-            0x48 => {
-                self.obp0 = val;
-                update_pal(&mut self.pal.obp0, val);
-            }
-            0x49 => {
-                self.obp1 = val;
-                update_pal(&mut self.pal.obp1, val);
-            }
-            0x4a => {
-                self.wy = val;
-            }
-            0x4b => {
-                self.wx = val;
-            }
-            0x4f => {
-                // if self.is_cgb {
-                self.vrambank = val & 1;
-                // }
-            }
-
-            // http://nocash.emubase.de/pandocs.htm#lcdvramdmatransferscgbonly
-            0x51 => {
-                self.hdma_src = (self.hdma_src & 0x00ff) | ((val as u16) << 8);
-            }
-            0x52 => {
-                self.hdma_src = (self.hdma_src & 0xff00) | (val as u16);
-            }
-            0x53 => {
-                self.hdma_dst = (self.hdma_dst & 0x00ff) | ((val as u16) << 8);
-            }
-            0x54 => {
-                self.hdma_dst = (self.hdma_dst & 0xff00) | (val as u16);
-            }
-            // 0x55 handled in mem
-
-            // http://nocash.emubase.de/pandocs.htm#lcdcolorpalettescgbonly
-            //
-            // The two indices/palette memories work the same way. The index's
-            // lower 6 bits are the actual index, and bit 7 indicates that the
-            // index should be automatically incremented whenever this memory is
-            // written to. When dealing with the index, make sure to mask out
-            // bit 6.
-            0x68 => {
-                self.cgb.bgpi = val & 0xbf;
-            }
-            0x6a => {
-                self.cgb.obpi = val & 0xbf;
-            }
-            0x69 => {
-                let cgb = &mut *self.cgb;
-                cgb.bgp[(cgb.bgpi & 0x3f) as usize] = val;
-                update_cgb_pal(&mut cgb.cbgp, &cgb.bgp, cgb.bgpi);
-                if cgb.bgpi & 0x80 != 0 {
-                    cgb.bgpi = (cgb.bgpi + 1) & 0xbf;
-                }
-            }
-            0x6b => {
-                let cgb = &mut *self.cgb;
-                cgb.obp[(cgb.obpi & 0x3f) as usize] = val;
-                update_cgb_pal(&mut cgb.cobp, &cgb.obp, cgb.obpi);
-                if cgb.obpi & 0x80 != 0 {
-                    cgb.obpi = (cgb.obpi + 1) & 0xbf;
-                }
-            }
-
-            _ => {}
         }
     }
 
-    // Register that a tile needs to be updated
-    pub fn update_tile(&mut self, addr: u16) {
-        let tilei = (addr & 0x1fff) / 16; // each tile is 16 bytes, divide by 16
-        let tilei = tilei + (self.vrambank as u16) * (NUM_TILES as u16);
-        self.tiles.need_update = true;
-        self.tiles.to_update[tilei as usize] = true;
-    }
-
-    // Trigger a DMA transfer into OAM. This happens whenever something is
-    // written to 0xff46. See
-    // http://nocash.emubase.de/pandocs.htm#lcdoamdmatransfers for the
-    // specifics, but the gist is that the value written to this memory is the
-    // upper byte of the addresses which should be copied over into OAM.
-    pub fn oam_dma_transfer(mem: &mut Mmu, val: u8) {
-        // DMA transfer moves data in regular ram to OAM. It's triggered when
-        // writing to a specific address in memory. Here's what happens:
-        //
-        //      Source:      XX00-XX9F   ;XX in range from 00-F1h
-        //      Destination: FE00-FE9F
-        let orval = (val as u16) << 8;
-        if orval > 0xf100 {
-            return;
-        }
-
-        for i in 0..OAM_SIZE as u16 {
-            mem.gpu.oam[i as usize] = mem.rb(orval | i);
-        }
-    }
-
-    // When in CGB mode, this triggers a DMA transfer to VRAM. For more info,
-    // see http://nocash.emubase.de/pandocs.htm#lcdvramdmatransferscgbonly
-    pub fn hdma_dma_transfer(mem: &mut Mmu, _val: u8) {
-        let src = mem.gpu.hdma_src & 0xfff0;
-        let dst = mem.gpu.hdma_dst & 0x1ff0;
-
-        if (src > 0x7ff0 && src < 0xa000) || src > 0xdff0 || dst < 0x8000 || dst > 0x9ff0 {
-            return;
-        }
+    pub fn may_hdma(&self) -> bool {
+        return self.hblanking;
     }
 }
 
-// Update the cached palettes for BG/OBP0/OBP1. This should be called whenever
-// these registers are modified
-fn update_pal(pal: &mut [Color; 4], val: u8) {
-    // These registers are indices into the actual palette. See
-    // http://nocash.emubase.de/pandocs.htm#lcdmonochromepalettes
-    pal[0] = PALETTE[((val >> 0) & 0x3) as usize];
-    pal[1] = PALETTE[((val >> 2) & 0x3) as usize];
-    pal[2] = PALETTE[((val >> 4) & 0x3) as usize];
-    pal[3] = PALETTE[((val >> 6) & 0x3) as usize];
+// Functions to determine the order of sprites. Input is a tuple x-coord, OAM position
+// These function ensures that sprites with a higher priority are 'larger'
+fn dmg_sprite_order(a: &(i32, i32, u8), b: &(i32, i32, u8)) -> Ordering {
+    // DMG order: prioritize on x-coord, and then by OAM position.
+    if a.0 != b.0 {
+        return b.0.cmp(&a.0);
+    }
+    return b.2.cmp(&a.2);
 }
 
-// Update the cached CGB palette that was just written to
-fn update_cgb_pal(pal: &mut [[Color; 4]; 8], mem: &[u8; CGB_BP_SIZE], addr: u8) {
-    // See http://nocash.emubase.de/pandocs.htm#lcdcolorpalettescgbonly
-    let addr = addr & 0x3f; // mask off the auto-increment bit
-    let pali = addr / 8; // divide by 8 (size of one palette)
-    let colori = (addr % 8) / 2; // 2 bytes per color, divide by 2
-
-    let byte1 = mem[(addr & 0x3e) as usize];
-    let byte2 = mem[((addr & 0x3e) + 1) as usize];
-
-    let color = &mut pal[pali as usize][colori as usize];
-
-    // Bits 0-7 in byte1, others in byte2
-    //  Bit 0-4   Red Intensity   (00-1F)
-    //  Bit 5-9   Green Intensity (00-1F)
-    //  Bit 10-14 Blue Intensity  (00-1F)
-    color[0] = (byte1 & 0x1f) << 3;
-    color[1] = ((byte1 >> 5) | ((byte2 & 0x3) << 3)) << 3;
-    color[2] = ((byte2 >> 2) & 0x1f) << 3;
-    color[3] = 255;
+fn cgb_sprite_order(a: &(i32, i32, u8), b: &(i32, i32, u8)) -> Ordering {
+    // CGB order: only prioritize based on OAM position.
+    return b.2.cmp(&a.2);
 }

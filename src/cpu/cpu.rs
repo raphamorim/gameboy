@@ -1,6 +1,7 @@
+use crate::mode::GbMode;
 use crate::cpu::registers::CpuFlag::*;
 use crate::cpu::registers::Registers;
-use crate::mmu::mmu::{Mmu, Speed};
+use crate::mmu::mmu::{MMU};
 
 #[allow(dead_code)]
 pub enum Interrupt {
@@ -11,13 +12,12 @@ pub enum Interrupt {
     Joypad = 0x10,
 }
 
-#[derive(Debug)]
-pub struct Cpu {
+pub struct Cpu<'a> {
     pub registers: Registers,
     ime: bool,
     pub halt: u32,
     pub stop: u32,
-    pub memory: Mmu,
+    pub memory: MMU<'a>,
     delay: u32,
     ticks: u32,
 
@@ -29,11 +29,14 @@ pub struct Cpu {
     _executed_operations: Vec<u8>,
 }
 
-impl Cpu {
-    pub fn new(memory: Mmu) -> Self {
+impl Cpu<'_> {
+    pub fn new(mode: GbMode, filepath: &str) -> Self {
+        let cpu_mmu = MMU::new_cgb(filepath, None, true).unwrap();
+        let registers = Registers::new(cpu_mmu.gbmode);
+
         Cpu {
-            registers: Registers::new(),
-            memory: memory,
+            registers: Registers::new(cpu_mmu.gbmode),
+            memory: cpu_mmu,
             halt: 0,
             setdi: 0,
             setei: 0,
@@ -59,6 +62,12 @@ impl Cpu {
         // println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
         // println!("{:?}", self._executed_operations);
     }
+
+    pub fn do_cycle(&mut self) -> u32 {
+        let ticks = self.do_cycle() * 4;
+        return self.memory.do_cycle(ticks);
+    }
+
     fn updateime(&mut self) {
         self.setdi = match self.setdi {
             2 => 1,
@@ -112,7 +121,7 @@ impl Cpu {
     fn handleinterrupt(&mut self) -> u32 {
         if self.ime == false && self.halted == false { return 0 }
 
-        let triggered = self.memory.ie_ & self.memory.if_;
+        let triggered = self.memory.inte & self.memory.intf;
         if triggered == 0 { return 0 }
 
         self.halted = false;
@@ -121,7 +130,7 @@ impl Cpu {
 
         let n = triggered.trailing_zeros();
         if n >= 5 { panic!("Invalid interrupt triggered"); }
-        self.memory.if_ &= !(1 << n);
+        self.memory.intf &= !(1 << n);
         let pc = self.registers.pc;
         self.pushstack(pc);
         self.registers.pc = 0x0040 | ((n as u16) << 3);

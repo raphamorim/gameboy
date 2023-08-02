@@ -13,7 +13,7 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-desktop = ["dep:gl", "dep:glutin", "dep:libc"]
+desktop = []
 
 [profile.release]
 opt-level = 's'
@@ -26,9 +26,9 @@ js-sys = "0.3.59"
 wasm-bindgen = "0.2.82"
 wasm-bindgen-futures = "0.4.32"
 console_error_panic_hook = "0.1.7"
-libc = { version = "0.2.126", optional = true }
-glutin = { version = "0.28.0", optional = true }
-gl = { version = "0.14.0", optional = true }
+libc = { version = "0.2.126" }
+glutin = { version = "0.28.0" }
+gl = { version = "0.14.0" }
 
 [dependencies.web-sys]
 version = "0.3.4"

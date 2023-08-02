@@ -3,7 +3,7 @@ extern crate glutin;
 extern crate libc;
 
 use crate::gameboy::Gameboy;
-use crate::input::Button;
+use crate::input::KeypadKey;
 
 use std::ffi::CString;
 use std::iter::repeat;
@@ -18,7 +18,7 @@ use glutin::event::{ElementState, Event, VirtualKeyCode};
 use glutin::window::{Window, WindowBuilder};
 use glutin::ContextWrapper;
 
-struct Glcx {
+pub struct Glcx {
     tex: GLuint,
     program: GLuint,
     frag: GLuint,
@@ -28,54 +28,54 @@ struct Glcx {
     vao: GLuint,
 }
 
-pub fn render(mut gameboy: Gameboy) {
-    let mut ratio = 1 + (gameboy.height / 10);
-    let event_loop: glutin::event_loop::EventLoop<()> =
-        glutin::event_loop::EventLoop::with_user_event();
-    let inner_size = glutin::dpi::LogicalSize {
-        width: gameboy.width,
-        height: gameboy.height,
-    };
-    let window_builder = glutin::window::WindowBuilder::new()
-        .with_title("LR35902")
-        .with_inner_size(inner_size)
-        .with_resizable(false);
-    let gl_window = glutin::ContextBuilder::new()
-        .build_windowed(window_builder, &event_loop)
-        .unwrap();
-    let gl_window = unsafe { gl_window.make_current().unwrap() };
+// pub fn render(gameboy: &mut Gameboy) {
+//     let mut ratio = 1 + (gameboy.height / 10);
+//     let event_loop: glutin::event_loop::EventLoop<()> =
+//         glutin::event_loop::EventLoop::with_user_event();
+//     let inner_size = glutin::dpi::LogicalSize {
+//         width: gameboy.width,
+//         height: gameboy.height,
+//     };
+//     let window_builder = glutin::window::WindowBuilder::new()
+//         .with_title("LR35902")
+//         .with_inner_size(inner_size)
+//         .with_resizable(false);
+//     let gl_window = glutin::ContextBuilder::new()
+//         .build_windowed(window_builder, &event_loop)
+//         .unwrap();
+//     let gl_window = unsafe { gl_window.make_current().unwrap() };
 
-    gl::load_with(|s| gl_window.get_proc_address(s) as *const _);
+//     gl::load_with(|s| gl_window.get_proc_address(s) as *const _);
 
-    let cx = Glcx::new();
-    let mut focused = true;
-    event_loop.run(move |event, _, control_flow| {
-        let window = gl_window.window();
-        match event {
-            glutin::event::Event::WindowEvent {
-                window_id: _,
-                event: wevent,
-            } => *control_flow = process_window(window, &wevent, &mut gameboy, &mut focused),
-            glutin::event::Event::MainEventsCleared => window.request_redraw(),
-            glutin::event::Event::RedrawRequested(_) => {
-                if focused == true {
-                    gameboy.frame();
-                    cx.draw(gameboy.width, gameboy.height, gameboy.image());
-                    gl_window.swap_buffers().unwrap();
-                }
+//     let cx = Glcx::new();
+//     let mut focused = true;
+//     event_loop.run(move |event, _, control_flow| {
+//         let window = gl_window.window();
+//         match event {
+//             glutin::event::Event::WindowEvent {
+//                 window_id: _,
+//                 event: wevent,
+//             } => *control_flow = process_window(window, &wevent, &mut gameboy, &mut focused),
+//             glutin::event::Event::MainEventsCleared => window.request_redraw(),
+//             glutin::event::Event::RedrawRequested(_) => {
+//                 if focused == true {
+//                     gameboy.frame();
+//                     cx.draw(gameboy.width, gameboy.height, gameboy.image());
+//                     gl_window.swap_buffers().unwrap();
+//                 }
 
-                thread::sleep(Duration::from_millis(10));
-            }
-            _ => {
-                let next_frame_time =
-                    std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
-                *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-            }
-        }
-    })
-}
+//                 thread::sleep(Duration::from_millis(10));
+//             }
+//             _ => {
+//                 let next_frame_time =
+//                     std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
+//                 *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+//             }
+//         }
+//     })
+// }
 
-fn process_window(
+pub fn process_window(
     window: &glutin::window::Window,
     wevent: &glutin::event::WindowEvent,
     gameboy: &mut Gameboy,
@@ -89,15 +89,15 @@ fn process_window(
         glutin::event::WindowEvent::KeyboardInput { input, .. } => {
             if let Some(virt_keycode) = input.virtual_keycode {
                 let button = match virt_keycode {
-                    VirtualKeyCode::A => Button::A,
-                    VirtualKeyCode::B => Button::B,
-                    VirtualKeyCode::Z => Button::Select,
-                    VirtualKeyCode::X => Button::Start,
+                    VirtualKeyCode::A => KeypadKey::A,
+                    VirtualKeyCode::B => KeypadKey::B,
+                    VirtualKeyCode::Z => KeypadKey::Select,
+                    VirtualKeyCode::X => KeypadKey::Start,
 
-                    VirtualKeyCode::Left => Button::Left,
-                    VirtualKeyCode::Right => Button::Right,
-                    VirtualKeyCode::Down => Button::Down,
-                    VirtualKeyCode::Up => Button::Up,
+                    VirtualKeyCode::Left => KeypadKey::Left,
+                    VirtualKeyCode::Right => KeypadKey::Right,
+                    VirtualKeyCode::Down => KeypadKey::Down,
+                    VirtualKeyCode::Up => KeypadKey::Up,
 
                     _ => return glutin::event_loop::ControlFlow::Poll,
                 };
@@ -142,7 +142,7 @@ void main() {
 ";
 
 impl Glcx {
-    fn new() -> Glcx {
+    pub fn new() -> Glcx {
         unsafe {
             let mut vao = 0;
             gl::GenVertexArrays(1, &mut vao);
@@ -283,7 +283,7 @@ impl Glcx {
         panic!("{}", str::from_utf8(&buf).unwrap());
     }
 
-    fn draw(&self, width: u32, height: u32, data: &[u8]) {
+    pub fn draw(&self, width: u32, height: u32, data: &[u8]) {
         unsafe {
             gl::ClearColor(0.0, 0.0, 1.0, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);

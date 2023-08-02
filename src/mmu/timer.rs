@@ -1,84 +1,74 @@
-use crate::cpu::cpu::Interrupt;
-use crate::mmu::mmu::Speed;
-
-#[derive(Debug)]
 pub struct Timer {
-    clock: Clock,
-
-    pub div: u8,
-    pub tima: u8,
-    pub tma: u8,
-    pub tac: u8,
-
+    divider: u8,
+    counter: u8,
+    modulo: u8,
+    enabled: bool,
     step: u32,
-}
-
-#[derive(Debug)]
-struct Clock {
-    tima: u32,
-    div: u32,
+    internalcnt: u32,
+    internaldiv: u32,
+    pub interrupt: u8,
 }
 
 impl Timer {
     pub fn new() -> Timer {
         Timer {
-            div: 0,
-            tima: 0,
-            tma: 0,
-            tac: 0,
+            divider: 0,
+            counter: 0,
+            modulo: 0,
+            enabled: false,
             step: 256,
-            clock: Clock { tima: 0, div: 0 },
+            internalcnt: 0,
+            internaldiv: 0,
+            interrupt: 0,
         }
     }
 
-    pub fn update(&mut self) {
-        // See step() function for timings
-        match self.tac & 0x3 {
-            0x0 => {
-                self.step = 256;
+    pub fn rb(&self, a: u16) -> u8 {
+        match a {
+            0xFF04 => self.divider,
+            0xFF05 => self.counter,
+            0xFF06 => self.modulo,
+            0xFF07 => {
+                0xF8 |
+                (if self.enabled { 0x4 } else { 0 }) |
+                (match self.step { 16 => 1, 64 => 2, 256 => 3, _ => 0 })
             }
-            0x1 => {
-                self.step = 4;
-            }
-            0x2 => {
-                self.step = 16;
-            }
-            0x3 => {
-                self.step = 64;
-            }
-            _ => {}
+            _ => panic!("Timer does not handler read {:4X}", a),
         }
     }
 
-    // Details: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Timers
-    pub fn step(&mut self, ticks: u32, if_: &mut u8, speed: Speed) {
-        // undo the multiplication in the cpu
-        let ticks = match speed {
-            Speed::Normal => {
-                // ticks / 4
-                ticks
-            }
-            Speed::Double => ticks,
+    pub fn wb(&mut self, a: u16, v: u8) {
+        match a {
+            0xFF04 => { self.divider = 0; },
+            0xFF05 => { self.counter = v; },
+            0xFF06 => { self.modulo = v; },
+            0xFF07 => {
+                self.enabled = v & 0x4 != 0;
+                self.step = match v & 0x3 { 1 => 16, 2 => 64, 3 => 256, _ => 1024 };
+            },
+            _ => panic!("Timer does not handler write {:4X}", a),
         };
+    }
 
-        self.clock.div += ticks;
-        while self.clock.div >= 256 {
-            self.div = self.div.wrapping_add(1);
-            self.clock.div -= 256;
+    pub fn do_cycle(&mut self, ticks: u32) {
+        self.internaldiv += ticks;
+        while self.internaldiv >= 256 {
+            self.divider = self.divider.wrapping_add(1);
+            self.internaldiv -= 256;
         }
 
-        // Increment the TIMA timer as necessary (variable speed)
-        if self.tac & 0x4 != 0 {
-            self.clock.tima += ticks;
+        if self.enabled {
+            self.internalcnt += ticks;
 
-            while self.clock.tima >= self.step {
-                self.tima = self.tima.wrapping_add(1);
-                if self.tima == 0 {
-                    self.tima = self.tma;
-                    *if_ |= Interrupt::Timer as u8;
+            while self.internalcnt >= self.step {
+                self.counter = self.counter.wrapping_add(1);
+                if self.counter == 0 {
+                    self.counter = self.modulo;
+                    self.interrupt |= 0x04;
                 }
-                self.clock.tima -= self.step;
+                self.internalcnt -= self.step;
             }
         }
     }
 }
+

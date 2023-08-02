@@ -1,117 +1,137 @@
-use crate::cpu::cpu::Interrupt;
-
-#[derive(Debug)]
-pub struct Input {
-    buttons: u8,
-    directions: u8,
-    pub joypad_sel: u8,
-    col: Selected,
+pub struct Keypad {
+    row0: u8,
+    row1: u8,
+    data: u8,
+    pub interrupt: u8,
 }
 
-pub enum Button {
-    A,
-    B,
-    Start,
-    Select,
+#[derive(Copy, Clone)]
+pub enum KeypadKey {
+    Right,
     Left,
     Up,
     Down,
-    Right,
+    A,
+    B,
+    Select,
+    Start,
 }
 
-// http://bgb.bircd.org/pandocs.htm#joypadinput
-#[derive(Debug)]
-pub enum Selected {
-    Button = 0x20,
-    Direction = 0x10,
-    MltReq = 0x00,
+impl Keypad {
+    pub fn new() -> Keypad {
+        Keypad {
+            row0: 0x0F,
+            row1: 0x0F,
+            data: 0xFF,
+            interrupt: 0,
+        }
+    }
+
+    pub fn rb(&self) -> u8 {
+        self.data
+    }
+
+    pub fn wb(&mut self, value: u8) {
+        self.data = (self.data & 0xCF) | (value & 0x30);
+        self.update();
+    }
+
+    fn update(&mut self) {
+        let old_values = self.data & 0xF;
+        let mut new_values = 0xF;
+
+        if self.data & 0x10 == 0x00 {
+            new_values &= self.row0;
+        }
+        if self.data & 0x20 == 0x00 {
+            new_values &= self.row1;
+        }
+
+        if old_values == 0xF && new_values != 0xF {
+            self.interrupt |= 0x10;
+        }
+
+        self.data = (self.data & 0xF0) | new_values;
+    }
+
+    pub fn keydown(&mut self, key: KeypadKey) {
+        match key {
+            KeypadKey::Right =>  self.row0 &= !(1 << 0),
+            KeypadKey::Left =>   self.row0 &= !(1 << 1),
+            KeypadKey::Up =>     self.row0 &= !(1 << 2),
+            KeypadKey::Down =>   self.row0 &= !(1 << 3),
+            KeypadKey::A =>      self.row1 &= !(1 << 0),
+            KeypadKey::B =>      self.row1 &= !(1 << 1),
+            KeypadKey::Select => self.row1 &= !(1 << 2),
+            KeypadKey::Start =>  self.row1 &= !(1 << 3),
+        }
+        self.update();
+    }
+
+    pub fn keyup(&mut self, key: KeypadKey) {
+        match key {
+            KeypadKey::Right =>  self.row0 |= 1 << 0,
+            KeypadKey::Left =>   self.row0 |= 1 << 1,
+            KeypadKey::Up =>     self.row0 |= 1 << 2,
+            KeypadKey::Down =>   self.row0 |= 1 << 3,
+            KeypadKey::A =>      self.row1 |= 1 << 0,
+            KeypadKey::B =>      self.row1 |= 1 << 1,
+            KeypadKey::Select => self.row1 |= 1 << 2,
+            KeypadKey::Start =>  self.row1 |= 1 << 3,
+        }
+        self.update();
+    }
 }
 
-impl Input {
-    pub fn new() -> Input {
-        Input {
-            buttons: 0xf,
-            directions: 0xf,
-            col: Selected::Direction,
-            joypad_sel: 0,
+#[cfg(test)]
+mod test {
+    use super::KeypadKey;
+
+    #[test]
+    fn keys_buttons() {
+        let mut keypad = super::Keypad::new();
+        let keys0 : [KeypadKey; 4] = [KeypadKey::A, KeypadKey::B, KeypadKey::Select, KeypadKey::Start];
+
+        for i in 0 .. keys0.len() {
+            keypad.keydown(keys0[i]);
+
+            keypad.wb(0x00);
+            assert_eq!(keypad.rb(), 0xCF & !(1 << i));
+
+            keypad.wb(0x10);
+            assert_eq!(keypad.rb(), 0xDF & !(1 << i));
+
+            keypad.wb(0x20);
+            assert_eq!(keypad.rb(), 0xEF);
+
+            keypad.wb(0x30);
+            assert_eq!(keypad.rb(), 0xFF);
+
+            keypad.keyup(keys0[i]);
         }
     }
 
-    pub fn rb(&self, _addr: u16) -> u8 {
-        match self.col {
-            Selected::Button => self.buttons,
-            Selected::Direction => self.directions,
-            Selected::MltReq => 0xf - self.joypad_sel,
-        }
-    }
+    #[test]
+    fn keys_direction() {
+        let mut keypad = super::Keypad::new();
+        let keys1 : [KeypadKey; 4] = [KeypadKey::Right, KeypadKey::Left, KeypadKey::Up, KeypadKey::Down];
 
-    pub fn wb(&mut self, _addr: u16, value: u8) {
-        // The selected column is also negatively asserted, so invert the value
-        // written in to get a positively asserted selection
-        match !value & 0x30 {
-            0x20 => self.col = Selected::Button,
-            0x10 => self.col = Selected::Direction,
-            0x00 => self.col = Selected::MltReq,
-            _ => {}
-        }
-    }
+        for i in 0 .. keys1.len() {
+            keypad.keydown(keys1[i]);
 
-    pub fn keydown(&mut self, key: Button, if_: &mut u8) {
-        *if_ |= Interrupt::Joypad as u8;
-        match key {
-            Button::A => {
-                self.buttons &= 0xe;
-            }
-            Button::B => {
-                self.buttons &= 0xd;
-            }
-            Button::Start => {
-                self.buttons &= 0x7;
-            }
-            Button::Select => {
-                self.buttons &= 0xb;
-            }
-            Button::Left => {
-                self.directions &= 0xd;
-            }
-            Button::Up => {
-                self.directions &= 0xb;
-            }
-            Button::Down => {
-                self.directions &= 0x7;
-            }
-            Button::Right => {
-                self.directions &= 0xe;
-            }
-        }
-    }
+            keypad.wb(0x00);
+            assert_eq!(keypad.rb(), 0xCF & !(1 << i));
 
-    pub fn keyup(&mut self, key: Button) {
-        match key {
-            Button::A => {
-                self.buttons |= !0xe;
-            }
-            Button::B => {
-                self.buttons |= !0xd;
-            }
-            Button::Start => {
-                self.buttons |= !0x7;
-            }
-            Button::Select => {
-                self.buttons |= !0xb;
-            }
-            Button::Left => {
-                self.directions |= !0xd;
-            }
-            Button::Up => {
-                self.directions |= !0xb;
-            }
-            Button::Down => {
-                self.directions |= !0x7;
-            }
-            Button::Right => {
-                self.directions |= !0xe;
-            }
+            keypad.wb(0x10);
+            assert_eq!(keypad.rb(), 0xDF);
+
+            keypad.wb(0x20);
+            assert_eq!(keypad.rb(), 0xEF & !(1 << i));
+
+            keypad.wb(0x30);
+            assert_eq!(keypad.rb(), 0xFF);
+
+            keypad.keyup(keys1[i]);
         }
     }
 }
