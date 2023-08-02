@@ -7,11 +7,7 @@
 
 ![Quick demo](resources/demo-wasm.gif)
 
-> Disclaimer 1.2: Tests need to pass by `ubuntu-20.04`, `macOS-latest` and `windows-latest`. This project was created using rustc 1.62.1 (e092d0b6b 2022-07-16).
->
-> Disclaimer 1.3: The emulator is still under development, you can track it development by [Tests](#tests) and [Todo](#todo).
->
-> tl;dr 1.0: Skip to [usage examples](#usage-examples).
+> Disclaimer 1.1: The emulator is still under development, you can track it development by [Tests](#tests) and [Todo](#todo).
 >
 
 ## ●&nbsp;&nbsp;Report
