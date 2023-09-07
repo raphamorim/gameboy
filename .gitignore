@@ -1,16 +1,7 @@
-# Cargo.lock
-
 roms
-/target/
+target
 /node_modules/
-
-# Web
-/web/target
-/web/Cargo.lock
-
-# Server
-/examples/desktop/target
-/examples/desktop/Cargo.lock
+Cargo.lock
 
 /examples/*.gb
 **/*.gbsave
