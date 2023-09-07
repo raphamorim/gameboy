@@ -7,7 +7,7 @@
 
 ![Quick demo](resources/demo-wasm.gif)
 
-> Disclaimer 1.1: The emulator is still under development, you can track it development by [Tests](#tests) and [Todo](#todo).
+> Disclaimer 1.1: Altough the emulator already runs a good amount of games, it is still under development and you can track it development by checking [Tests](#tests) section.
 >
 
 ## ●&nbsp;&nbsp;Report
@@ -268,27 +268,6 @@ fn main() {
 }
 ```
 
-# ●&nbsp;&nbsp;TODO
-
-- [x] Desktop
-    - [x] Create desktop window
-- [x] Browser
-    - [x] Create server using port `3000`
-- [x] Keyboard handlers
-    - [x] Web
-    - [x] Desktop
-- [ ] Classic gameboy instructions (`.gb`)
-- [x] Read ROM on browser and send to WASM (`Gameboy::load_with_u8_vec`)
-- [x] Extend screen mod to render on web with WASM
-    - [ ] Render with WebGl
-- [ ] Support `.cgb` rom (Game Boy Color)
-- [ ] `Gameboy::setScale(u8)` for desktop
-- [ ] Audio
-    - [ ] Desktop
-    - [ ] Web
-- [ ] Tests for classic Gameboy `/tests`
-- [ ] Support `.sgb` rom (Super Game Boy)
-
 # ●&nbsp;&nbsp;Tests
 
 The tests are based on Blargg's Gameboy hardware test ROMs.
@@ -302,16 +281,6 @@ Link to the repository: https://github.com/retrio/gb-test-roms.git
 | ![Halt Bug test](resources/tests/halt-bug.png) | Failing |
 | ![Bits bank1 test](resources/tests/bits-bank1.png) | Failing |
 | ![GGB Sound test](resources/tests/cgb-sound.png) | Failing |
-
-# ●&nbsp;&nbsp;Development Diary
-
-Tthis section is for personal purposes.
-
-| Diary entry | Screenshot | Notes |
-| --- | --- | --- |
-| [Sat, 6 August 2022](73c5aded94e466f93c3312633f67097972401f5f) | ![Diary Aug 6](resources/6-august-2022.png) | CPU is running but not connected with GPU neither using memory (`MMU`) functions yet. |
-| [Sat, 10 August 2022](d42c123aaf1f9632812be0061246bc3335cc71a7) | ![Diary Aug 10](resources/10-august-2022.png) | CPU connected with GPU and MMU but using wrong data to plot on screen. Few issues regarding the order of execution on the registers  |
-| [Sun, 14 August 2022](9d242d49c3f11703cc8de83b4eb9999ccdbd7308) | ![Diary Aug 14](resources/14-august-2022.png) | Operations covered: `0x00, 0xC3, 0x31, 0x3E, 0xE0, 0x97, 0xEA, 0x01, 0xCD, 0x21, 0x16, 0x1E, 0xF0, 0xE6, 0x20, 0xA, 0x22, 0x03, 21, 194, 29, 201, 197, 0x47, 14, 0x09, 193, 68, 77, 213, 25, 209, 0x06, 0x05, 35, 251, 243, 245, 61, 229, 42, 254, 40, 225, 250, 60, 241, 217, 47, 203, 176, 160, 120, 126, 202`. <br/><br/>`0xCD` operations: `0x37, 0x77, 0x7F, 0x6F, 0x67, 0x47, 0x4F` |
 
 # ●&nbsp;&nbsp;Resources & References
 
