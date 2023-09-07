@@ -38,7 +38,8 @@ impl Rtc {
                 self.regs[1] = self.m;
                 self.regs[2] = self.h;
                 self.regs[3] = self.d as u8;
-                self.regs[4] = ((self.d >> 8) as u8) | (self.stop << 6) | (self.carry << 7);
+                self.regs[4] =
+                    ((self.d >> 8) as u8) | (self.stop << 6) | (self.carry << 7);
                 self.regs[5] = 0xff;
                 self.regs[6] = 0xff;
                 self.regs[7] = 0xff;

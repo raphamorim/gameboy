@@ -129,20 +129,28 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
     }
     {
         let current_key_code = current_key_code.clone();
-        let closure = Closure::<dyn FnMut(_)>::new(move |event: web_sys::KeyboardEvent| {
-            let key = event.key_code();
-            *current_key_code.borrow_mut() = key as i32;
-        });
-        window().add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
+        let closure =
+            Closure::<dyn FnMut(_)>::new(move |event: web_sys::KeyboardEvent| {
+                let key = event.key_code();
+                *current_key_code.borrow_mut() = key as i32;
+            });
+        window().add_event_listener_with_callback(
+            "keydown",
+            closure.as_ref().unchecked_ref(),
+        )?;
         closure.forget();
     }
     {
         let current_key_code = current_key_code.clone();
-        let closure = Closure::<dyn FnMut(_)>::new(move |event: web_sys::KeyboardEvent| {
-            let key = event.key_code();
-            *current_key_code.borrow_mut() = (key as i32) * -1;
-        });
-        window().add_event_listener_with_callback("keyup", closure.as_ref().unchecked_ref())?;
+        let closure =
+            Closure::<dyn FnMut(_)>::new(move |event: web_sys::KeyboardEvent| {
+                let key = event.key_code();
+                *current_key_code.borrow_mut() = (key as i32) * -1;
+            });
+        window().add_event_listener_with_callback(
+            "keyup",
+            closure.as_ref().unchecked_ref(),
+        )?;
         closure.forget();
     }
 

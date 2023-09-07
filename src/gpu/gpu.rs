@@ -197,7 +197,9 @@ impl GPU {
 
     pub fn rb(&self, a: u16) -> u8 {
         match a {
-            0x8000..=0x9FFF => self.vram[(self.vrambank * 0x2000) | (a as usize & 0x1FFF)],
+            0x8000..=0x9FFF => {
+                self.vram[(self.vrambank * 0x2000) | (a as usize & 0x1FFF)]
+            }
             0xFE00..=0xFE9F => self.voam[a as usize - 0xFE00],
             0xFF40 => {
                 (if self.lcd_on { 0x80 } else { 0 })
@@ -236,7 +238,8 @@ impl GPU {
                 let palnum = (self.cbgpal_ind >> 3) as usize;
                 let colnum = ((self.cbgpal_ind >> 1) & 0x3) as usize;
                 if self.cbgpal_ind & 0x01 == 0x00 {
-                    self.cbgpal[palnum][colnum][0] | ((self.cbgpal[palnum][colnum][1] & 0x07) << 5)
+                    self.cbgpal[palnum][colnum][0]
+                        | ((self.cbgpal[palnum][colnum][1] & 0x07) << 5)
                 } else {
                     ((self.cbgpal[palnum][colnum][1] & 0x18) >> 3)
                         | (self.cbgpal[palnum][colnum][2] << 2)
@@ -247,7 +250,8 @@ impl GPU {
                 let palnum = (self.csprit_ind >> 3) as usize;
                 let colnum = ((self.csprit_ind >> 1) & 0x3) as usize;
                 if self.csprit_ind & 0x01 == 0x00 {
-                    self.csprit[palnum][colnum][0] | ((self.csprit[palnum][colnum][1] & 0x07) << 5)
+                    self.csprit[palnum][colnum][0]
+                        | ((self.csprit[palnum][colnum][1] & 0x07) << 5)
                 } else {
                     ((self.csprit[palnum][colnum][1] & 0x18) >> 3)
                         | (self.csprit[palnum][colnum][2] << 2)
@@ -272,7 +276,9 @@ impl GPU {
 
     pub fn wb(&mut self, a: u16, v: u8) {
         match a {
-            0x8000..=0x9FFF => self.vram[(self.vrambank * 0x2000) | (a as usize & 0x1FFF)] = v,
+            0x8000..=0x9FFF => {
+                self.vram[(self.vrambank * 0x2000) | (a as usize & 0x1FFF)] = v
+            }
             0xFE00..=0xFE9F => self.voam[a as usize - 0xFE00] = v,
             0xFF40 => {
                 let orig_lcd_on = self.lcd_on;
@@ -590,8 +596,8 @@ impl GPU {
                 }
 
                 let xbit = 1 << (if xflip { x } else { 7 - x } as u32);
-                let colnr =
-                    (if b1 & xbit != 0 { 1 } else { 0 }) | (if b2 & xbit != 0 { 2 } else { 0 });
+                let colnr = (if b1 & xbit != 0 { 1 } else { 0 })
+                    | (if b2 & xbit != 0 { 2 } else { 0 });
                 if colnr == 0 {
                     continue;
                 }
@@ -599,7 +605,9 @@ impl GPU {
                 if self.gbmode == GbMode::Color {
                     if self.lcdc0
                         && (self.bgprio[(spritex + x) as usize] == PrioType::PrioFlag
-                            || (belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0))
+                            || (belowbg
+                                && self.bgprio[(spritex + x) as usize]
+                                    != PrioType::Color0))
                     {
                         continue 'xloop;
                     }
@@ -608,7 +616,8 @@ impl GPU {
                     let b = self.csprit[c_palnr][colnr][2];
                     self.setrgb((spritex + x) as usize, r, g, b);
                 } else {
-                    if belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0 {
+                    if belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0
+                    {
                         continue 'xloop;
                     }
                     let color = if usepal1 {

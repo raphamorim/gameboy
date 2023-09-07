@@ -109,10 +109,13 @@ pub fn process_window(
 
             glutin::event_loop::ControlFlow::Poll
         }
-        glutin::event::WindowEvent::Resized(glutin::dpi::PhysicalSize { width, height }) => {
-            glutin::event_loop::ControlFlow::Poll
+        glutin::event::WindowEvent::Resized(glutin::dpi::PhysicalSize {
+            width,
+            height,
+        }) => glutin::event_loop::ControlFlow::Poll,
+        glutin::event::WindowEvent::CloseRequested => {
+            glutin::event_loop::ControlFlow::Exit
         }
-        glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
         _ => glutin::event_loop::ControlFlow::Poll,
     }
 }
@@ -247,8 +250,16 @@ impl Glcx {
             let buf = CString::new("tex").unwrap();
             gl::Uniform1i(gl::GetUniformLocation(program, buf.as_ptr()), 0);
 
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_WRAP_S,
+                gl::CLAMP_TO_EDGE as i32,
+            );
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_WRAP_T,
+                gl::CLAMP_TO_EDGE as i32,
+            );
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 

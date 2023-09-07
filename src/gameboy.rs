@@ -100,7 +100,10 @@ impl<'a> Gameboy {
                 glutin::event::Event::WindowEvent {
                     window_id: _,
                     event: wevent,
-                } => *control_flow = process_window(window, &wevent, &mut self, &mut focused),
+                } => {
+                    *control_flow =
+                        process_window(window, &wevent, &mut self, &mut focused)
+                }
                 glutin::event::Event::MainEventsCleared => window.request_redraw(),
                 glutin::event::Event::RedrawRequested(_) => {
                     if focused == true {
@@ -112,9 +115,10 @@ impl<'a> Gameboy {
                     std::thread::sleep(std::time::Duration::from_millis(10));
                 }
                 _ => {
-                    let next_frame_time =
-                        std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
-                    *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+                    let next_frame_time = std::time::Instant::now()
+                        + std::time::Duration::from_nanos(16_666_667);
+                    *control_flow =
+                        glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
                 }
             }
         });

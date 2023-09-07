@@ -207,7 +207,9 @@ impl<'a> MMU<'a> {
             0xFF0F => self.intf | 0b11100000,
             0xFF10..=0xFF3F => 0xFF,
             // self.sound.as_mut().map_or(0xFF, |s| s.rb(address)),
-            0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70 if self.gbmode != GbMode::Color => {
+            0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70
+                if self.gbmode != GbMode::Color =>
+            {
                 0xFF
             }
             0xFF72..=0xFF73 | 0xFF75..=0xFF77 if self.gbmode == GbMode::Classic => 0xFF,
@@ -242,7 +244,9 @@ impl<'a> MMU<'a> {
             0x0000..=0x7FFF => self.mbc.writerom(address, value),
             0x8000..=0x9FFF => self.gpu.wb(address, value),
             0xA000..=0xBFFF => self.mbc.writeram(address, value),
-            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF] = value,
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => {
+                self.wram[address as usize & 0x0FFF] = value
+            }
             0xD000..=0xDFFF | 0xF000..=0xFDFF => {
                 self.wram[(self.wrambank * 0x1000) | (address as usize & 0x0FFF)] = value
             }
@@ -271,7 +275,9 @@ impl<'a> MMU<'a> {
                     n => n as usize,
                 };
             }
-            0xFF72..=0xFF73 => self.undocumented_cgb_regs[address as usize - 0xFF72] = value,
+            0xFF72..=0xFF73 => {
+                self.undocumented_cgb_regs[address as usize - 0xFF72] = value
+            }
             0xFF75 => self.undocumented_cgb_regs[2] = value,
             0xFF80..=0xFFFE => self.zram[address as usize & 0x007F] = value,
             0xFFFF => self.inte = value,

@@ -69,7 +69,8 @@ impl MBC1 {
             None => Ok(()),
             Some(ref savepath) => {
                 let mut data = vec![];
-                match fs::File::open(savepath).and_then(|mut f| f.read_to_end(&mut data)) {
+                match fs::File::open(savepath).and_then(|mut f| f.read_to_end(&mut data))
+                {
                     Err(ref e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
                     Err(_) => Err("Could not open save file"),
                     Ok(..) => {

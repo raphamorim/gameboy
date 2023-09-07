@@ -121,9 +121,12 @@ impl MBC3 {
         if self.rtc_zero.is_none() {
             return None;
         }
-        let mut difftime = match time::SystemTime::now().duration_since(time::UNIX_EPOCH) {
+        let mut difftime = match time::SystemTime::now().duration_since(time::UNIX_EPOCH)
+        {
             Ok(t) => t.as_secs(),
-            Err(_) => panic!("System clock is set to a time before the unix epoch (1970-01-01)"),
+            Err(_) => {
+                panic!("System clock is set to a time before the unix epoch (1970-01-01)")
+            }
         };
         difftime -= self.rtc_ram[0] as u64;
         difftime -= (self.rtc_ram[1] as u64) * 60;
