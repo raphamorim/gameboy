@@ -3,7 +3,7 @@ extern crate console_error_panic_hook;
 use crate::gameboy::Gameboy;
 use crate::input::KeypadKey;
 
-use core::cell::{Ref, RefCell, RefMut};
+use core::cell::{RefCell, RefMut};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

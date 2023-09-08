@@ -1,7 +1,7 @@
 use crate::cpu::cpu::Cpu;
 use crate::input::KeypadKey;
-use crate::mode::GbMode;
-use std::sync::mpsc::Receiver;
+
+
 
 pub struct Gameboy {
     cpu: Cpu<'static>,

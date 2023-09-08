@@ -1,7 +1,7 @@
 use crate::cpu::registers::CpuFlag::*;
 use crate::cpu::registers::Registers;
 use crate::mmu::mmu::MMU;
-use crate::mode::GbMode;
+
 
 #[allow(dead_code)]
 pub enum Interrupt {
