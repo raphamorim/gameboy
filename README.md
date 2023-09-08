@@ -196,7 +196,7 @@ pub const WIDTH: usize = 160;
 pub const HEIGHT: usize = 144;
 ```
 
-> https://github.com/raphamorim/LR35902/blob/main/src/gb.rs#L3-L4
+> https://github.com/raphamorim/gameboy/blob/main/src/gb.rs#L3-L4
 
 [...] TODO: write here more about the GPU.
 
@@ -241,7 +241,7 @@ tl;dr: You can see the destop example in the example folder ([`/examples/desktop
 
 ```toml
 [dependencies]
-lr35902 = { version = "0.1.0", features = ["desktop"] }
+gameboy = { version = "0.1.0", features = ["desktop"] }
 ```
 
 2. Import `gameboy` and `renderer::render`:

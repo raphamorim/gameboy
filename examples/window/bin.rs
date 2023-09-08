@@ -1,6 +1,6 @@
-extern crate lr35902;
+extern crate gameboy;
 
-use lr35902::gameboy::{load_rom, Gameboy, RenderMode::Desktop};
+use gameboy::gameboy::{load_rom, Gameboy, RenderMode::Desktop};
 
 fn main() {
     // let gb = Gameboy::new("./../../tests/cpu_instrs/cpu_instrs.gb");
