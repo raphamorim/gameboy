@@ -1,7 +1,7 @@
-import('./pkg')
+import('./gameboy')
   .catch(console.error);
 
-import { render } from './pkg';
+import { render } from './gameboy';
 
 const playButton = document.querySelector('#play');
 const file = document.querySelector('#file');

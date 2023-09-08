@@ -18,18 +18,16 @@ test:
 	cargo test --release
 
 desktop:
-	cd ./examples/desktop && RUST_BACKTRACE=1 make dl
+	cd ./examples/window && RUST_BACKTRACE=1 make dl
 
-web-build:
-	yarn && wasm-pack build --debug
+web-build-dev:
+	cd website && make build-dev
 
 web-publish:
-	yarn && wasm-pack build --release
-	du -k ./pkg
-	npm publish
+	cd website && make publish
 
-web-docs:
-	yarn webpack && du -h ./docs
+web-build:
+	cd website && make build
 
 web:
-	yarn serve
+	cd website && make local
