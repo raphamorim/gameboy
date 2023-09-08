@@ -216,7 +216,9 @@ pub fn adcr_a(cpu: &mut Cpu) {
     alu_add(cpu, cpu.registers.a, true);
 }
 pub fn adchl(cpu: &mut Cpu) {
-    let hl = cpu.memory.rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
+    let hl = cpu
+        .memory
+        .rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
     alu_add(cpu, hl, true);
 }
 pub fn adcn(cpu: &mut Cpu) {
@@ -302,7 +304,9 @@ pub fn subr_a(cpu: &mut Cpu) {
     cpu.registers.a = r;
 }
 pub fn subhl(cpu: &mut Cpu) {
-    let v = cpu.memory.rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
+    let v = cpu
+        .memory
+        .rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
     alu_sub(cpu, v, false);
 }
 pub fn subn(cpu: &mut Cpu) {
@@ -337,7 +341,9 @@ pub fn sbcr_a(cpu: &mut Cpu) {
     alu_sub(cpu, cpu.registers.a, true);
 }
 pub fn sbchl(cpu: &mut Cpu) {
-    let hl = cpu.memory.rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
+    let hl = cpu
+        .memory
+        .rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
     alu_sub(cpu, hl, true);
 }
 pub fn sbcn(cpu: &mut Cpu) {
@@ -394,7 +400,9 @@ pub fn cpr_a(cpu: &mut Cpu) {
     cpu.registers.a = r;
 }
 pub fn cphl(cpu: &mut Cpu) -> u32 {
-    let v = cpu.memory.rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
+    let v = cpu
+        .memory
+        .rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
     let r = cpu.registers.a;
     alu_sub(cpu, v, false);
     cpu.registers.a = r;
@@ -467,7 +475,9 @@ pub fn andr_a(cpu: &mut Cpu) {
     alu_and(cpu, cpu.registers.a);
 }
 pub fn andhl(cpu: &mut Cpu) {
-    let hl = cpu.memory.rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
+    let hl = cpu
+        .memory
+        .rb(((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16));
     alu_and(cpu, hl);
 }
 pub fn andn(cpu: &mut Cpu) {
@@ -782,7 +792,8 @@ pub fn decbc(cpu: &mut Cpu) {
     cpu.registers.c = (val & 0x00FF) as u8;
 }
 pub fn decde(cpu: &mut Cpu) {
-    let val = (((cpu.registers.d as u16) << 8) | (cpu.registers.e as u16)).wrapping_sub(1);
+    let val =
+        (((cpu.registers.d as u16) << 8) | (cpu.registers.e as u16)).wrapping_sub(1);
     cpu.registers.d = (val >> 8) as u8;
     cpu.registers.e = (val & 0x00FF) as u8;
 }

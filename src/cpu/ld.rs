@@ -1,5 +1,5 @@
-use crate::cpu::registers::CpuFlag::{Z,N,C,H};
 use crate::cpu::cpu::Cpu;
+use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 
 pub fn r_hlm_b(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
@@ -112,7 +112,7 @@ pub fn hlia(cpu: &mut Cpu) {
     cpu.registers.h = (hl >> 8) as u8;
     cpu.registers.l = (hl & 0x00FF) as u8;
 }
-pub fn ahli(cpu: &mut Cpu) {    
+pub fn ahli(cpu: &mut Cpu) {
     let hl = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
     let value = hl.wrapping_add(1);
     cpu.registers.h = (value >> 8) as u8;
@@ -145,7 +145,8 @@ pub fn aioc(cpu: &mut Cpu) {
     cpu.registers.a = cpu.memory.rb(0xFF00 | cpu.registers.c as u16);
 }
 pub fn ioca(cpu: &mut Cpu) {
-    cpu.memory.wb(0xFF00 | cpu.registers.c as u16, cpu.registers.a);
+    cpu.memory
+        .wb(0xFF00 | cpu.registers.c as u16, cpu.registers.a);
 }
 pub fn hlspn(cpu: &mut Cpu) {
     cpu.registers.sp = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
@@ -298,11 +299,7 @@ pub fn rr_e(cpu: &mut Cpu) {
 }
 pub fn rr_h(cpu: &mut Cpu) {
     let mut a = cpu.registers.a;
-    let mut adjust = if cpu.registers.getflag(C) {
-        0x60
-    } else {
-        0x00
-    };
+    let mut adjust = if cpu.registers.getflag(C) { 0x60 } else { 0x00 };
     if cpu.registers.getflag(H) {
         adjust |= 0x06;
     };

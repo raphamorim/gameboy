@@ -510,9 +510,7 @@ impl Cpu<'_> {
                 ld::rr_dc(self);
                 1
             }
-            0x52 => {
-                1
-            }
+            0x52 => 1,
             0x53 => {
                 ld::rr_de(self);
                 1
@@ -545,9 +543,7 @@ impl Cpu<'_> {
                 ld::rr_ed(self);
                 1
             }
-            0x5B => {
-                1
-            }
+            0x5B => 1,
             0x5C => {
                 ld::rr_eh(self);
                 1
@@ -580,9 +576,7 @@ impl Cpu<'_> {
                 ld::rr_he(self);
                 1
             }
-            0x64 => {
-                1
-            }
+            0x64 => 1,
             0x65 => {
                 ld::rr_hl(self);
                 1
@@ -615,9 +609,7 @@ impl Cpu<'_> {
                 ld::rr_lh(self);
                 1
             }
-            0x6D => {
-                1
-            }
+            0x6D => 1,
             0x6E => {
                 ld::r_hlm_l(self);
                 2

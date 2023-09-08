@@ -35,7 +35,16 @@ impl fmt::Display for Registers {
             f,
             "a:{:2x} f:{:2x} b:{:2x} c:{:2x} d:{:2x} e:{:2x} \
                 h:{:2x} l:{:2x} pc:{:4x} sp:{:4x}",
-            self.a, self.b, self.c, self.d, self.e, self.f, self.h, self.l, self.pc, self.sp
+            self.a,
+            self.b,
+            self.c,
+            self.d,
+            self.e,
+            self.f,
+            self.h,
+            self.l,
+            self.pc,
+            self.sp
         )
     }
 }

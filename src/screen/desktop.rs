@@ -11,12 +11,8 @@ use std::mem;
 use std::ptr;
 use std::str;
 
-
-
 use gl::types::*;
 use glutin::event::{ElementState, VirtualKeyCode};
-
-
 
 pub struct Glcx {
     tex: GLuint,

@@ -1,6 +1,5 @@
 pub type StrResult<T> = Result<T, &'static str>;
 
-
 use std::path;
 
 mod mbc0;

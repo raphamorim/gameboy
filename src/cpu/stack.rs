@@ -205,7 +205,7 @@ pub fn reti(c: &mut Cpu) {
     c.registers.pc = val;
 }
 pub fn retnz(c: &mut Cpu) -> u32 {
-     if !c.registers.getflag(Z) {
+    if !c.registers.getflag(Z) {
         c.registers.pc = popstack(c);
         5
     } else {
