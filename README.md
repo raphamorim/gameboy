@@ -211,15 +211,11 @@ npm install lr35902
 # yarn install lr35902
 ```
 
-2. Import the render function:
+2. There you go:
 
 ```javascript
 import { render } from 'lr35902';
-```
 
-3. Configure it:
-
-```javascript
 const romFile = document.querySelector('#rom-file');
 romFile.addEventListener('change', function readFile() {
   loadRom(this.files[0]);
@@ -244,17 +240,13 @@ tl;dr: You can see the destop example in the example folder ([`/examples/desktop
 gameboy = { version = "0.1.0", features = ["desktop"] }
 ```
 
-2. Import `gameboy` and `renderer::render`:
-
-```rust
-use lr35902::gameboy::{Gameboy, RenderMode::Desktop};
-```
-
-3. Configure it:
+2. There you go:
 
 > Default scale is `1` (160x144).
 
 ```rust
+use gameboy::gameboy::{Gameboy, RenderMode::Desktop};
+
 fn main() {
     let mut gb = Gameboy::new();
     match gb.load_rom("./sample-rom.gb") {
