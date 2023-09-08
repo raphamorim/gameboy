@@ -18,7 +18,7 @@ test:
 	cargo test --release
 
 desktop:
-	cd ./examples/window && RUST_BACKTRACE=1 make dl
+	cd ./examples/window && make dl
 
 web-build-dev:
 	cd website && make build-dev

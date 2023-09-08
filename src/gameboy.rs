@@ -1,8 +1,6 @@
 use crate::cpu::cpu::Cpu;
 use crate::input::KeypadKey;
 
-
-
 pub struct Gameboy {
     cpu: Cpu<'static>,
     pub width: u32,
