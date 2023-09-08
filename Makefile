@@ -18,7 +18,7 @@ test:
 	cargo test --release
 
 desktop:
-	cd ./examples/window && make dl
+	cd examples/desktop && cargo run
 
 web-build-dev:
 	cd website && make build-dev

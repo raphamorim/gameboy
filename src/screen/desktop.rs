@@ -10,13 +10,13 @@ use std::iter::repeat;
 use std::mem;
 use std::ptr;
 use std::str;
-use std::thread;
-use std::time::Duration;
+
+
 
 use gl::types::*;
-use glutin::event::{ElementState, Event, VirtualKeyCode};
-use glutin::window::{Window, WindowBuilder};
-use glutin::ContextWrapper;
+use glutin::event::{ElementState, VirtualKeyCode};
+
+
 
 pub struct Glcx {
     tex: GLuint,
@@ -76,7 +76,7 @@ pub struct Glcx {
 // }
 
 pub fn process_window(
-    window: &glutin::window::Window,
+    _window: &glutin::window::Window,
     wevent: &glutin::event::WindowEvent,
     gameboy: &mut Gameboy,
     focused: &mut bool,
@@ -110,8 +110,8 @@ pub fn process_window(
             glutin::event_loop::ControlFlow::Poll
         }
         glutin::event::WindowEvent::Resized(glutin::dpi::PhysicalSize {
-            width,
-            height,
+            width: _,
+            height: _,
         }) => glutin::event_loop::ControlFlow::Poll,
         glutin::event::WindowEvent::CloseRequested => {
             glutin::event_loop::ControlFlow::Exit
@@ -275,7 +275,7 @@ impl Glcx {
         }
     }
 
-    unsafe fn check_program_link(gl: &Glcx, program: GLuint) {
+    unsafe fn check_program_link(_gl: &Glcx, program: GLuint) {
         let mut status = gl::FALSE as GLint;
         gl::GetProgramiv(program, gl::LINK_STATUS, &mut status);
         if status == (gl::TRUE as GLint) {

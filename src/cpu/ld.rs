@@ -1,3 +1,6 @@
+use crate::cpu::registers::CpuFlag::{Z,N,C,H};
+use crate::cpu::cpu::Cpu;
+
 pub fn r_hlm_b(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) | cpu.registers.l as u16;
     cpu.registers.b = cpu.memory.rb(addr);
@@ -109,25 +112,26 @@ pub fn hlia(cpu: &mut Cpu) {
     cpu.registers.h = (hl >> 8) as u8;
     cpu.registers.l = (hl & 0x00FF) as u8;
 }
-pub fn ahli(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
-    cpu.registers.h = ((addr + 1) >> 8) as u8;
-    cpu.registers.l = ((addr + 1) & 0x00FF) as u8;
-    cpu.registers.a = cpu.memory.rb(addr);
+pub fn ahli(cpu: &mut Cpu) {    
+    let hl = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    let value = hl.wrapping_add(1);
+    cpu.registers.h = (value >> 8) as u8;
+    cpu.registers.l = (value & 0x00FF) as u8;
+    cpu.registers.a = cpu.memory.rb(hl);
 }
 pub fn hld_a(cpu: &mut Cpu) {
     let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
-    cpu.registers.h = (addr - 1 >> 8) as u8;
-    cpu.registers.l = (addr - 1 & 0x00FF) as u8;
+    let value = addr.wrapping_sub(1);
+    cpu.registers.h = (value >> 8) as u8;
+    cpu.registers.l = (value & 0x00FF) as u8;
     cpu.memory.wb(addr, cpu.registers.a);
 }
 pub fn ahld(cpu: &mut Cpu) {
-    let addr = ((cpu.registers.h as u16) << 8) + cpu.registers.l as u16;
-    cpu.registers.a = cpu.memory.rb(addr);
-    cpu.registers.l = (cpu.registers.l - 1) & 255;
-    if cpu.registers.l == 255 {
-        cpu.registers.h = (cpu.registers.h - 1) & 255;
-    }
+    let res = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    let value = res - 1;
+    cpu.registers.h = (value >> 8) as u8;
+    cpu.registers.l = (value & 0x00FF) as u8;
+    cpu.registers.a = cpu.memory.rb(res);
 }
 pub fn aion(cpu: &mut Cpu) {
     let addr = 0xFF00 | cpu.get_byte() as u16;
@@ -138,32 +142,18 @@ pub fn ion_a(cpu: &mut Cpu) {
     cpu.memory.wb(a, cpu.registers.a);
 }
 pub fn aioc(cpu: &mut Cpu) {
-    let addr: u16 = (0xFF00 + cpu.registers.c as u16).into();
-    cpu.registers.a = cpu.memory.rb(addr);
+    cpu.registers.a = cpu.memory.rb(0xFF00 | cpu.registers.c as u16);
 }
 pub fn ioca(cpu: &mut Cpu) {
-    let addr: u16 = (0xFF00 + cpu.registers.c as u16).into();
-    cpu.memory.wb(addr, cpu.registers.a);
+    cpu.memory.wb(0xFF00 | cpu.registers.c as u16, cpu.registers.a);
 }
 pub fn hlspn(cpu: &mut Cpu) {
-    let mut i: u8 = cpu.memory.rb(cpu.registers.pc);
-    if i > 127 {
-        // i=-(!i+1);
-        // i = (i - (cpu.registers.sp as u8)) + 1;
-        i = 1;
-    }
-    cpu.registers.pc += 1;
-    i += cpu.registers.sp as u8;
-    // cpu.registers.h = ((i >> 8) as u8) & 255;
-    cpu.registers.h = i;
-    cpu.registers.l = i & 255;
+    cpu.registers.sp = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
 }
 pub fn mmsp(cpu: &mut Cpu) {
     let addr = cpu.get_word();
     cpu.memory.ww(addr, cpu.registers.sp);
 }
-
-use crate::cpu::cpu::Cpu;
 
 pub fn rr_bc(cpu: &mut Cpu) {
     cpu.registers.b = cpu.registers.c;
@@ -249,9 +239,9 @@ pub fn rr_hd(cpu: &mut Cpu) {
 pub fn rr_he(cpu: &mut Cpu) {
     cpu.registers.h = cpu.registers.e;
 }
-pub fn rr_hh(cpu: &mut Cpu) {
-    cpu.registers.h = cpu.registers.h;
-}
+// pub fn rr_hh(cpu: &mut Cpu) {
+//     cpu.registers.h = cpu.registers.h;
+// }
 pub fn rr_hl(cpu: &mut Cpu) {
     cpu.registers.h = cpu.registers.l;
 }
@@ -307,7 +297,31 @@ pub fn rr_e(cpu: &mut Cpu) {
     cpu.registers.e = cpu.get_byte();
 }
 pub fn rr_h(cpu: &mut Cpu) {
-    cpu.registers.h = cpu.get_byte();
+    let mut a = cpu.registers.a;
+    let mut adjust = if cpu.registers.getflag(C) {
+        0x60
+    } else {
+        0x00
+    };
+    if cpu.registers.getflag(H) {
+        adjust |= 0x06;
+    };
+    if !cpu.registers.getflag(N) {
+        if a & 0x0F > 0x09 {
+            adjust |= 0x06;
+        };
+        if a > 0x99 {
+            adjust |= 0x60;
+        };
+        a = a.wrapping_add(adjust);
+    } else {
+        a = a.wrapping_sub(adjust);
+    }
+
+    cpu.registers.flag(C, adjust >= 0x60);
+    cpu.registers.flag(H, false);
+    cpu.registers.flag(Z, a == 0);
+    cpu.registers.a = a;
 }
 pub fn rr_l(cpu: &mut Cpu) {
     cpu.registers.l = cpu.get_byte();

@@ -13,7 +13,9 @@ pub enum Interrupt {
 
 pub struct Cpu<'a> {
     pub registers: Registers,
-    pub ime: u32,
+    pub ime: bool,
+    pub setdi: u32,
+    pub setei: u32,
     pub halt: u32,
     pub stop: u32,
     pub memory: MMU<'a>,
@@ -32,7 +34,9 @@ impl Cpu<'_> {
         Cpu {
             registers,
             memory,
-            ime: 0,
+            ime: false,
+            setdi: 0,
+            setei: 0,
             halt: 0,
             stop: 0,
             ticks: 0,
@@ -52,7 +56,6 @@ impl Cpu<'_> {
         Cpu::mut_find_or_insert(&mut self._executed_operations, op);
         // println!("{} {:#01x} {}", op, op, format!("{:?}", self.registers));
         // println!("{} {}", op, format!("{:?}", self.registers));
-        // println!("{:?}", self._executed_operations);
     }
     pub fn get_byte(&mut self) -> u8 {
         let pc = self.memory.rb(self.registers.pc);
@@ -64,80 +67,134 @@ impl Cpu<'_> {
         self.registers.pc += 2;
         w
     }
-    pub fn fz(&mut self, _i: u8, _cond: u8) {
-        panic!("fix it");
-        // self.registers.f = 0;
-        // if !((i & 255) > 0) {
-        //     // self.registers.f |= 128;
-        // }
-        // if cond > 0 {
-        //     // self.registers.f |= 0x40;
-        // } else {
-        //     // self.registers.f |= 0;
-        // }
-    }
-    pub fn do_cycle(&mut self) -> u32 {
-        match self.delay {
-            0 => {}
+    fn updateime(&mut self) {
+        self.setdi = match self.setdi {
+            2 => 1,
             1 => {
-                self.delay = 0;
-                self.ime = 1;
+                self.ime = false;
+                0
             }
-            2 => {
-                self.delay = 1;
+            _ => 0,
+        };
+        self.setei = match self.setei {
+            2 => 1,
+            1 => {
+                self.ime = true;
+                0
             }
-            _ => {}
+            _ => 0,
+        };
+    }
+
+    fn handleinterrupt(&mut self) -> u32 {
+        if self.ime == false && self.halt == 0 {
+            return 0;
         }
 
-        let mut ticks = if self.halt == 0 && self.stop == 0 {
-            self.operation()
-        } else {
-            self.memory.switch_speed();
-            self.stop = 0;
-            1
+        let triggered = self.memory.inte & self.memory.intf;
+        if triggered == 0 {
+            return 0;
+        }
+
+        self.halt = 0;
+        if self.ime == false {
+            return 0;
+        }
+        self.ime = false;
+
+        let n = triggered.trailing_zeros();
+        if n >= 5 {
+            panic!("Invalid interrupt triggered");
+        }
+        self.memory.intf &= !(1 << n);
+        let pc = self.registers.pc;
+        stack::pushstack(self, pc);
+        self.registers.pc = 0x0040 | ((n as u16) << 3);
+
+        return 4;
+    }
+
+    pub fn exec(&mut self) -> u32 {
+        self.updateime();
+        match self.handleinterrupt() {
+            0 => {}
+            n => return n,
         };
 
-        // See http://bgb.bircd.org/pandocs.htm#interrupts
-        if self.ime != 0 || self.halt != 0 {
-            let ints = self.memory.intf & self.memory.inte;
-
-            if ints != 0 {
-                let i = ints.trailing_zeros();
-                if self.ime != 0 {
-                    self.memory.intf &= !(1 << (i as u32));
-                }
-                self.ime = 0;
-                self.halt = 0;
-                self.stop = 0;
-                match i {
-                    0 => {
-                        stack::rst(self, 0x40);
-                    }
-                    1 => {
-                        stack::rst(self, 0x48);
-                    }
-                    2 => {
-                        stack::rst(self, 0x50);
-                    }
-                    3 => {
-                        stack::rst(self, 0x58);
-                    }
-                    4 => {
-                        stack::rst(self, 0x60);
-                    }
-                    _ => {}
-                }
-                ticks += 1;
-            }
+        if self.halt == 1 {
+            // Emulate an noop instruction
+            1
+        } else {
+            self.operation()
         }
+    }
 
-        self.ticks += ticks;
-        return ticks;
+    pub fn do_cycle(&mut self) -> u32 {
+        let ticks = self.exec() * 4;
+        return self.memory.do_cycle(ticks);
+
+        // match self.delay {
+        //     0 => {}
+        //     1 => {
+        //         self.delay = 0;
+        //         self.ime = 1;
+        //     }
+        //     2 => {
+        //         self.delay = 1;
+        //     }
+        //     _ => {}
+        // }
+
+        // let mut ticks = if self.halt == 0 && self.stop == 0 {
+        //     self.operation()
+        // } else {
+        //     self.memory.switch_speed();
+        //     self.stop = 0;
+        //     1
+        // };
+
+        // // See http://bgb.bircd.org/pandocs.htm#interrupts
+        // if self.ime != 0 || self.halt != 0 {
+        //     let ints = self.memory.intf & self.memory.inte;
+
+        //     if ints != 0 {
+        //         let i = ints.trailing_zeros();
+        //         if self.ime != 0 {
+        //             self.memory.intf &= !(1 << (i as u32));
+        //         }
+        //         self.ime = 0;
+        //         self.halt = 0;
+        //         self.stop = 0;
+        //         match i {
+        //             0 => {
+        //                 stack::rst(self, 0x40);
+        //             }
+        //             1 => {
+        //                 stack::rst(self, 0x48);
+        //             }
+        //             2 => {
+        //                 stack::rst(self, 0x50);
+        //             }
+        //             3 => {
+        //                 stack::rst(self, 0x58);
+        //             }
+        //             4 => {
+        //                 stack::rst(self, 0x60);
+        //             }
+        //             _ => {}
+        //         }
+        //         ticks += 1;
+        //     }
+        // }
+
+        // self.ticks += ticks;
+        // return ticks;
     }
 
     fn operation(&mut self) -> u32 {
         let op = self.get_byte();
         // self.debug(op);
+        // println!("{:?}", self.registers);
         match op {
             0x00 => 1,
             0x01 => {
@@ -188,7 +245,7 @@ impl Cpu<'_> {
                 data::incr_c(self);
                 1
             }
-            13 => {
+            0x0D => {
                 data::decr_c(self);
                 1
             }
@@ -209,7 +266,7 @@ impl Cpu<'_> {
                 ld::denn(self);
                 3
             }
-            18 => {
+            0x12 => {
                 ld::dem_a(self);
                 2
             }
@@ -229,7 +286,7 @@ impl Cpu<'_> {
                 ld::rr_d(self);
                 2
             }
-            23 => {
+            0x17 => {
                 misc::rla(self);
                 1
             }
@@ -245,11 +302,11 @@ impl Cpu<'_> {
                 ld::adem(self);
                 2
             }
-            27 => {
+            0x1B => {
                 data::decde(self);
                 2
             }
-            28 => {
+            0x1C => {
                 data::incr_e(self);
                 1
             }
@@ -278,30 +335,34 @@ impl Cpu<'_> {
                 data::inchl(self);
                 2
             }
-            36 => {
+            0x24 => {
                 data::incr_h(self);
                 1
             }
-            37 => {
+            0x25 => {
                 data::decr_h(self);
                 1
             }
-            38 => {
+            0x26 => {
+                self.registers.h = self.get_byte();
+                2
+            }
+            0x27 => {
                 ld::rr_h(self);
                 1
             }
             0x28 => stack::jrzn(self),
-            41 => {
+            0x29 => {
                 data::addhlhl(self);
-                1
+                2
             }
             0x2A => {
                 ld::ahli(self);
                 2
             }
-            43 => {
+            0x2B => {
                 data::dechl(self);
-                1
+                2
             }
             0x2C => {
                 data::incr_l(self);
@@ -328,13 +389,13 @@ impl Cpu<'_> {
                 ld::hld_a(self);
                 2
             }
-            51 => {
+            0x33 => {
                 data::incsp(self);
-                1
+                2
             }
-            52 => {
+            0x34 => {
                 data::inchlm(self);
-                1
+                3
             }
             0x35 => {
                 data::dechlm(self);
@@ -349,17 +410,17 @@ impl Cpu<'_> {
                 1
             }
             0x38 => stack::jrcn(self),
-            57 => {
+            0x39 => {
                 data::addhlsp(self);
-                1
+                2
             }
-            58 => {
+            0x3A => {
                 ld::ahld(self);
-                1
+                2
             }
-            59 => {
+            0x3B => {
                 data::decsp(self);
-                1
+                2
             }
             0x3C => {
                 data::incr_a(self);
@@ -381,15 +442,15 @@ impl Cpu<'_> {
                 // ld::rr_bb(self);
                 1
             }
-            65 => {
+            0x41 => {
                 ld::rr_bc(self);
                 1
             }
-            66 => {
+            0x42 => {
                 ld::rr_bd(self);
                 1
             }
-            67 => {
+            0x43 => {
                 ld::rr_be(self);
                 1
             }
@@ -397,7 +458,7 @@ impl Cpu<'_> {
                 ld::rr_bh(self);
                 1
             }
-            69 => {
+            0x45 => {
                 ld::rr_bl(self);
                 1
             }
@@ -409,7 +470,7 @@ impl Cpu<'_> {
                 ld::rr_ba(self);
                 1
             }
-            72 => {
+            0x48 => {
                 ld::rr_cb(self);
                 1
             }
@@ -417,15 +478,15 @@ impl Cpu<'_> {
                 // ld::rr_cc(self);
                 1
             }
-            74 => {
+            0x4A => {
                 ld::rr_cd(self);
                 1
             }
-            75 => {
+            0x4B => {
                 ld::rr_ce(self);
                 1
             }
-            76 => {
+            0x4C => {
                 ld::rr_ch(self);
                 1
             }
@@ -437,31 +498,30 @@ impl Cpu<'_> {
                 ld::r_hlm_c(self);
                 2
             }
-            79 => {
+            0x4F => {
                 ld::rr_ca(self);
                 1
             }
-            80 => {
+            0x50 => {
                 ld::rr_db(self);
                 1
             }
-            81 => {
+            0x51 => {
                 ld::rr_dc(self);
                 1
             }
             0x52 => {
-                // ld::rr_dd(self);
                 1
             }
-            83 => {
+            0x53 => {
                 ld::rr_de(self);
                 1
             }
-            84 => {
+            0x54 => {
                 ld::rr_dh(self);
                 1
             }
-            85 => {
+            0x55 => {
                 ld::rr_dl(self);
                 1
             }
@@ -469,31 +529,30 @@ impl Cpu<'_> {
                 ld::r_hlm_d(self);
                 2
             }
-            87 => {
+            0x57 => {
                 ld::rr_da(self);
                 1
             }
-            88 => {
+            0x58 => {
                 ld::rr_eb(self);
                 1
             }
-            89 => {
+            0x59 => {
                 ld::rr_ec(self);
                 1
             }
-            90 => {
+            0x5A => {
                 ld::rr_ed(self);
                 1
             }
             0x5B => {
-                // ld::rr_ee(self);
                 1
             }
-            92 => {
+            0x5C => {
                 ld::rr_eh(self);
                 1
             }
-            93 => {
+            0x5D => {
                 ld::rr_el(self);
                 1
             }
@@ -501,11 +560,11 @@ impl Cpu<'_> {
                 ld::r_hlm_e(self);
                 2
             }
-            95 => {
+            0x5F => {
                 ld::rr_ea(self);
                 1
             }
-            96 => {
+            0x60 => {
                 ld::rr_hb(self);
                 1
             }
@@ -513,19 +572,18 @@ impl Cpu<'_> {
                 ld::rr_hc(self);
                 1
             }
-            98 => {
+            0x62 => {
                 ld::rr_hd(self);
                 1
             }
-            99 => {
+            0x63 => {
                 ld::rr_he(self);
                 1
             }
-            100 => {
-                ld::rr_hh(self);
+            0x64 => {
                 1
             }
-            101 => {
+            0x65 => {
                 ld::rr_hl(self);
                 1
             }
@@ -533,65 +591,64 @@ impl Cpu<'_> {
                 ld::r_hlm_h(self);
                 2
             }
-            103 => {
+            0x67 => {
                 ld::rr_ha(self);
                 1
             }
-            104 => {
+            0x68 => {
                 ld::rr_lb(self);
                 1
             }
-            105 => {
+            0x69 => {
                 ld::rr_lc(self);
                 1
             }
-            106 => {
+            0x6A => {
                 ld::rr_ld(self);
                 1
             }
-            107 => {
+            0x6B => {
                 ld::rr_le(self);
                 1
             }
-            108 => {
+            0x6C => {
                 ld::rr_lh(self);
                 1
             }
             0x6D => {
-                // ld::rr_ll(self);
                 1
             }
             0x6E => {
                 ld::r_hlm_l(self);
                 2
             }
-            111 => {
+            0x6F => {
                 ld::rr_la(self);
                 1
             }
-            112 => {
+            0x70 => {
                 ld::hlmr_b(self);
-                1
+                2
             }
-            113 => {
+            0x71 => {
                 ld::hlmr_c(self);
-                1
+                2
             }
-            114 => {
+            0x72 => {
                 ld::hlmr_d(self);
-                1
+                2
             }
-            115 => {
+            0x73 => {
                 ld::hlmr_e(self);
-                1
+                2
             }
-            116 => {
+            0x74 => {
                 ld::hlmr_h(self);
-                1
+                2
             }
-            117 => {
+            0x75 => {
                 ld::hlmr_l(self);
-                1
+                2
             }
             0x76 => {
                 self.halt = 1;
@@ -661,39 +718,39 @@ impl Cpu<'_> {
                 data::addhl(self);
                 2
             }
-            135 => {
+            0x87 => {
                 data::addr_a(self);
                 1
             }
-            136 => {
+            0x88 => {
                 data::adcr_b(self);
                 1
             }
-            137 => {
+            0x89 => {
                 data::adcr_c(self);
                 1
             }
-            138 => {
+            0x8A => {
                 data::adcr_d(self);
                 1
             }
-            139 => {
+            0x8B => {
                 data::adcr_e(self);
                 1
             }
-            140 => {
+            0x8C => {
                 data::adcr_h(self);
                 1
             }
-            141 => {
+            0x8D => {
                 data::adcr_l(self);
                 1
             }
-            142 => {
+            0x8E => {
                 data::adchl(self);
-                1
+                2
             }
-            143 => {
+            0x8F => {
                 data::adcr_a(self);
                 1
             }
@@ -705,59 +762,59 @@ impl Cpu<'_> {
                 data::subr_c(self);
                 1
             }
-            146 => {
+            0x92 => {
                 data::subr_d(self);
                 1
             }
-            147 => {
+            0x93 => {
                 data::subr_e(self);
                 1
             }
-            148 => {
+            0x94 => {
                 data::subr_h(self);
                 1
             }
-            149 => {
+            0x95 => {
                 data::subr_l(self);
                 1
             }
-            150 => {
+            0x96 => {
                 data::subhl(self);
-                1
+                2
             }
             0x97 => {
                 data::subr_a(self);
                 1
             }
-            152 => {
+            0x98 => {
                 data::sbcr_b(self);
                 1
             }
-            153 => {
+            0x99 => {
                 data::sbcr_c(self);
                 1
             }
-            154 => {
+            0x9A => {
                 data::sbcr_d(self);
                 1
             }
-            155 => {
+            0x9B => {
                 data::sbcr_e(self);
                 1
             }
-            156 => {
+            0x9C => {
                 data::sbcr_h(self);
                 1
             }
-            157 => {
+            0x9D => {
                 data::sbcr_l(self);
                 1
             }
-            158 => {
+            0x9E => {
                 data::sbchl(self);
-                1
+                2
             }
-            159 => {
+            0x9F => {
                 data::sbcr_a(self);
                 1
             }
@@ -765,31 +822,31 @@ impl Cpu<'_> {
                 data::andr_b(self);
                 1
             }
-            161 => {
+            0xA1 => {
                 data::andr_c(self);
                 1
             }
-            162 => {
+            0xA2 => {
                 data::andr_d(self);
                 1
             }
-            163 => {
+            0xA3 => {
                 data::andr_e(self);
                 1
             }
-            164 => {
+            0xA4 => {
                 data::andr_h(self);
                 1
             }
-            165 => {
+            0xA5 => {
                 data::andr_l(self);
                 1
             }
-            166 => {
+            0xA6 => {
                 data::andhl(self);
-                1
+                2
             }
-            167 => {
+            0xA7 => {
                 data::andr_a(self);
                 1
             }
@@ -857,42 +914,39 @@ impl Cpu<'_> {
                 data::orr_a(self);
                 1
             }
-            184 => {
+            0xB8 => {
                 data::cpr_b(self);
                 1
             }
-            185 => {
+            0xB9 => {
                 data::cpr_c(self);
                 1
             }
-            186 => {
+            0xBA => {
                 data::cpr_d(self);
                 1
             }
-            187 => {
+            0xBB => {
                 data::cpr_e(self);
                 1
             }
-            188 => {
+            0xBC => {
                 data::cpr_h(self);
                 1
             }
-            189 => {
+            0xBD => {
                 data::cpr_l(self);
                 1
             }
-            190 => {
+            0xBE => {
                 data::cphl(self);
-                1
+                2
             }
-            191 => {
+            0xBF => {
                 data::cpr_a(self);
                 1
             }
-            192 => {
-                stack::retnz(self);
-                1
-            }
+            0xC0 => stack::retnz(self),
             0xC1 => {
                 stack::popbc(self);
                 3
@@ -911,9 +965,9 @@ impl Cpu<'_> {
                 data::addn(self);
                 2
             }
-            199 => {
+            0xC7 => {
                 stack::rst(self, 0x00);
-                1
+                4
             }
             0xC8 => stack::retz(self),
             0xC9 => {
@@ -941,10 +995,7 @@ impl Cpu<'_> {
                 3
             }
             0xD2 => stack::jpncnn(self),
-            212 => {
-                stack::callncnn(self);
-                1
-            }
+            0xD4 => stack::callncnn(self),
             0xD5 => {
                 stack::pushde(self);
                 4
@@ -953,22 +1004,17 @@ impl Cpu<'_> {
                 data::subn(self);
                 2
             }
-            215 => {
+            0xD7 => {
                 stack::rst(self, 0x10);
-                1
-            }
-            216 => {
-                stack::retc(self);
-                1
-            }
-            0xD9 => {
-                stack::reti(self);
                 4
             }
-            218 => {
-                stack::jpcnn(self);
-                1
+            0xD8 => stack::retc(self),
+            0xD9 => {
+                stack::reti(self);
+                self.setei = 1;
+                4
             }
+            0xDA => stack::jpcnn(self),
             0xDC => stack::callcnn(self),
             0xDE => {
                 data::sbcn(self);
@@ -986,9 +1032,9 @@ impl Cpu<'_> {
                 stack::pophl(self);
                 3
             }
-            226 => {
+            0xE2 => {
                 ld::ioca(self);
-                1
+                2
             }
             0xE5 => {
                 stack::pushhl(self);
@@ -998,13 +1044,13 @@ impl Cpu<'_> {
                 data::andn(self);
                 2
             }
-            231 => {
+            0xE7 => {
                 stack::rst(self, 0x20);
-                1
+                4
             }
-            232 => {
+            0xE8 => {
                 data::addspn(self);
-                1
+                4
             }
             0xE9 => {
                 stack::jphl(self);
@@ -1030,42 +1076,42 @@ impl Cpu<'_> {
                 stack::popaf(self);
                 3
             }
-            242 => {
+            0xF2 => {
                 ld::aioc(self);
                 2
             }
             0xF3 => {
-                self.ime = 0;
-                self.delay = 0;
+                self.setdi = 2;
                 1
             }
             0xF5 => {
                 stack::pushaf(self);
                 4
             }
-            246 => {
-                data::xorn(self);
+            0xF6 => {
+                let v = self.get_byte();
+                data::alu_or(self, v);
                 2
             }
-            247 => {
+            0xF7 => {
                 stack::rst(self, 0x30);
                 4
             }
-            248 => {
+            0xF8 => {
+                let r = data::alu_add16imm(self);
+                data::set_hl(self, r);
+                3
+            }
+            0xF9 => {
                 ld::hlspn(self);
-                1
+                2
             }
             0xFA => {
                 ld::amm(self);
                 4
             }
             0xFB => {
-                if self.delay == 2 || self.memory.rb(self.registers.pc) == 0x76 {
-                    self.delay = 1;
-                } else {
-                    self.delay = 2;
-                }
-                self.ime = 1;
+                self.setei = 2;
                 1
             }
             0xFE => {

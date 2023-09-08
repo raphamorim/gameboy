@@ -1,6 +1,17 @@
 use crate::cpu::cpu::Cpu;
 use crate::cpu::registers::CpuFlag::{C, Z};
 
+pub fn pushstack(cpu: &mut Cpu, value: u16) {
+    cpu.registers.sp = cpu.registers.sp.wrapping_sub(2);
+    cpu.memory.ww(cpu.registers.sp, value);
+}
+
+fn popstack(cpu: &mut Cpu) -> u16 {
+    let res = cpu.memory.rw(cpu.registers.sp);
+    cpu.registers.sp += 2;
+    res
+}
+
 pub fn pushbc(c: &mut Cpu) {
     let value = ((c.registers.b as u16) << 8) | (c.registers.c as u16);
     c.registers.sp -= 2;
@@ -80,11 +91,13 @@ pub fn jpncnn(c: &mut Cpu) -> u32 {
         3
     }
 }
-pub fn jpcnn(c: &mut Cpu) {
-    if (c.registers.f & 0x10) == 0x10 {
-        c.registers.pc = c.memory.rw(c.registers.pc);
+pub fn jpcnn(cpu: &mut Cpu) -> u32 {
+    if cpu.registers.getflag(C) {
+        cpu.registers.pc = cpu.get_word();
+        4
     } else {
-        c.registers.pc += 2;
+        cpu.registers.pc += 2;
+        3
     }
 }
 pub fn jrn(c: &mut Cpu) {
@@ -133,21 +146,6 @@ pub fn jrcn(c: &mut Cpu) -> u32 {
     }
 }
 
-// Switch speed
-// pub fn djnzn(c: &mut Cpu) {
-// let mut i = c.memory.rb(c.registers.pc);
-// if i > 127 {
-//     // i=-((~i+1)&255)
-//     i = 1;
-// };
-// c.registers.pc += 1;
-// c.registers.b -= 1;
-// if c.registers.b > 0 {
-//     c.registers.pc += i as u16;
-
-// }
-// }
-
 pub fn callnn(c: &mut Cpu) {
     c.registers.sp -= 2;
     c.memory.ww(c.registers.sp, c.registers.pc + 2);
@@ -175,13 +173,14 @@ pub fn callznn(c: &mut Cpu) -> u32 {
         3
     }
 }
-pub fn callncnn(c: &mut Cpu) {
-    if (c.registers.f & 0x10) == 0x00 {
-        c.registers.sp -= 2;
-        c.memory.ww(c.registers.sp, c.registers.pc + 2);
-        c.registers.pc = c.memory.rw(c.registers.pc);
+pub fn callncnn(c: &mut Cpu) -> u32 {
+    if !c.registers.getflag(C) {
+        pushstack(c, c.registers.pc + 2);
+        c.registers.pc = c.get_word();
+        6
     } else {
         c.registers.pc += 2;
+        3
     }
 }
 pub fn callcnn(c: &mut Cpu) -> u32 {
@@ -204,12 +203,13 @@ pub fn reti(c: &mut Cpu) {
     let val = c.memory.rw(c.registers.sp);
     c.registers.sp += 2;
     c.registers.pc = val;
-    c.ime = 1;
 }
-pub fn retnz(c: &mut Cpu) {
-    if (c.registers.f & 0x80) == 0x00 {
-        c.registers.pc = c.memory.rw(c.registers.sp);
-        c.registers.sp += 2;
+pub fn retnz(c: &mut Cpu) -> u32 {
+     if !c.registers.getflag(Z) {
+        c.registers.pc = popstack(c);
+        5
+    } else {
+        2
     }
 }
 pub fn retz(c: &mut Cpu) -> u32 {
@@ -231,10 +231,12 @@ pub fn retnc(c: &mut Cpu) -> u32 {
         2
     }
 }
-pub fn retc(c: &mut Cpu) {
-    if (c.registers.f & 0x10) == 0x10 {
-        c.registers.pc = c.memory.rw(c.registers.sp);
-        c.registers.sp += 2;
+pub fn retc(cpu: &mut Cpu) -> u32 {
+    if cpu.registers.getflag(C) {
+        cpu.registers.pc = popstack(cpu);
+        5
+    } else {
+        2
     }
 }
 pub fn rst(c: &mut Cpu, val: u16) {
