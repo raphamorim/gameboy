@@ -22,11 +22,10 @@ jobs:
       - run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }}
       - run: rustup component add rustfmt clippy
       - run: cargo fetch
-      - run: cargo fmt -- --check --color always
-      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: make lint
       - name: cargo test build
         run: cargo build --tests --release
       - name: cargo test
         run: cargo test --release
       - name: Make desktop build
-        run: cd ./examples/desktop && make desktop-build
+        run: cd ./examples/desktop && cargo build

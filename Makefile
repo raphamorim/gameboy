@@ -8,7 +8,8 @@ watch:
 	cargo watch -- make run
 
 lint:
-	cargo fmt --check
+	cargo fmt -- --check --color always
+	cargo clippy --all-targets --all-features -- -D warnings
 
 build-wasm:
 	cargo build --release --target wasm32-unknown-unknown
