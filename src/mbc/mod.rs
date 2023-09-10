@@ -41,7 +41,7 @@ pub fn get_mbc(
     filepath: Option<path::PathBuf>,
 ) -> StrResult<Box<dyn MBC + 'static>> {
     if filepath.is_none() {
-        return mbc0::MBC0::new(data).map(|v| Box::new(v) as Box<dyn MBC>);
+        return mbc1::MBC1::new_without_save(data).map(|v| Box::new(v) as Box<dyn MBC>);
     }
 
     let file = filepath.unwrap();

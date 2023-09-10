@@ -1,7 +1,7 @@
-import('./gameboy')
+import('./gameboy/index.js')
   .catch(console.error);
 
-import { render } from './gameboy';
+import { render } from './gameboy/index.js';
 
 const playButton = document.querySelector('#play');
 const file = document.querySelector('#file');

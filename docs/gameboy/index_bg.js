@@ -512,17 +512,17 @@ export function __wbindgen_throw(arg0, arg1) {
     throw new Error(getStringFromWasm0(arg0, arg1));
 };
 
-export function __wbindgen_closure_wrapper670() { return logError(function (arg0, arg1, arg2) {
+export function __wbindgen_closure_wrapper671() { return logError(function (arg0, arg1, arg2) {
     const ret = makeMutClosure(arg0, arg1, 76, __wbg_adapter_14);
     return addHeapObject(ret);
 }, arguments) };
 
-export function __wbindgen_closure_wrapper672() { return logError(function (arg0, arg1, arg2) {
+export function __wbindgen_closure_wrapper673() { return logError(function (arg0, arg1, arg2) {
     const ret = makeMutClosure(arg0, arg1, 74, __wbg_adapter_17);
     return addHeapObject(ret);
 }, arguments) };
 
-export function __wbindgen_closure_wrapper855() { return logError(function (arg0, arg1, arg2) {
+export function __wbindgen_closure_wrapper856() { return logError(function (arg0, arg1, arg2) {
     const ret = makeMutClosure(arg0, arg1, 79, __wbg_adapter_20);
     return addHeapObject(ret);
 }, arguments) };
