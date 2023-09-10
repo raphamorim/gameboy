@@ -1,6 +1,6 @@
 [package]
 name = "gameboy"
-version = "0.1.0"
+version = "0.1.1"
 description = "Gameboy emulator written in Rust and WebAssembly"
 authors = ["Raphael Amorim <rapha850@gmail.com>"]
 repository = "https://github.com/raphamorim/gameboy"
