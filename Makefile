@@ -22,13 +22,13 @@ desktop:
 	cd examples/desktop && cargo run
 
 web-build-dev:
-	cd docs && make build-dev
+	cd web && npm run build-dev
 
 web-publish:
-	cd docs && make publish
+	cd web && npm run publish
 
 web-build:
-	cd docs && make build
+	cd web && npm run build
 
 web:
-	cd docs && make local
+	cd web && npm run local
