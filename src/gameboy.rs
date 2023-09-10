@@ -80,7 +80,7 @@ impl<'a> Gameboy {
             height: self.height,
         };
         let window_builder = glutin::window::WindowBuilder::new()
-            .with_title("LR35902")
+            .with_title("Gameboy")
             .with_inner_size(inner_size)
             .with_resizable(true);
         let gl_window = glutin::ContextBuilder::new()

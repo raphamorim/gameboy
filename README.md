@@ -2,23 +2,17 @@
 >
 > Disclaimer 1.0: This project does not endorse or promote any type of piracy activity. The act of build or install an emulator is not illegal. As many others emulators that have been created over past decades, this *project is just a study case*.
 >
->
-> WebAssembly quick 5s demo
-
-![Quick demo](resources/demo-wasm.gif)
-
 > Disclaimer 1.1: Altough the emulator already runs a good amount of games, it is still under development and you can track it development by checking [Tests](#tests) section.
 >
 
-## ●&nbsp;&nbsp;Report
-
 | WebGL with WebAssembly | Desktop GUI with Rust |
 | --- | --- |
-| ![Demo Web with Assembly](resources/demo-web.png) | ![Demo Desktop GUI](resources/demo-desktop.png) |
-| Firefox 102.0.1 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
+| ![Demo Web with Assembly](resources/demo-web.png) | ![First demo desktop GUI](resources/demo-desktop-1.png) ![Second demo desktop GUI](resources/demo-desktop-2.png) |
+| Playing [Cookies Bakery by leafthief](https://leafthief.itch.io/cookies-bakery) | Playing [Unearthed by benjelter](https://benjelter.itch.io/unearthed) |
+| Firefox 116.0.3 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
 | `make web` | `make desktop` |
 
-## ●&nbsp;&nbsp;Internals
+## Internals
 
 <img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" />
 
@@ -28,7 +22,7 @@
 
 * A scan of the main logic board for the DMG 01: https://chipmusic.org/forums/topic/13608/dmg-main-board-schematic-circuit-arduinoboy/
 
-## ●&nbsp;&nbsp;Emulators and a bit of Game Boy history...
+## Emulators and a bit of Game Boy history...
 
 An emulator typically enables the host system to run software or use peripheral devices designed for the guest system. Emulation refers to the ability of a computer program in an electronic device to emulate (or imitate) another program or device. In the case of the Game Boy most of the work involves dealing with 8-bit buses around (a variant of) the Z80 CPU. The Game Boy CPU is a hybrid between the Intel 8080 and the Zilog Z80. In computing, an emulator is hardware or software that enables one computer system (called the host) to behave like another computer system (called the guest).
 
@@ -82,7 +76,7 @@ Anyway, enough about the Game Boy history.
 
 The Z80 was designed to be binary compatible with the already existing Intel 8080. This means that the instruction set found in the 8080 was also implemented by the Z80 (in essence, the 8080 can be seen as a subset of the Z80). The Game Boy’s custom hybrid chip official name is *Sharp LR35902*.
 
-## ●&nbsp;&nbsp;LR35902 ~ High level architecture
+## LR35902 ~ High level architecture
 
 #### CPU (`src/cpu`)
 
@@ -200,7 +194,7 @@ pub const HEIGHT: usize = 144;
 
 [...] TODO: write here more about the GPU.
 
-# ●&nbsp;&nbsp;Usage examples
+# Usage examples
 
 ## Web ~ JavaScript/WASM usage:
 
@@ -260,7 +254,7 @@ fn main() {
 }
 ```
 
-# ●&nbsp;&nbsp;Tests
+# Tests
 
 The tests are based on Blargg's Gameboy hardware test ROMs.
 
@@ -274,7 +268,7 @@ Link to the repository: https://github.com/retrio/gb-test-roms.git
 | ![Bits bank1 test](resources/tests/bits-bank1.png) | Failing |
 | ![GGB Sound test](resources/tests/cgb-sound.png) | Failing |
 
-# ●&nbsp;&nbsp;Resources & References
+# Resources & References
 
 - The website gameboy CSS built from by [Daniel Snows Gameboy CSS](https://codepen.io/daniel-snows) 🥇
 - http://bgb.bircd.org/pandocs.htm 🥇
