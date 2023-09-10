@@ -12,6 +12,10 @@
 | Firefox 116.0.3 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
 | `make web` | `make desktop` |
 
+## WebAssembly quick demo
+
+![WebAssembly quick demo](resources/demo-pokemon.gif)
+
 ## Internals
 
 <img src="resources/internals-cpu-section.gif" alt="GameBoy Internals" />
