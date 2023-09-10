@@ -12,27 +12,32 @@ name = "gameboy"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
-[features]
-desktop = ["dep:gl", "dep:glutin", "dep:libc"]
-
 [profile.release]
-opt-level = 's'
-lto = true
-# The Rust compiler splits your crate into multiple codegen units to parallelize (and thus speed up) compilation. However, this might cause it to miss some potential optimizations.
+opt-level = "s"
+lto = "thin"
+strip = true
+debug = 0
+panic = 'abort'
 codegen-units = 1
+incremental = false
 
-[dependencies]
+[profile.dev]
+split-debuginfo = "unpacked"
+lto = false
+incremental = true
+opt-level = 0
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+libc = { version = "0.2.126" }
+glutin = { version = "0.28.0" }
+gl = { version = "0.14.0" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3.59"
 wasm-bindgen = "0.2.82"
 wasm-bindgen-futures = "0.4.32"
 console_error_panic_hook = "0.1.7"
-libc = { version = "0.2.126", optional = true }
-glutin = { version = "0.28.0", optional = true }
-gl = { version = "0.14.0", optional = true }
-
-[dependencies.web-sys]
-version = "0.3.4"
-features = [
+web-sys = {version = "0.3.4", features = [
   'Document',
   'Element',
   'HtmlCanvasElement',
@@ -40,7 +45,7 @@ features = [
   'ImageData',
   'Window',
   'KeyboardEvent',
-]
+]}
 
 #'WebGlBuffer',
 #'WebGlRenderingContext',

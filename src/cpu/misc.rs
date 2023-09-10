@@ -15,27 +15,12 @@ pub fn bit_m(cpu: &mut Cpu, i: u8) -> u32 {
     3
 }
 pub fn rla(cpu: &mut Cpu) {
-    let mut ci = 0;
-    let mut co = 0;
-    if (cpu.registers.f & 0x10) > 0 {
-        ci = 1;
-    }
-    if (cpu.registers.a & 0x80) > 0 {
-        co = 0x10;
-    }
-    cpu.registers.a = (cpu.registers.a << 1) + ci;
-    cpu.registers.f = (cpu.registers.f & 0xEF) + co;
+    cpu.registers.a = alu_rl(cpu, cpu.registers.a);
+    cpu.registers.flag(Z, false);
 }
 pub fn rlca(cpu: &mut Cpu) {
-    let mut ci = 0;
-    let mut co = 0;
-    if (cpu.registers.a & 0x80) > 0 {
-        ci = 1;
-        co = 0x10;
-    }
-
-    cpu.registers.a = (cpu.registers.a << 1) + ci;
-    cpu.registers.f = (cpu.registers.f & 0xEF) + co;
+    cpu.registers.a = alu_rlc(cpu, cpu.registers.a);
+    cpu.registers.flag(Z, false);
 }
 pub fn rra(cpu: &mut Cpu) {
     let a = cpu.registers.a;
@@ -49,15 +34,8 @@ pub fn rra(cpu: &mut Cpu) {
     cpu.registers.flag(Z, false);
 }
 pub fn rrca(cpu: &mut Cpu) {
-    let mut ci = 0;
-    let mut co = 0;
-    if (cpu.registers.a & 1) > 0 {
-        ci = 0x80;
-        co = 0x10;
-    }
-
-    cpu.registers.a = (cpu.registers.a >> 1) + ci;
-    cpu.registers.f = (cpu.registers.f & 0xEF) + co;
+    cpu.registers.a = alu_rrc(cpu, cpu.registers.a);
+    cpu.registers.flag(Z, false);
 }
 
 fn alu_srflagupdate(cpu: &mut Cpu, r: u8, c: bool) {

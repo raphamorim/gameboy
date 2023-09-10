@@ -11,8 +11,26 @@ pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum RenderMode {
+    #[cfg(not(target_arch = "wasm32"))]
     Desktop,
+    #[cfg(not(target_arch = "wasm32"))]
+    Terminal,
+    #[cfg(target_arch = "wasm32")]
     WebAssembly,
+}
+
+impl Default for RenderMode {
+    fn default() -> RenderMode {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            RenderMode::Desktop
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            RenderMode::WebAssembly
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -22,7 +40,7 @@ pub enum Target {
     SuperGameBoy,
 }
 
-// #[cfg(feature = "desktop")]
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String> {
     use std::fs::File;
     use std::io::Read;
@@ -35,7 +53,7 @@ pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String>
     let file = File::open(filepath);
     let filepath = Default::default();
     match file.and_then(|mut f| f.read_to_end(&mut rom)) {
-        Ok(mut filepath) => filepath = filepath,
+        Ok(_) => {}
         Err(e) => return Err(format!("Failed to read {:?}: {}", filepath, e)),
     };
 
@@ -59,17 +77,22 @@ impl<'a> Gameboy {
 
     pub fn render(self, render_mode: RenderMode) {
         match render_mode {
+            #[cfg(not(target_arch = "wasm32"))]
             RenderMode::Desktop => {
-                #[cfg(feature = "desktop")]
                 self.render_desktop();
             }
+            #[cfg(target_arch = "wasm32")]
             RenderMode::WebAssembly => {
                 // crate::screen::web::render();
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            RenderMode::Terminal => {
+                self.render_terminal();
             }
         }
     }
 
-    #[cfg(feature = "desktop")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn render_desktop(mut self) {
         use crate::screen::desktop::*;
 
@@ -104,22 +127,33 @@ impl<'a> Gameboy {
                 }
                 glutin::event::Event::MainEventsCleared => window.request_redraw(),
                 glutin::event::Event::RedrawRequested(_) => {
-                    if focused == true {
-                        self.frame();
-                        cx.draw(self.width, self.height, self.image());
-                        gl_window.swap_buffers().unwrap();
-                    }
+                    self.frame();
+                    cx.draw(self.width, self.height, self.image());
+                    gl_window.swap_buffers().unwrap();
 
-                    std::thread::sleep(std::time::Duration::from_millis(10));
+                    std::thread::sleep(std::time::Duration::from_millis(5));
                 }
                 _ => {
-                    let next_frame_time = std::time::Instant::now()
-                        + std::time::Duration::from_nanos(16_666_667);
+                    let next_frame_time =
+                        std::time::Instant::now() + std::time::Duration::from_millis(5);
                     *control_flow =
                         glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
                 }
             }
         });
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn render_terminal(self) {
+        // loop {
+        // println!("{:?}", self.image());
+        let image = self.image();
+        // fn intensity_to_ascii(value: &u8) -> &str {
+        // changes an intensity into an ascii character
+        // this is a central step in creating the ascii art
+
+        //     std::thread::sleep(std::time::Duration::from_millis(5));
+        // }
     }
 
     pub fn check_and_reset_gpu_updated(&mut self) -> bool {

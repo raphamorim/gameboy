@@ -21,6 +21,12 @@ test:
 desktop:
 	cd examples/desktop && cargo run
 
+terminal:
+	cd examples/terminal && cargo run
+
+web:
+	cd web && npm run serve
+
 web-build-dev:
 	cd web && npm run build-dev
 
@@ -30,5 +36,3 @@ web-publish:
 web-build:
 	cd web && npm run build
 
-web:
-	cd web && npm run local

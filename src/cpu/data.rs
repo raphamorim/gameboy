@@ -798,9 +798,10 @@ pub fn decde(cpu: &mut Cpu) {
     cpu.registers.e = (val & 0x00FF) as u8;
 }
 pub fn dechl(cpu: &mut Cpu) {
-    let v = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16).wrapping_sub(1);
-    cpu.registers.h = (v >> 8) as u8;
-    cpu.registers.l = (v & 0x00FF) as u8;
+    let v = ((cpu.registers.h as u16) << 8) | (cpu.registers.l as u16);
+    let value = v.wrapping_sub(1);
+    cpu.registers.h = (value >> 8) as u8;
+    cpu.registers.l = (value & 0x00FF) as u8;
 }
 pub fn decsp(cpu: &mut Cpu) {
     cpu.registers.sp = cpu.registers.sp.wrapping_sub(1);

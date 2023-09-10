@@ -19,8 +19,6 @@ pub struct Cpu<'a> {
     pub halt: u32,
     pub stop: u32,
     pub memory: MMU<'a>,
-    delay: u32,
-    ticks: u32,
 
     // To debug
     _executed_operations: Vec<u8>,
@@ -39,8 +37,6 @@ impl Cpu<'_> {
             setei: 0,
             halt: 0,
             stop: 0,
-            ticks: 0,
-            delay: 0,
             _executed_operations: Vec::new(),
         }
     }
@@ -259,7 +255,7 @@ impl Cpu<'_> {
             }
             0x10 => {
                 // stack::djnzn(self);
-                self.stop = 1;
+                self.memory.switch_speed();
                 1
             }
             0x11 => {
