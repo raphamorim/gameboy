@@ -9,8 +9,7 @@ pub struct Gameboy {
 
 pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
-#[derive(Default)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Default)]
 pub enum RenderMode {
     #[cfg(not(target_arch = "wasm32"))]
     #[default]
@@ -20,8 +19,6 @@ pub enum RenderMode {
     #[cfg(target_arch = "wasm32")]
     WebAssembly,
 }
-
-
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Target {

@@ -18,10 +18,6 @@ impl MBC for MBC0 {
     fn readram(&self, _a: u16) -> u8 {
         0
     }
-    fn writerom(&mut self, _a: u16, _v: u8) {
-        
-    }
-    fn writeram(&mut self, _a: u16, _v: u8) {
-        
-    }
+    fn writerom(&mut self, _a: u16, _v: u8) {}
+    fn writeram(&mut self, _a: u16, _v: u8) {}
 }
