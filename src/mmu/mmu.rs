@@ -66,7 +66,7 @@ impl<'a> MMU<'a> {
             wrambank: 1,
             inte: 0,
             intf: 0,
-            serial: serial,
+            serial,
             timer: Timer::new(),
             keypad: Keypad::new(),
             gpu: GPU::new(),
@@ -99,7 +99,7 @@ impl<'a> MMU<'a> {
             hdma: [0; 4],
             inte: 0,
             intf: 0,
-            serial: serial,
+            serial,
             timer: Timer::new(),
             keypad: Keypad::new(),
             gpu: GPU::new_cgb(),
@@ -188,7 +188,7 @@ impl<'a> MMU<'a> {
         self.intf |= self.serial.interrupt;
         self.serial.interrupt = 0;
 
-        return gputicks;
+        gputicks
     }
 
     pub fn rb(&mut self, address: u16) -> u8 {
@@ -339,7 +339,7 @@ impl<'a> MMU<'a> {
                 }
                 let src = ((self.hdma[0] as u16) << 8) | (self.hdma[1] as u16);
                 let dst = ((self.hdma[2] as u16) << 8) | (self.hdma[3] as u16) | 0x8000;
-                if !(src <= 0x7FF0 || (src >= 0xA000 && src <= 0xDFF0)) {
+                if !(src <= 0x7FF0 || (0xA000..=0xDFF0).contains(&src)) {
                     panic!("HDMA transfer with illegal start address {:04X}", src);
                 }
 
@@ -366,7 +366,7 @@ impl<'a> MMU<'a> {
     }
 
     fn perform_hdma(&mut self) -> u32 {
-        if self.gpu.may_hdma() == false {
+        if !self.gpu.may_hdma() {
             return 0;
         }
 
@@ -375,7 +375,7 @@ impl<'a> MMU<'a> {
             self.hdma_status = DMAType::NoDMA;
         }
 
-        return 8;
+        8
     }
 
     fn perform_gdma(&mut self) -> u32 {
@@ -385,7 +385,7 @@ impl<'a> MMU<'a> {
         }
 
         self.hdma_status = DMAType::NoDMA;
-        return len * 8;
+        len * 8
     }
 
     fn perform_vramdma_row(&mut self) {

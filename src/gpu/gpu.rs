@@ -183,7 +183,7 @@ impl GPU {
             }
             2 => self.m2_inte,
             3 => {
-                if self.win_on && self.wy_trigger == false && self.line == self.winy {
+                if self.win_on && !self.wy_trigger && self.line == self.winy {
                     self.wy_trigger = true;
                     self.wy_pos = -1;
                 }
@@ -262,13 +262,13 @@ impl GPU {
     }
 
     fn rbvram0(&self, a: u16) -> u8 {
-        if a < 0x8000 || a >= 0xA000 {
+        if !(0x8000..0xA000).contains(&a) {
             panic!("Shouldn't have used rbvram0");
         }
         self.vram[a as usize & 0x1FFF]
     }
     fn rbvram1(&self, a: u16) -> u8 {
-        if a < 0x8000 || a >= 0xA000 {
+        if !(0x8000..0xA000).contains(&a) {
             panic!("Shouldn't have used rbvram1");
         }
         self.vram[0x2000 + (a as usize & 0x1FFF)]
@@ -391,7 +391,7 @@ impl GPU {
     }
 
     fn get_monochrome_pal_val(value: u8, index: usize) -> u8 {
-        match (value >> 2 * index) & 0x03 {
+        match (value >> (2 * index)) & 0x03 {
             0 => 255,
             1 => 192,
             2 => 96,
@@ -409,7 +409,7 @@ impl GPU {
     }
 
     fn setcolor(&mut self, x: usize, color: u8) {
-        self.data[self.line as usize * WIDTH * 4 + x * 4 + 0] = color;
+        self.data[self.line as usize * WIDTH * 4 + x * 4] = color;
         self.data[self.line as usize * WIDTH * 4 + x * 4 + 1] = color;
         self.data[self.line as usize * WIDTH * 4 + x * 4 + 2] = color;
     }
@@ -424,7 +424,7 @@ impl GPU {
         let g = g as u32;
         let b = b as u32;
 
-        self.data[baseidx + 0] = ((r * 13 + g * 2 + b) >> 1) as u8;
+        self.data[baseidx] = ((r * 13 + g * 2 + b) >> 1) as u8;
         self.data[baseidx + 1] = ((g * 3 + b) << 1) as u8;
         self.data[baseidx + 2] = ((r * 3 + g * 2 + b * 11) >> 1) as u8;
     }
@@ -440,7 +440,7 @@ impl GPU {
             -1
         };
 
-        if winy < 0 && drawbg == false {
+        if winy < 0 && !drawbg {
             return;
         }
 
@@ -523,7 +523,7 @@ impl GPU {
                 let r = self.cbgpal[palnr][colnr][0];
                 let g = self.cbgpal[palnr][colnr][1];
                 let b = self.cbgpal[palnr][colnr][2];
-                self.setrgb(x as usize, r, g, b);
+                self.setrgb(x, r, g, b);
             } else {
                 let color = self.palb[colnr];
                 self.setcolor(x, color);
@@ -543,7 +543,7 @@ impl GPU {
         let mut sidx = 0;
         for index in 0..40 {
             let spriteaddr = 0xFE00 + (index as u16) * 4;
-            let spritey = self.rb(spriteaddr + 0) as u16 as i32 - 16;
+            let spritey = self.rb(spriteaddr) as u16 as i32 - 16;
             if line < spritey || line >= spritey + sprite_size {
                 continue;
             }
@@ -632,7 +632,7 @@ impl GPU {
     }
 
     pub fn may_hdma(&self) -> bool {
-        return self.hblanking;
+        self.hblanking
     }
 }
 
@@ -643,10 +643,10 @@ fn dmg_sprite_order(a: &(i32, i32, u8), b: &(i32, i32, u8)) -> Ordering {
     if a.0 != b.0 {
         return b.0.cmp(&a.0);
     }
-    return b.2.cmp(&a.2);
+    b.2.cmp(&a.2)
 }
 
 fn cgb_sprite_order(a: &(i32, i32, u8), b: &(i32, i32, u8)) -> Ordering {
     // CGB order: only prioritize based on OAM position.
-    return b.2.cmp(&a.2);
+    b.2.cmp(&a.2)
 }

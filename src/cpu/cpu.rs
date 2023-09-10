@@ -83,7 +83,7 @@ impl Cpu<'_> {
     }
 
     fn handleinterrupt(&mut self) -> u32 {
-        if self.ime == false && self.halt == 0 {
+        if !self.ime && self.halt == 0 {
             return 0;
         }
 
@@ -93,7 +93,7 @@ impl Cpu<'_> {
         }
 
         self.halt = 0;
-        if self.ime == false {
+        if !self.ime {
             return 0;
         }
         self.ime = false;
@@ -107,7 +107,7 @@ impl Cpu<'_> {
         stack::pushstack(self, pc);
         self.registers.pc = 0x0040 | ((n as u16) << 3);
 
-        return 4;
+        4
     }
 
     pub fn exec(&mut self) -> u32 {
@@ -127,7 +127,7 @@ impl Cpu<'_> {
 
     pub fn do_cycle(&mut self) -> u32 {
         let ticks = self.exec() * 4;
-        return self.memory.do_cycle(ticks);
+        self.memory.do_cycle(ticks)
 
         // match self.delay {
         //     0 => {}

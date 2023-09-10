@@ -34,8 +34,8 @@ impl MBC1 {
             rombank: 1,
             rambank: 0,
             savepath: svpath,
-            rombanks: rombanks,
-            rambanks: rambanks,
+            rombanks,
+            rambanks,
         };
         res.loadram().map(|_| res)
     }
@@ -57,8 +57,8 @@ impl MBC1 {
             rombank: 1,
             rambank: 0,
             savepath: svpath,
-            rombanks: rombanks,
-            rambanks: rambanks,
+            rombanks,
+            rambanks,
         };
         // res.loadram().map(|_| res)
         Ok(res)
@@ -88,7 +88,7 @@ impl Drop for MBC1 {
         match self.savepath {
             None => {}
             Some(ref path) => {
-                let _ = fs::File::create(path).and_then(|mut f| f.write_all(&*self.ram));
+                let _ = fs::File::create(path).and_then(|mut f| f.write_all(&self.ram));
             }
         };
     }
@@ -105,7 +105,7 @@ impl MBC for MBC1 {
         } else {
             self.rombank
         };
-        let idx = bank * 0x4000 | ((a as usize) & 0x3FFF);
+        let idx = (bank * 0x4000) | ((a as usize) & 0x3FFF);
         *self.rom.get(idx).unwrap_or(&0xFF)
     }
     fn readram(&self, a: u16) -> u8 {

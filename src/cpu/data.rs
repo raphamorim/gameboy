@@ -58,7 +58,7 @@ pub fn alu_add16imm(cpu: &mut Cpu) -> u16 {
     cpu.registers.flag(Z, false);
     cpu.registers.flag(H, (a & 0x000F) + (b & 0x000F) > 0x000F);
     cpu.registers.flag(C, (a & 0x00FF) + (b & 0x00FF) > 0x00FF);
-    return a.wrapping_add(b);
+    a.wrapping_add(b)
 }
 
 pub fn alu_or(cpu: &mut Cpu, b: u8) {

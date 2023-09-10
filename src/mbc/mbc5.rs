@@ -37,8 +37,8 @@ impl MBC5 {
             rambank: 0,
             ram_on: false,
             savepath: svpath,
-            rombanks: rombanks,
-            rambanks: rambanks,
+            rombanks,
+            rambanks,
         };
         res.loadram().map(|_| res)
     }
@@ -48,7 +48,7 @@ impl MBC5 {
             None => Ok(()),
             Some(ref savepath) => {
                 let mut data = vec![];
-                match File::open(&savepath).and_then(|mut f| f.read_to_end(&mut data)) {
+                match File::open(savepath).and_then(|mut f| f.read_to_end(&mut data)) {
                     Err(ref e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
                     Err(_) => Err("Could not read RAM"),
                     Ok(..) => {
@@ -66,7 +66,7 @@ impl Drop for MBC5 {
         match self.savepath {
             None => {}
             Some(ref path) => {
-                let _ = File::create(path).and_then(|mut f| f.write_all(&*self.ram));
+                let _ = File::create(path).and_then(|mut f| f.write_all(&self.ram));
             }
         };
     }
@@ -77,7 +77,7 @@ impl MBC for MBC5 {
         let idx = if a < 0x4000 {
             a as usize
         } else {
-            self.rombank * 0x4000 | ((a as usize) & 0x3FFF)
+            (self.rombank * 0x4000) | ((a as usize) & 0x3FFF)
         };
         *self.rom.get(idx).unwrap_or(&0)
     }
@@ -85,7 +85,7 @@ impl MBC for MBC5 {
         if !self.ram_on {
             return 0;
         }
-        self.ram[self.rambank * 0x2000 | ((a as usize) & 0x1FFF)]
+        self.ram[(self.rambank * 0x2000) | ((a as usize) & 0x1FFF)]
     }
     fn writerom(&mut self, a: u16, v: u8) {
         match a {
@@ -103,9 +103,9 @@ impl MBC for MBC5 {
         }
     }
     fn writeram(&mut self, a: u16, v: u8) {
-        if self.ram_on == false {
+        if !self.ram_on {
             return;
         }
-        self.ram[self.rambank * 0x2000 | ((a as usize) & 0x1FFF)] = v;
+        self.ram[(self.rambank * 0x2000) | ((a as usize) & 0x1FFF)] = v;
     }
 }

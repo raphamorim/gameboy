@@ -46,7 +46,7 @@ impl Rtc {
             }
             self.readylatch = false;
         } else {
-            self.readylatch = if value == 0 { true } else { false };
+            self.readylatch = value == 0;
         }
     }
 

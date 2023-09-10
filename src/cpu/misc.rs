@@ -49,28 +49,28 @@ fn alu_rlc(cpu: &mut Cpu, a: u8) -> u8 {
     let c = a & 0x80 == 0x80;
     let r = (a << 1) | (if c { 1 } else { 0 });
     alu_srflagupdate(cpu, r, c);
-    return r;
+    r
 }
 
 fn alu_rl(cpu: &mut Cpu, a: u8) -> u8 {
     let c = a & 0x80 == 0x80;
     let r = (a << 1) | (if cpu.registers.getflag(C) { 1 } else { 0 });
     alu_srflagupdate(cpu, r, c);
-    return r;
+    r
 }
 
 fn alu_rrc(cpu: &mut Cpu, a: u8) -> u8 {
     let c = a & 0x01 == 0x01;
     let r = (a >> 1) | (if c { 0x80 } else { 0 });
     alu_srflagupdate(cpu, r, c);
-    return r;
+    r
 }
 
 fn alu_rr(cpu: &mut Cpu, a: u8) -> u8 {
     let c = a & 0x01 == 0x01;
     let r = (a >> 1) | (if cpu.registers.getflag(C) { 0x80 } else { 0 });
     alu_srflagupdate(cpu, r, c);
-    return r;
+    r
 }
 
 fn alu_swap(cpu: &mut Cpu, a: u8) -> u8 {
@@ -85,21 +85,21 @@ fn alu_sla(cpu: &mut Cpu, a: u8) -> u8 {
     let c = a & 0x80 == 0x80;
     let r = a << 1;
     alu_srflagupdate(cpu, r, c);
-    return r;
+    r
 }
 
 fn alu_sra(cpu: &mut Cpu, a: u8) -> u8 {
     let c = a & 0x01 == 0x01;
     let r = (a >> 1) | (a & 0x80);
     alu_srflagupdate(cpu, r, c);
-    return r;
+    r
 }
 
 fn alu_srl(cpu: &mut Cpu, a: u8) -> u8 {
     let c = a & 0x01 == 0x01;
     let r = a >> 1;
     alu_srflagupdate(cpu, r, c);
-    return r;
+    r
 }
 
 pub fn cbmap(cpu: &mut Cpu) -> u32 {
@@ -474,27 +474,27 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
         126 => bit_m(cpu, 7),
         127 => bit(cpu, cpu.registers.a, 7),
         0x80 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 0);
+            cpu.registers.b &= !(1 << 0);
             2
         }
         0x81 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 0);
+            cpu.registers.c &= !(1 << 0);
             2
         }
         0x82 => {
-            cpu.registers.d = cpu.registers.d & !(1 << 0);
+            cpu.registers.d &= !(1 << 0);
             2
         }
         0x83 => {
-            cpu.registers.e = cpu.registers.e & !(1 << 0);
+            cpu.registers.e &= !(1 << 0);
             2
         }
         0x84 => {
-            cpu.registers.h = cpu.registers.h & !(1 << 0);
+            cpu.registers.h &= !(1 << 0);
             2
         }
         0x85 => {
-            cpu.registers.l = cpu.registers.l & !(1 << 0);
+            cpu.registers.l &= !(1 << 0);
             2
         }
         0x86 => {
@@ -504,31 +504,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0x87 => {
-            cpu.registers.a = cpu.registers.a & !(1 << 0);
+            cpu.registers.a &= !(1 << 0);
             2
         }
         0x88 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 1);
+            cpu.registers.b &= !(1 << 1);
             2
         }
         0x89 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 1);
+            cpu.registers.c &= !(1 << 1);
             2
         }
         0x8A => {
-            cpu.registers.d = cpu.registers.d & !(1 << 1);
+            cpu.registers.d &= !(1 << 1);
             2
         }
         0x8B => {
-            cpu.registers.e = cpu.registers.e & !(1 << 1);
+            cpu.registers.e &= !(1 << 1);
             2
         }
         0x8C => {
-            cpu.registers.h = cpu.registers.h & !(1 << 1);
+            cpu.registers.h &= !(1 << 1);
             2
         }
         0x8D => {
-            cpu.registers.l = cpu.registers.l & !(1 << 1);
+            cpu.registers.l &= !(1 << 1);
             2
         }
         0x8E => {
@@ -538,31 +538,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0x8F => {
-            cpu.registers.a = cpu.registers.a & !(1 << 1);
+            cpu.registers.a &= !(1 << 1);
             2
         }
         0x90 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 2);
+            cpu.registers.b &= !(1 << 2);
             2
         }
         0x91 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 2);
+            cpu.registers.c &= !(1 << 2);
             2
         }
         0x92 => {
-            cpu.registers.d = cpu.registers.d & !(1 << 2);
+            cpu.registers.d &= !(1 << 2);
             2
         }
         0x93 => {
-            cpu.registers.e = cpu.registers.e & !(1 << 2);
+            cpu.registers.e &= !(1 << 2);
             2
         }
         0x94 => {
-            cpu.registers.h = cpu.registers.h & !(1 << 2);
+            cpu.registers.h &= !(1 << 2);
             2
         }
         0x95 => {
-            cpu.registers.l = cpu.registers.l & !(1 << 2);
+            cpu.registers.l &= !(1 << 2);
             2
         }
         0x96 => {
@@ -572,31 +572,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0x97 => {
-            cpu.registers.a = cpu.registers.a & !(1 << 2);
+            cpu.registers.a &= !(1 << 2);
             2
         }
         0x98 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 3);
+            cpu.registers.b &= !(1 << 3);
             2
         }
         0x99 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 3);
+            cpu.registers.c &= !(1 << 3);
             2
         }
         0x9A => {
-            cpu.registers.d = cpu.registers.d & !(1 << 3);
+            cpu.registers.d &= !(1 << 3);
             2
         }
         0x9B => {
-            cpu.registers.e = cpu.registers.e & !(1 << 3);
+            cpu.registers.e &= !(1 << 3);
             2
         }
         0x9C => {
-            cpu.registers.h = cpu.registers.h & !(1 << 3);
+            cpu.registers.h &= !(1 << 3);
             2
         }
         0x9D => {
-            cpu.registers.l = cpu.registers.l & !(1 << 3);
+            cpu.registers.l &= !(1 << 3);
             2
         }
         0x9E => {
@@ -606,31 +606,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0x9F => {
-            cpu.registers.a = cpu.registers.a & !(1 << 3);
+            cpu.registers.a &= !(1 << 3);
             2
         }
         0xA0 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 4);
+            cpu.registers.b &= !(1 << 4);
             2
         }
         0xA1 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 4);
+            cpu.registers.c &= !(1 << 4);
             2
         }
         0xA2 => {
-            cpu.registers.d = cpu.registers.d & !(1 << 4);
+            cpu.registers.d &= !(1 << 4);
             2
         }
         0xA3 => {
-            cpu.registers.e = cpu.registers.e & !(1 << 4);
+            cpu.registers.e &= !(1 << 4);
             2
         }
         0xA4 => {
-            cpu.registers.h = cpu.registers.h & !(1 << 4);
+            cpu.registers.h &= !(1 << 4);
             2
         }
         0xA5 => {
-            cpu.registers.l = cpu.registers.l & !(1 << 4);
+            cpu.registers.l &= !(1 << 4);
             2
         }
         0xA6 => {
@@ -640,31 +640,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xA7 => {
-            cpu.registers.a = cpu.registers.a & !(1 << 4);
+            cpu.registers.a &= !(1 << 4);
             2
         }
         0xA8 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 5);
+            cpu.registers.b &= !(1 << 5);
             2
         }
         0xA9 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 5);
+            cpu.registers.c &= !(1 << 5);
             2
         }
         0xAA => {
-            cpu.registers.d = cpu.registers.d & !(1 << 5);
+            cpu.registers.d &= !(1 << 5);
             2
         }
         0xAB => {
-            cpu.registers.e = cpu.registers.e & !(1 << 5);
+            cpu.registers.e &= !(1 << 5);
             2
         }
         0xAC => {
-            cpu.registers.h = cpu.registers.h & !(1 << 5);
+            cpu.registers.h &= !(1 << 5);
             2
         }
         0xAD => {
-            cpu.registers.l = cpu.registers.l & !(1 << 5);
+            cpu.registers.l &= !(1 << 5);
             2
         }
         0xAE => {
@@ -674,31 +674,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xAF => {
-            cpu.registers.a = cpu.registers.a & !(1 << 5);
+            cpu.registers.a &= !(1 << 5);
             2
         }
         0xB0 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 6);
+            cpu.registers.b &= !(1 << 6);
             2
         }
         0xB1 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 6);
+            cpu.registers.c &= !(1 << 6);
             2
         }
         0xB2 => {
-            cpu.registers.d = cpu.registers.d & !(1 << 6);
+            cpu.registers.d &= !(1 << 6);
             2
         }
         0xB3 => {
-            cpu.registers.e = cpu.registers.e & !(1 << 6);
+            cpu.registers.e &= !(1 << 6);
             2
         }
         0xB4 => {
-            cpu.registers.h = cpu.registers.h & !(1 << 6);
+            cpu.registers.h &= !(1 << 6);
             2
         }
         0xB5 => {
-            cpu.registers.l = cpu.registers.l & !(1 << 6);
+            cpu.registers.l &= !(1 << 6);
             2
         }
         0xB6 => {
@@ -708,31 +708,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xB7 => {
-            cpu.registers.a = cpu.registers.a & !(1 << 6);
+            cpu.registers.a &= !(1 << 6);
             2
         }
         0xB8 => {
-            cpu.registers.b = cpu.registers.b & !(1 << 7);
+            cpu.registers.b &= !(1 << 7);
             2
         }
         0xB9 => {
-            cpu.registers.c = cpu.registers.c & !(1 << 7);
+            cpu.registers.c &= !(1 << 7);
             2
         }
         0xBA => {
-            cpu.registers.d = cpu.registers.d & !(1 << 7);
+            cpu.registers.d &= !(1 << 7);
             2
         }
         0xBB => {
-            cpu.registers.e = cpu.registers.e & !(1 << 7);
+            cpu.registers.e &= !(1 << 7);
             2
         }
         0xBC => {
-            cpu.registers.h = cpu.registers.h & !(1 << 7);
+            cpu.registers.h &= !(1 << 7);
             2
         }
         0xBD => {
-            cpu.registers.l = cpu.registers.l & !(1 << 7);
+            cpu.registers.l &= !(1 << 7);
             2
         }
         0xBE => {
@@ -742,31 +742,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xBF => {
-            cpu.registers.a = cpu.registers.a & !(1 << 7);
+            cpu.registers.a &= !(1 << 7);
             2
         }
         0xC0 => {
-            cpu.registers.b = cpu.registers.b | (1 << 0);
+            cpu.registers.b |= 1 << 0;
             2
         }
         0xC1 => {
-            cpu.registers.c = cpu.registers.c | (1 << 0);
+            cpu.registers.c |= 1 << 0;
             2
         }
         0xC2 => {
-            cpu.registers.d = cpu.registers.d | (1 << 0);
+            cpu.registers.d |= 1 << 0;
             2
         }
         0xC3 => {
-            cpu.registers.e = cpu.registers.e | (1 << 0);
+            cpu.registers.e |= 1 << 0;
             2
         }
         0xC4 => {
-            cpu.registers.h = cpu.registers.h | (1 << 0);
+            cpu.registers.h |= 1 << 0;
             2
         }
         0xC5 => {
-            cpu.registers.l = cpu.registers.l | (1 << 0);
+            cpu.registers.l |= 1 << 0;
             2
         }
         0xC6 => {
@@ -776,31 +776,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xC7 => {
-            cpu.registers.a = cpu.registers.a | (1 << 0);
+            cpu.registers.a |= 1 << 0;
             2
         }
         0xC8 => {
-            cpu.registers.b = cpu.registers.b | (1 << 1);
+            cpu.registers.b |= 1 << 1;
             2
         }
         0xC9 => {
-            cpu.registers.c = cpu.registers.c | (1 << 1);
+            cpu.registers.c |= 1 << 1;
             2
         }
         0xCA => {
-            cpu.registers.d = cpu.registers.d | (1 << 1);
+            cpu.registers.d |= 1 << 1;
             2
         }
         0xCB => {
-            cpu.registers.e = cpu.registers.e | (1 << 1);
+            cpu.registers.e |= 1 << 1;
             2
         }
         0xCC => {
-            cpu.registers.h = cpu.registers.h | (1 << 1);
+            cpu.registers.h |= 1 << 1;
             2
         }
         0xCD => {
-            cpu.registers.l = cpu.registers.l | (1 << 1);
+            cpu.registers.l |= 1 << 1;
             2
         }
         0xCE => {
@@ -810,31 +810,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xCF => {
-            cpu.registers.a = cpu.registers.a | (1 << 1);
+            cpu.registers.a |= 1 << 1;
             2
         }
         0xD0 => {
-            cpu.registers.b = cpu.registers.b | (1 << 2);
+            cpu.registers.b |= 1 << 2;
             2
         }
         0xD1 => {
-            cpu.registers.c = cpu.registers.c | (1 << 2);
+            cpu.registers.c |= 1 << 2;
             2
         }
         0xD2 => {
-            cpu.registers.d = cpu.registers.d | (1 << 2);
+            cpu.registers.d |= 1 << 2;
             2
         }
         0xD3 => {
-            cpu.registers.e = cpu.registers.e | (1 << 2);
+            cpu.registers.e |= 1 << 2;
             2
         }
         0xD4 => {
-            cpu.registers.h = cpu.registers.h | (1 << 2);
+            cpu.registers.h |= 1 << 2;
             2
         }
         0xD5 => {
-            cpu.registers.l = cpu.registers.l | (1 << 2);
+            cpu.registers.l |= 1 << 2;
             2
         }
         0xD6 => {
@@ -844,31 +844,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xD7 => {
-            cpu.registers.a = cpu.registers.a | (1 << 2);
+            cpu.registers.a |= 1 << 2;
             2
         }
         0xD8 => {
-            cpu.registers.b = cpu.registers.b | (1 << 3);
+            cpu.registers.b |= 1 << 3;
             2
         }
         0xD9 => {
-            cpu.registers.c = cpu.registers.c | (1 << 3);
+            cpu.registers.c |= 1 << 3;
             2
         }
         0xDA => {
-            cpu.registers.d = cpu.registers.d | (1 << 3);
+            cpu.registers.d |= 1 << 3;
             2
         }
         0xDB => {
-            cpu.registers.e = cpu.registers.e | (1 << 3);
+            cpu.registers.e |= 1 << 3;
             2
         }
         0xDC => {
-            cpu.registers.h = cpu.registers.h | (1 << 3);
+            cpu.registers.h |= 1 << 3;
             2
         }
         0xDD => {
-            cpu.registers.l = cpu.registers.l | (1 << 3);
+            cpu.registers.l |= 1 << 3;
             2
         }
         0xDE => {
@@ -878,31 +878,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xDF => {
-            cpu.registers.a = cpu.registers.a | (1 << 3);
+            cpu.registers.a |= 1 << 3;
             2
         }
         0xE0 => {
-            cpu.registers.b = cpu.registers.b | (1 << 4);
+            cpu.registers.b |= 1 << 4;
             2
         }
         0xE1 => {
-            cpu.registers.c = cpu.registers.c | (1 << 4);
+            cpu.registers.c |= 1 << 4;
             2
         }
         0xE2 => {
-            cpu.registers.d = cpu.registers.d | (1 << 4);
+            cpu.registers.d |= 1 << 4;
             2
         }
         0xE3 => {
-            cpu.registers.e = cpu.registers.e | (1 << 4);
+            cpu.registers.e |= 1 << 4;
             2
         }
         0xE4 => {
-            cpu.registers.h = cpu.registers.h | (1 << 4);
+            cpu.registers.h |= 1 << 4;
             2
         }
         0xE5 => {
-            cpu.registers.l = cpu.registers.l | (1 << 4);
+            cpu.registers.l |= 1 << 4;
             2
         }
         0xE6 => {
@@ -912,31 +912,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xE7 => {
-            cpu.registers.a = cpu.registers.a | (1 << 4);
+            cpu.registers.a |= 1 << 4;
             2
         }
         0xE8 => {
-            cpu.registers.b = cpu.registers.b | (1 << 5);
+            cpu.registers.b |= 1 << 5;
             2
         }
         0xE9 => {
-            cpu.registers.c = cpu.registers.c | (1 << 5);
+            cpu.registers.c |= 1 << 5;
             2
         }
         0xEA => {
-            cpu.registers.d = cpu.registers.d | (1 << 5);
+            cpu.registers.d |= 1 << 5;
             2
         }
         0xEB => {
-            cpu.registers.e = cpu.registers.e | (1 << 5);
+            cpu.registers.e |= 1 << 5;
             2
         }
         0xEC => {
-            cpu.registers.h = cpu.registers.h | (1 << 5);
+            cpu.registers.h |= 1 << 5;
             2
         }
         0xED => {
-            cpu.registers.l = cpu.registers.l | (1 << 5);
+            cpu.registers.l |= 1 << 5;
             2
         }
         0xEE => {
@@ -946,31 +946,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xEF => {
-            cpu.registers.a = cpu.registers.a | (1 << 5);
+            cpu.registers.a |= 1 << 5;
             2
         }
         0xF0 => {
-            cpu.registers.b = cpu.registers.b | (1 << 6);
+            cpu.registers.b |= 1 << 6;
             2
         }
         0xF1 => {
-            cpu.registers.c = cpu.registers.c | (1 << 6);
+            cpu.registers.c |= 1 << 6;
             2
         }
         0xF2 => {
-            cpu.registers.d = cpu.registers.d | (1 << 6);
+            cpu.registers.d |= 1 << 6;
             2
         }
         0xF3 => {
-            cpu.registers.e = cpu.registers.e | (1 << 6);
+            cpu.registers.e |= 1 << 6;
             2
         }
         0xF4 => {
-            cpu.registers.h = cpu.registers.h | (1 << 6);
+            cpu.registers.h |= 1 << 6;
             2
         }
         0xF5 => {
-            cpu.registers.l = cpu.registers.l | (1 << 6);
+            cpu.registers.l |= 1 << 6;
             2
         }
         0xF6 => {
@@ -980,31 +980,31 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xF7 => {
-            cpu.registers.a = cpu.registers.a | (1 << 6);
+            cpu.registers.a |= 1 << 6;
             2
         }
         0xF8 => {
-            cpu.registers.b = cpu.registers.b | (1 << 7);
+            cpu.registers.b |= 1 << 7;
             2
         }
         0xF9 => {
-            cpu.registers.c = cpu.registers.c | (1 << 7);
+            cpu.registers.c |= 1 << 7;
             2
         }
         0xFA => {
-            cpu.registers.d = cpu.registers.d | (1 << 7);
+            cpu.registers.d |= 1 << 7;
             2
         }
         0xFB => {
-            cpu.registers.e = cpu.registers.e | (1 << 7);
+            cpu.registers.e |= 1 << 7;
             2
         }
         0xFC => {
-            cpu.registers.h = cpu.registers.h | (1 << 7);
+            cpu.registers.h |= 1 << 7;
             2
         }
         0xFD => {
-            cpu.registers.l = cpu.registers.l | (1 << 7);
+            cpu.registers.l |= 1 << 7;
             2
         }
         0xFE => {
@@ -1014,7 +1014,7 @@ pub fn cbmap(cpu: &mut Cpu) -> u32 {
             4
         }
         0xFF => {
-            cpu.registers.a = cpu.registers.a | (1 << 7);
+            cpu.registers.a |= 1 << 7;
             2
         }
     }

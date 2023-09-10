@@ -10,8 +10,10 @@ pub struct Gameboy {
 pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(Default)]
 pub enum RenderMode {
     #[cfg(not(target_arch = "wasm32"))]
+    #[default]
     Desktop,
     #[cfg(not(target_arch = "wasm32"))]
     Terminal,
@@ -19,19 +21,7 @@ pub enum RenderMode {
     WebAssembly,
 }
 
-impl Default for RenderMode {
-    fn default() -> RenderMode {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            RenderMode::Desktop
-        }
 
-        #[cfg(target_arch = "wasm32")]
-        {
-            RenderMode::WebAssembly
-        }
-    }
-}
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Target {
@@ -46,7 +36,7 @@ pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String>
     use std::io::Read;
 
     let mut rom = Vec::new();
-    if filepath == "" {
+    if filepath.is_empty() {
         return Err(String::from("Please provide a valid filepath"));
     }
 
@@ -147,7 +137,7 @@ impl<'a> Gameboy {
     pub fn render_terminal(self) {
         // loop {
         // println!("{:?}", self.image());
-        let image = self.image();
+        let _image = self.image();
         // fn intensity_to_ascii(value: &u8) -> &str {
         // changes an intensity into an ascii character
         // this is a central step in creating the ascii art

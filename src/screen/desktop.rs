@@ -117,7 +117,7 @@ pub fn process_window(
 }
 
 // Shader sources
-const VERTEX: &'static str = r"#version 150 core
+const VERTEX: &str = r"#version 150 core
 in vec2 position;
 in vec3 color;
 in vec2 texcoord;
@@ -130,7 +130,7 @@ void main() {
 }
 ";
 
-const FRAGMENT: &'static str = r"#version 150 core
+const FRAGMENT: &str = r"#version 150 core
 in vec3 Color;
 in vec2 Texcoord;
 out vec4 outColor;
@@ -150,7 +150,7 @@ impl Glcx {
             let mut vbo = 0;
             gl::GenBuffers(1, &mut vbo);
 
-            const VERTICES: &'static [f32] = &[
+            const VERTICES: &[f32] = &[
                 //  Position   Color             Texcoords
                 -1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, // Top-left
                 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, // Top-right
@@ -168,26 +168,26 @@ impl Glcx {
             let mut ebo = 0;
             gl::GenBuffers(1, &mut ebo);
 
-            const ELEMENTS: &'static [GLuint] = &[0, 1, 2, 2, 3, 0];
+            const ELEMENTS: &[GLuint] = &[0, 1, 2, 2, 3, 0];
 
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
-                (ELEMENTS.len() * mem::size_of::<GLuint>()) as libc::ssize_t,
+                std::mem::size_of_val(ELEMENTS) as libc::ssize_t,
                 ELEMENTS.as_ptr() as *const _,
                 gl::STATIC_DRAW,
             );
 
             let vert = gl::CreateShader(gl::VERTEX_SHADER);
             let src = CString::new(VERTEX).unwrap();
-            gl::ShaderSource(vert, 1, &src.as_ptr(), 0 as *const i32);
+            gl::ShaderSource(vert, 1, &src.as_ptr(), std::ptr::null::<i32>());
             gl::CompileShader(vert);
             // Glcx::check_shader_compile(&gl, vert);
 
             // Create and compile the fragment shader
             let frag = gl::CreateShader(gl::FRAGMENT_SHADER);
             let src = CString::new(FRAGMENT).unwrap();
-            gl::ShaderSource(frag, 1, &src.as_ptr(), 0 as *const i32);
+            gl::ShaderSource(frag, 1, &src.as_ptr(), std::ptr::null::<i32>());
             gl::CompileShader(frag);
             // TODO: check_shader_compile(frag)
 
@@ -210,7 +210,7 @@ impl Glcx {
                 gl::FLOAT,
                 gl::FALSE,
                 (7 * mem::size_of::<GLfloat>()) as i32,
-                0 as *const _,
+                std::ptr::null(),
             );
 
             let buf = CString::new("color").unwrap();
@@ -260,13 +260,13 @@ impl Glcx {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             Glcx {
-                tex: tex,
-                program: program,
-                frag: frag,
-                vert: vert,
-                ebo: ebo,
-                vbo: vbo,
-                vao: vao,
+                tex,
+                program,
+                frag,
+                vert,
+                ebo,
+                vbo,
+                vao,
             }
         }
     }
@@ -308,7 +308,7 @@ impl Glcx {
             );
             assert_eq!(gl::GetError(), 0);
 
-            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const _);
+            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, std::ptr::null());
         }
     }
 }
