@@ -276,6 +276,7 @@ Link to the repository: https://github.com/retrio/gb-test-roms.git
 
 # ●&nbsp;&nbsp;Resources & References
 
+- The website gameboy CSS built from by [Daniel Snows Gameboy CSS](https://codepen.io/daniel-snows) 🥇
 - http://bgb.bircd.org/pandocs.htm 🥇
 - https://github.com/mvdnes/rboy 🥇
 - https://github.com/alexcrichton/jba/tree/rust 🥇

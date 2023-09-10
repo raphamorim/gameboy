@@ -14,7 +14,7 @@ file.addEventListener('change', function readFile() {
 
 playButton.addEventListener('click', function readFile() {
   if (rom) {
-    playButton.style.visibility = 'hidden';
+    playButton.disabled = true;
     render(rom);
   }
 });

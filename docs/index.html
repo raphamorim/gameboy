@@ -1,63 +1,85 @@
 <html>
   <head>
-    <title>Gameboy</title>
+    <title>Gameboy powered by WebAssembly + Rust</title>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
     <link rel="stylesheet" href="app.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <style type="text/css">
     html, body { height: 100%; overflow: hidden }
     #game {border: 1px solid black; width: 160px; height: 144px; background: black;}
   </style>
   <body>
-    <p>
-      <label for="rom">Select a rom file</label>
-      <input type="file" id="file" />
-    </p>
-    <p>
-      <button id="play" disabled class="btn">Load Game</button>
-    </p>
-    <main class="gameboy">
-      <div class="gameboy-body">  
-      <header></header>
-      <section class="screen">
-        <span></span>
-        <div class="glass" id="game"></div>
-        <!-- <div class="glass"></div> -->
-      </section>
-      <section class="actions">
-       <div class="directions">
-        <button class="arrow-left"></button>
-        <button class="arrow-top"></button>
-        <button class="arrow-right"></button>
-        <button class="arrow-bottom"></button>
+    <div class="theater"></div>
+    <div class="helper">
+        <p>
+          <strong>Directional</strong><br/>
+          Up, Down, Left, Right
+        </p>
+        <p>
+          <strong>A</strong><br/>
+          A
+        </p>
+        <p>
+          <strong>B</strong><br/>
+          S
+        </p>
+        <p>
+          <strong>Select</strong><br/>
+          Z
+        </p>
+        <p>
+          <strong>Start</strong><br/>
+          X
+        </p>
+    </div>
+    <div class="menu">
+      <p>
+        <a href="https://github.com/raphamorim/gameboy">github.com/raphamorim/gameboy</a>
+      </p>
+      <p>
+          <strong><label for="rom">Select a rom file to play</label></strong><br/>
+          <input type="file" id="file" />
+        </p>
+        <p>
+          <strong>Click once you have selected the rom</strong></br>
+          <button id="play" disabled class="btn">Load Game</button>
+        </p>
+    </div>
+    <div class="container">
+      <main class="gameboy">
+        <div class="gameboy-body">  
+        <header></header>
+        <section class="screen">
+          <span></span>
+          <div class="glass" id="game"></div>
+          <!-- <div class="glass"></div> -->
+        </section>
+        <section class="actions">
+         <div class="directions">
+          <button class="arrow-left"></button>
+          <button class="arrow-top"></button>
+          <button class="arrow-right"></button>
+          <button class="arrow-bottom"></button>
+         </div>
+         <div class="buttons">
+          <button class="button-a"></button>
+          <button class="button-b"></button>
+         </div>
+         <ul class="start-reset">
+          <li><button class="start"></button></li>
+          <li><button class="reset"></button></li>
+         </ul>
+         <div class="points">
+          <span>•••••</span><br>
+          <span>•••••••</span><br>
+          <span>•••••</span><br>
+          <span>••••••</span><br>
+          <span>••••</span>
+         </div>
+        </section>
        </div>
-       <div class="buttons">
-        <button class="button-a"></button>
-        <button class="button-b"></button>
-       </div>
-       <ul class="start-reset">
-        <li><button class="start"></button></li>
-        <li><button class="reset"></button></li>
-       </ul>
-       <div class="points">
-        <span>•••••</span><br>
-        <span>•••••••</span><br>
-        <span>•••••</span><br>
-        <span>••••••</span><br>
-        <span>••••</span>
-       </div>
-      </section>
-     </div>
-    </main>
-    <a href="https://github.com/raphamorim/gameboy">Github</a>
-    <a href="https://codepen.io/daniel-snows">Gameboy CSS made by Daniel Snows</a>
-    <p>Buttons</p>
-    <p>
-      Directional: Up, Down, Left, Right<br/>
-      A: A<br/>
-      B: S<br/>
-      Select: Z<br/>
-      Start: X
-    </p>
+      </main>
+    </div>
   </body>
 </html>

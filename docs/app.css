@@ -7,12 +7,12 @@
 /* COLORS */
 :root {
  --pink: #F38BA3;
- --blue: #C5F6FF;
- --stroke: #522438; 
+ --blue: #F38BA3;
+ --stroke: navy; 
  --green: #C2E688;
- --red: #FC6963;
- --light-brow: #846662;
- --gray: #9EA1AF;
+ --red: #8bf3db;
+ --light-brow: #8bf3db;
+ --gray: #8bf3db;
  --fonts-regular:-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 }
 
@@ -32,21 +32,75 @@ box-shadow: inset 0 0 !important;
 }
 
 body {
- background-color: var(--pink);
- background-image: url("/images/noise-light.png");
+ background-color: #F9F4DA;
 }
+.theater {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  background-color: #8bf3db;
+  height: 300px;
+  z-index: 0;
+}
+
+a, button, input {
+  text-decoration: none;
+  font-weight: thin;
+  color: #FFF;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background: #F38BA3;
+  cursor: pointer;
+  text-shadow: none;
+  border: none;
+}
+
+button:disabled,
+button[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+a:hover {
+  color: #F38BA3;
+  background: #F9F4DA;
+}
+
+.container {
+  margin: auto;
+  width: 50%;
+  position: relative;
+  z-index: 1;
+}
+
+.helper {
+  position: absolute;
+  right:0;
+  top:0;
+  text-align: right;
+  padding: 0 30px 0 0;
+}
+
+.menu {
+  position: absolute;
+  left:0;
+  top:0;
+  text-align: left;
+  padding: 0 0 0 30px;
+}
+
 .gameboy {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
 }
 .gameboy-body {
  background-color: var(--blue);
+ background-image: url("/images/noise-light.png");
  width: 320px;
  height: 590px;
  border-radius: 20px 20px 50px;
- border: 6px solid var(--stroke);
+ border: 10px solid var(--stroke);
  box-shadow: inset 10px 0 rgba(255,255,255,0.7), inset -10px 0 rgba(0,0,0,0.2) ;
  position: relative;
 /*  display: flex; */
@@ -132,9 +186,7 @@ border: 6px solid var(--stroke);
 .directions {
 width: 120px;
 height: 120px;
- border-radius: 50%;
- border: 6px solid var(--stroke);
- background-color: var(--gray);
+ border: 6px solid transparent;
  position: relative;
  display: flex;
  float: left;
@@ -188,10 +240,7 @@ height: 120px;
  z-index: 1;
 }
 .buttons {
- border: 6px solid var(--stroke);
- padding: 8px 3px;
- background-color: var(--gray);
- border-radius: 100px;
+ border: 6px solid transparent;
  float: right;
  position: relative;
  transform: rotate(-20deg);
@@ -201,8 +250,8 @@ height: 120px;
  background-color: var(--red);
  border: 6px solid var(--stroke);
  border-radius: 50%;
- width: 40px;
- height: 40px;
+ width: 50px;
+ height: 50px;
  padding: 0;
  box-shadow: inset 4px 0 rgba(255,255,255,0.7), inset -4px 0 rgba(0,0,0,0.2) ;
  margin: 0 5px;
