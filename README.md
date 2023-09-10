@@ -194,9 +194,9 @@ pub const HEIGHT: usize = 144;
 
 [...] TODO: write here more about the GPU.
 
-# Usage examples
+## Usage examples
 
-## Web ~ JavaScript/WASM usage:
+### Web ~ JavaScript/WASM usage:
 
 1. Install lr35902 with Yarn or NPM:
 
@@ -223,7 +223,7 @@ async function loadRom(file) {
 }
 ```
 
-## Desktop ~ Rust usage:
+### Desktop ~ Rust usage:
 
 tl;dr: You can see the destop example in the example folder ([`/examples/desktop`](/examples/desktop))
 
@@ -254,7 +254,7 @@ fn main() {
 }
 ```
 
-# Tests
+## Tests
 
 The tests are based on Blargg's Gameboy hardware test ROMs.
 
@@ -268,7 +268,7 @@ Link to the repository: https://github.com/retrio/gb-test-roms.git
 | ![Bits bank1 test](resources/tests/bits-bank1.png) | Failing |
 | ![GGB Sound test](resources/tests/cgb-sound.png) | Failing |
 
-# Resources & References
+## Resources & References
 
 - The website gameboy CSS built from by [Daniel Snows Gameboy CSS](https://codepen.io/daniel-snows) 🥇
 - http://bgb.bircd.org/pandocs.htm 🥇
