@@ -231,11 +231,11 @@ async function loadRom(file) {
 
 tl;dr: You can see the destop example in the example folder ([`/examples/desktop`](/examples/desktop))
 
-1. Add `lr35902` as dependency and make sure to have `desktop` as feature on:
+1. Add `gameboy` as dependency:
 
 ```toml
 [dependencies]
-gameboy = { version = "0.1.0", features = ["desktop"] }
+gameboy = { version = "0.1.1" }
 ```
 
 2. There you go:
@@ -246,14 +246,11 @@ gameboy = { version = "0.1.0", features = ["desktop"] }
 use gameboy::gameboy::{Gameboy, RenderMode::Desktop};
 
 fn main() {
-    let mut gb = Gameboy::new();
-    match gb.load_rom("./sample-rom.gb") {
-        Ok(..) => {
-            gb.render(Desktop);
-        }
-        Err(err) => {
-            println!("{:?}", err);
-        }
+    if let Ok((data, filepath)) = load_rom("./my-rom.gb") {
+        let gb = Gameboy::new(data, Some(filepath));
+        gb.render(Desktop);
+    } else {
+        panic!("error loading rom");
     }
 }
 ```
@@ -264,7 +261,7 @@ The tests are based on Blargg's Gameboy hardware test ROMs.
 
 Link to the repository: https://github.com/retrio/gb-test-roms.git
 
-| Tests (originally ran in [Openemu](https://openemu.org/)) | LR35902 Status
+| Tests (originally ran in [Openemu](https://openemu.org/)) | Status
 | --- | --- |
 | ![CPU instructions test](resources/tests/cpu-instrs.png) | ✅ |
 | ![Bits Unused test](resources/tests/bits-unused.png) | Failing |
