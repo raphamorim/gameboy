@@ -24,6 +24,7 @@ fn window() -> web_sys::Window {
     web_sys::window().expect("no global `window` exists")
 }
 
+#[allow(unused)]
 fn add_event_listener(listener: &str, f: &Closure<dyn FnMut(web_sys::KeyboardEvent)>) {
     window()
         .add_event_listener_with_callback(listener, f.as_ref().unchecked_ref())

@@ -17,6 +17,7 @@ pub enum RenderMode {
     #[cfg(not(target_arch = "wasm32"))]
     Terminal,
     #[cfg(target_arch = "wasm32")]
+    #[default]
     WebAssembly,
 }
 

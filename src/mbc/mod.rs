@@ -41,7 +41,7 @@ pub fn get_mbc(
     filepath: Option<path::PathBuf>,
 ) -> StrResult<Box<dyn MBC + 'static>> {
     if filepath.is_none() {
-        return mbc1::MBC1::new_without_save(data).map(|v| Box::new(v) as Box<dyn MBC>);
+        return mbc3::MBC3::new_without_save(data).map(|v| Box::new(v) as Box<dyn MBC>);
     }
 
     let file = filepath.unwrap();
@@ -81,6 +81,7 @@ fn rom_banks(v: u8) -> usize {
     }
 }
 
+#[allow(dead_code)]
 fn check_checksum(data: &[u8]) -> StrResult<()> {
     let mut value: u8 = 0;
     for i in 0x134..0x14D {

@@ -15,12 +15,19 @@ use gl::types::*;
 use glutin::event::{ElementState, VirtualKeyCode};
 
 pub struct Glcx {
+    #[allow(unused)]
     tex: GLuint,
+    #[allow(unused)]
     program: GLuint,
+    #[allow(unused)]
     frag: GLuint,
+    #[allow(unused)]
     vert: GLuint,
+    #[allow(unused)]
     ebo: GLuint,
+    #[allow(unused)]
     vbo: GLuint,
+    #[allow(unused)]
     vao: GLuint,
 }
 
@@ -271,6 +278,7 @@ impl Glcx {
         }
     }
 
+    #[allow(dead_code)]
     unsafe fn check_program_link(_gl: &Glcx, program: GLuint) {
         let mut status = gl::FALSE as GLint;
         gl::GetProgramiv(program, gl::LINK_STATUS, &mut status);

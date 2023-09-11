@@ -40,6 +40,7 @@ impl MBC1 {
         res.loadram().map(|_| res)
     }
 
+    #[allow(dead_code)]
     pub fn new_without_save(data: Vec<u8>) -> StrResult<MBC1> {
         let (svpath, rambanks) = match data[0x147] {
             0x02 => (None, ram_banks(data[0x149])),

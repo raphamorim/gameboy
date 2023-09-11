@@ -52,6 +52,38 @@ impl MBC3 {
         res.loadram().map(|_| res)
     }
 
+    pub fn new_without_save(data: Vec<u8>) -> StrResult<MBC3> {
+        let subtype = data[0x147];
+        let svpath = match subtype {
+            // 0x0F | 0x10 | 0x13 => Some(file.with_extension("gbsave")),
+            _ => None,
+        };
+        let rambanks = match subtype {
+            0x10 | 0x12 | 0x13 => ram_banks(data[0x149]),
+            _ => 0,
+        };
+        let ramsize = rambanks * 0x2000;
+        let rtc = match subtype {
+            0x0F | 0x10 => Some(0),
+            _ => None,
+        };
+
+        let mut res = MBC3 {
+            rom: data,
+            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            rombank: 1,
+            rambank: 0,
+            rambanks,
+            selectrtc: false,
+            ram_on: false,
+            savepath: svpath,
+            rtc_ram: [0u8; 5],
+            rtc_ram_latch: [0u8; 5],
+            rtc_zero: rtc,
+        };
+        res.loadram().map(|_| res)
+    }
+
     fn loadram(&mut self) -> StrResult<()> {
         match self.savepath {
             None => Ok(()),
