@@ -1,4 +1,4 @@
-use crate::cpu::cpu::Cpu;
+use crate::cpu::core::Cpu;
 use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 
 pub fn r_hlm_b(cpu: &mut Cpu) {

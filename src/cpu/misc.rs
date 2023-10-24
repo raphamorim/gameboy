@@ -1,4 +1,4 @@
-use crate::cpu::cpu::Cpu;
+use crate::cpu::core::Cpu;
 use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 
 pub fn bit(cpu: &mut Cpu, a: u8, b: u8) -> u32 {

@@ -8,7 +8,7 @@ mod mbc2;
 mod mbc3;
 mod mbc5;
 
-pub trait MBC: Send {
+pub trait MemoryBankController: Send {
     fn readrom(&self, a: u16) -> u8;
     fn readram(&self, a: u16) -> u8;
     fn writerom(&mut self, a: u16, v: u8);
@@ -39,19 +39,26 @@ pub trait MBC: Send {
 pub fn get_mbc(
     data: Vec<u8>,
     filepath: Option<path::PathBuf>,
-) -> StrResult<Box<dyn MBC + 'static>> {
+) -> StrResult<Box<dyn MemoryBankController + 'static>> {
     if filepath.is_none() {
-        return mbc3::MBC3::new_without_save(data).map(|v| Box::new(v) as Box<dyn MBC>);
+        return mbc3::MBC3::new_without_save(data)
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>);
     }
 
     let file = filepath.unwrap();
 
     match data[0x147] {
-        0x00 => mbc0::MBC0::new(data).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x01..=0x03 => mbc1::MBC1::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x05..=0x06 => mbc2::MBC2::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x0F..=0x13 => mbc3::MBC3::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x19..=0x1E => mbc5::MBC5::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
+        0x00 => {
+            mbc0::MBC0::new(data).map(|v| Box::new(v) as Box<dyn MemoryBankController>)
+        }
+        0x01..=0x03 => mbc1::MBC1::new(data, file)
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
+        0x05..=0x06 => mbc2::MBC2::new(data, file)
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
+        0x0F..=0x13 => mbc3::MBC3::new(data, file)
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
+        0x19..=0x1E => mbc5::MBC5::new(data, file)
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
         _ => Err("Unsupported MBC type"),
     }
 }
@@ -84,8 +91,8 @@ fn rom_banks(v: u8) -> usize {
 #[allow(dead_code)]
 fn check_checksum(data: &[u8]) -> StrResult<()> {
     let mut value: u8 = 0;
-    for i in 0x134..0x14D {
-        value = value.wrapping_sub(data[i]).wrapping_sub(1);
+    for item in data.iter().take(0x14D).skip(0x134) {
+        value = value.wrapping_sub(*item).wrapping_sub(1);
     }
     match data[0x14D] == value {
         true => Ok(()),

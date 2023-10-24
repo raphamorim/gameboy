@@ -1,6 +1,6 @@
 use crate::cpu::registers::Registers;
 use crate::cpu::{data, ld, misc, stack};
-use crate::mmu::mmu::MMU;
+use crate::mmu::MemoryManagementUnit;
 
 #[allow(dead_code)]
 pub enum Interrupt {
@@ -18,7 +18,7 @@ pub struct Cpu<'a> {
     pub setei: u32,
     pub halt: u32,
     pub stop: u32,
-    pub memory: MMU<'a>,
+    pub memory: MemoryManagementUnit<'a>,
 
     // To debug
     _executed_operations: Vec<u8>,
@@ -26,7 +26,7 @@ pub struct Cpu<'a> {
 
 impl Cpu<'_> {
     pub fn new(data: Vec<u8>, file: Option<std::path::PathBuf>) -> Self {
-        let memory = MMU::new_cgb(data, file).unwrap();
+        let memory = MemoryManagementUnit::new_cgb(data, file).unwrap();
         let registers = Registers::new(memory.gbmode);
 
         Cpu {

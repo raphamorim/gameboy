@@ -1,5 +1,5 @@
 pub type StrResult<T> = Result<T, &'static str>;
-use crate::mbc::MBC;
+use crate::mbc::MemoryBankController;
 
 pub struct MBC0 {
     rom: Vec<u8>,
@@ -11,7 +11,7 @@ impl MBC0 {
     }
 }
 
-impl MBC for MBC0 {
+impl MemoryBankController for MBC0 {
     fn readrom(&self, a: u16) -> u8 {
         self.rom[a as usize]
     }

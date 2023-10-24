@@ -17,8 +17,8 @@ pub enum KeypadKey {
     Start,
 }
 
-impl Keypad {
-    pub fn new() -> Keypad {
+impl Default for Keypad {
+    fn default() -> Self {
         Keypad {
             row0: 0x0F,
             row1: 0x0F,
@@ -26,7 +26,9 @@ impl Keypad {
             interrupt: 0,
         }
     }
+}
 
+impl Keypad {
     pub fn rb(&self) -> u8 {
         self.data
     }
@@ -89,7 +91,7 @@ mod test {
 
     #[test]
     fn keys_buttons() {
-        let mut keypad = super::Keypad::new();
+        let mut keypad = super::Keypad::default();
         let keys0: [KeypadKey; 4] = [
             KeypadKey::A,
             KeypadKey::B,
@@ -97,7 +99,7 @@ mod test {
             KeypadKey::Start,
         ];
 
-        for i in 0..keys0.len() {
+        for (i, _keys) in keys0.iter().enumerate() {
             keypad.keydown(keys0[i]);
 
             keypad.wb(0x00);
@@ -118,7 +120,7 @@ mod test {
 
     #[test]
     fn keys_direction() {
-        let mut keypad = super::Keypad::new();
+        let mut keypad = super::Keypad::default();
         let keys1: [KeypadKey; 4] = [
             KeypadKey::Right,
             KeypadKey::Left,
@@ -126,7 +128,7 @@ mod test {
             KeypadKey::Down,
         ];
 
-        for i in 0..keys1.len() {
+        for (i, _keys) in keys1.iter().enumerate() {
             keypad.keydown(keys1[i]);
 
             keypad.wb(0x00);

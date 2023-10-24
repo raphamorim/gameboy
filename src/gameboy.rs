@@ -1,4 +1,4 @@
-use crate::cpu::cpu::Cpu;
+use crate::cpu::core::Cpu;
 use crate::input::KeypadKey;
 
 pub struct Gameboy {
@@ -50,7 +50,7 @@ pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String>
 
 pub const CYCLES: u32 = 70224;
 
-impl<'a> Gameboy {
+impl Gameboy {
     pub fn new(data: Vec<u8>, filepath: Option<std::path::PathBuf>) -> Gameboy {
         // let rom = load_rom();
 

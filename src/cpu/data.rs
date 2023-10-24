@@ -1,4 +1,4 @@
-use crate::cpu::cpu::Cpu;
+use crate::cpu::core::Cpu;
 use crate::cpu::registers::CpuFlag::{C, H, N, Z};
 
 fn alu_sub(cpu: &mut Cpu, b: u8, usec: bool) {
@@ -538,6 +538,7 @@ pub fn orr_l(cpu: &mut Cpu) {
     cpu.registers.a = r;
 }
 pub fn orr_a(cpu: &mut Cpu) {
+    #[allow(clippy::eq_op)]
     let r = cpu.registers.a | cpu.registers.a;
     cpu.registers.flag(Z, r == 0);
     cpu.registers.flag(C, false);
@@ -613,6 +614,7 @@ pub fn xorr_l(cpu: &mut Cpu) {
     cpu.registers.a = r;
 }
 pub fn xorr_a(cpu: &mut Cpu) {
+    #[allow(clippy::eq_op)]
     let r = cpu.registers.a ^ cpu.registers.a;
     cpu.registers.flag(Z, r == 0);
     cpu.registers.flag(C, false);

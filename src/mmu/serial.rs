@@ -27,12 +27,9 @@ impl<'a> Serial<'a> {
             0xFF02 => {
                 self.control = v;
                 if v & 0x81 == 0x81 {
-                    match (self.callback)(self.data) {
-                        Some(v) => {
-                            self.data = v;
-                            self.interrupt = 0x8
-                        }
-                        None => {}
+                    if let Some(v) = (self.callback)(self.data) {
+                        self.data = v;
+                        self.interrupt = 0x8
                     }
                 }
             }
@@ -57,8 +54,8 @@ impl<'a> Serial<'a> {
     }
 }
 
-impl Serial<'static> {
-    pub fn new() -> Serial<'static> {
+impl Default for Serial<'static> {
+    fn default() -> Serial<'static> {
         Serial {
             data: 0,
             control: 0,

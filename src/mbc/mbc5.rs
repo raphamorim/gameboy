@@ -1,4 +1,4 @@
-use crate::mbc::{ram_banks, rom_banks, MBC};
+use crate::mbc::{ram_banks, rom_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 use std::fs::File;
@@ -72,7 +72,7 @@ impl Drop for MBC5 {
     }
 }
 
-impl MBC for MBC5 {
+impl MemoryBankController for MBC5 {
     fn readrom(&self, a: u16) -> u8 {
         let idx = if a < 0x4000 {
             a as usize

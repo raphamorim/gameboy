@@ -9,8 +9,8 @@ pub struct Timer {
     pub interrupt: u8,
 }
 
-impl Timer {
-    pub fn new() -> Timer {
+impl Default for Timer {
+    fn default() -> Self {
         Timer {
             divider: 0,
             counter: 0,
@@ -22,7 +22,9 @@ impl Timer {
             interrupt: 0,
         }
     }
+}
 
+impl Timer {
     pub fn rb(&self, a: u16) -> u8 {
         match a {
             0xFF04 => self.divider,

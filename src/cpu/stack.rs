@@ -1,4 +1,4 @@
-use crate::cpu::cpu::Cpu;
+use crate::cpu::core::Cpu;
 use crate::cpu::registers::CpuFlag::{C, Z};
 
 pub fn pushstack(cpu: &mut Cpu, value: u16) {

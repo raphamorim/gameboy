@@ -1,4 +1,4 @@
-pub mod cpu;
+pub mod core;
 mod registers;
 
 mod data;

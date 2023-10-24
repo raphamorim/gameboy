@@ -1,4 +1,4 @@
-use crate::mbc::{ram_banks, MBC};
+use crate::mbc::{ram_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 use std::io::prelude::*;
@@ -54,10 +54,8 @@ impl MBC3 {
 
     pub fn new_without_save(data: Vec<u8>) -> StrResult<MBC3> {
         let subtype = data[0x147];
-        let svpath = match subtype {
-            // 0x0F | 0x10 | 0x13 => Some(file.with_extension("gbsave")),
-            _ => None,
-        };
+        let svpath = None;
+
         let rambanks = match subtype {
             0x10 | 0x12 | 0x13 => ram_banks(data[0x149]),
             _ => 0,
@@ -194,7 +192,7 @@ impl Drop for MBC3 {
     }
 }
 
-impl MBC for MBC3 {
+impl MemoryBankController for MBC3 {
     fn readrom(&self, a: u16) -> u8 {
         let idx = if a < 0x4000 {
             a as usize

@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::{fs, io, path};
 
-use crate::mbc::{ram_banks, rom_banks, MBC};
+use crate::mbc::{ram_banks, rom_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 pub struct MBC1 {
@@ -95,7 +95,7 @@ impl Drop for MBC1 {
     }
 }
 
-impl MBC for MBC1 {
+impl MemoryBankController for MBC1 {
     fn readrom(&self, a: u16) -> u8 {
         let bank = if a < 0x4000 {
             if self.banking_mode == 0 {

@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::{fs, io, path};
 
-use crate::mbc::{rom_banks, MBC};
+use crate::mbc::{rom_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 pub struct MBC2 {
@@ -63,7 +63,7 @@ impl Drop for MBC2 {
     }
 }
 
-impl MBC for MBC2 {
+impl MemoryBankController for MBC2 {
     fn readrom(&self, a: u16) -> u8 {
         let bank = if a < 0x4000 { 0 } else { self.rombank };
         let idx = (bank * 0x4000) | ((a as usize) & 0x3FFF);
@@ -77,18 +77,15 @@ impl MBC for MBC2 {
     }
 
     fn writerom(&mut self, a: u16, v: u8) {
-        match a {
-            0x0000..=0x3FFF => {
-                if a & 0x100 == 0 {
-                    self.ram_on = v & 0xF == 0xA;
-                } else {
-                    self.rombank = match (v as usize) & 0x0F {
-                        0 => 1,
-                        n => n,
-                    } % self.rombanks;
-                }
+        if let 0x0000..=0x3FFF = a {
+            if a & 0x100 == 0 {
+                self.ram_on = v & 0xF == 0xA;
+            } else {
+                self.rombank = match (v as usize) & 0x0F {
+                    0 => 1,
+                    n => n,
+                } % self.rombanks;
             }
-            _ => {}
         }
     }
 
