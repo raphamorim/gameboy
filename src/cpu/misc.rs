@@ -78,7 +78,8 @@ fn alu_swap(cpu: &mut Cpu, a: u8) -> u8 {
     cpu.registers.flag(C, false);
     cpu.registers.flag(H, false);
     cpu.registers.flag(N, false);
-    (a >> 4) | (a << 4)
+    a.rotate_left(4)
+    // (a >> 4) | (a << 4)
 }
 
 fn alu_sla(cpu: &mut Cpu, a: u8) -> u8 {
