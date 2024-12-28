@@ -120,35 +120,34 @@ fn size() -> Rect {
     Rect::new(0, 0, 30, 16)
 }
 
-fn get_image(gameboy: &mut Gameboy) -> image::RgbImage {
-    let mut img: image::RgbImage = image::ImageBuffer::new(gameboy.width, gameboy.height);
-    let gameboy_image = gameboy.image();
+fn get_image(gameboy: &mut Gameboy) -> image::DynamicImage {
+    // let harvest_moon = "/Users/rapha/harvest-moon.png";
+    // image::io::Reader::open(harvest_moon).unwrap().decode().unwrap()
 
-    let mut counter = 0;
-    for pixel in img.pixels_mut() {
-        counter += 3;
-        *pixel = image::Rgb([
-            gameboy_image[counter],
-            gameboy_image[counter + 1],
-            gameboy_image[counter + 2],
-        ]);
+    let width = gameboy.width;
+    let height = gameboy.height;
+
+    // Get the raw image data as a vector
+    let input: &Vec<u8> = &gameboy.image().to_vec();
+
+    // Allocate a new buffer for the RGB image, 3 bytes per pixel
+    let mut output_data = vec![0u8; width as usize * height as usize * 3];
+
+    let mut i = 0;
+    // Iterate through 4-byte chunks of the image data (RGBA bytes)
+    for chunk in input.chunks(4) {
+        // ... and copy each of them to output, leaving out the A byte
+        output_data[i..i + 3].copy_from_slice(&chunk[0..3]);
+        i += 3;
     }
 
-    img
+    let buffer = image::ImageBuffer::from_raw(width, height, output_data).unwrap();
+    image::DynamicImage::ImageRgb8(buffer)
 }
 
 impl App {
     pub fn new<B: Backend>(_: &mut Terminal<B>, gameboy: &mut Gameboy) -> Self {
-        // let img = image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(
-        //     gameboy.width,
-        //     gameboy.height,
-        //     gameboy.image().to_owned(),
-        // )
-        // .unwrap();
-        let image_source = image::DynamicImage::ImageRgb8(get_image(gameboy));
-
-        // let harvest_moon = "/Users/rapha/harvest-moon.png";
-        // let image_source = image::io::Reader::open(harvest_moon).unwrap().decode().unwrap();
+        let image_source = get_image(gameboy);
 
         let mut picker = Picker::from_query_stdio().unwrap();
         picker.set_background_color([0, 0, 0, 0]);
@@ -221,8 +220,12 @@ impl App {
 
     #[inline]
     pub fn on_tick(&mut self, gameboy: &mut Gameboy) {
-        self.reset_images();
-        self.image_source = image::DynamicImage::ImageRgb8(get_image(gameboy));
+        self.image_source = get_image(gameboy);
+        self.image_static = self
+            .picker
+            .new_protocol(self.image_source.clone(), size(), Resize::Fit(None))
+            .unwrap();
+        self.image_fit_state = self.picker.new_resize_protocol(self.image_source.clone());
     }
 
     fn render_resized_image(&mut self, f: &mut Frame<'_>, resize: Resize, area: Rect) {
