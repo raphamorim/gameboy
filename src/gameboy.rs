@@ -138,6 +138,7 @@ impl Gameboy {
         let _ = tui::run(&mut self);
     }
 
+    #[inline]
     pub fn check_and_reset_gpu_updated(&mut self) -> bool {
         let result = self.cpu.memory.gpu.updated;
         self.cpu.memory.gpu.updated = false;

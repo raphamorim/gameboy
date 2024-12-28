@@ -120,16 +120,32 @@ fn size() -> Rect {
     Rect::new(0, 0, 30, 16)
 }
 
+fn get_image(gameboy: &mut Gameboy) -> image::RgbImage {
+    let mut img: image::RgbImage = image::ImageBuffer::new(gameboy.width, gameboy.height);
+    let gameboy_image = gameboy.image();
+
+    let mut counter = 0;
+    for pixel in img.pixels_mut() {
+        counter += 3;
+        *pixel = image::Rgb([
+            gameboy_image[counter],
+            gameboy_image[counter + 1],
+            gameboy_image[counter + 2],
+        ]);
+    }
+
+    img
+}
+
 impl App {
     pub fn new<B: Backend>(_: &mut Terminal<B>, gameboy: &mut Gameboy) -> Self {
-        let pixel_data = gameboy.image();
-        let img = image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(
-            gameboy.width,
-            gameboy.height,
-            pixel_data.to_vec(),
-        )
-        .unwrap();
-        let image_source = image::DynamicImage::ImageRgb8(img);
+        // let img = image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(
+        //     gameboy.width,
+        //     gameboy.height,
+        //     gameboy.image().to_owned(),
+        // )
+        // .unwrap();
+        let image_source = image::DynamicImage::ImageRgb8(get_image(gameboy));
 
         // let harvest_moon = "/Users/rapha/harvest-moon.png";
         // let image_source = image::io::Reader::open(harvest_moon).unwrap().decode().unwrap();
@@ -204,15 +220,9 @@ impl App {
     }
 
     #[inline]
-    pub fn on_tick(&mut self, gameboy: &Gameboy) {
+    pub fn on_tick(&mut self, gameboy: &mut Gameboy) {
         self.reset_images();
-        let img = image::ImageBuffer::<image::Rgb<u8>, _>::from_raw(
-            gameboy.width,
-            gameboy.height,
-            gameboy.image().to_vec(),
-        )
-        .unwrap();
-        self.image_source = image::DynamicImage::ImageRgb8(img);
+        self.image_source = image::DynamicImage::ImageRgb8(get_image(gameboy));
     }
 
     fn render_resized_image(&mut self, f: &mut Frame<'_>, resize: Resize, area: Rect) {
@@ -220,7 +230,7 @@ impl App {
             "Gameboy on {} terminal",
             env::var("TERM").unwrap_or("unknown".to_string())
         );
-        let (state, name, _color) = (&mut self.image_fit_state, title, Color::Magenta);
+        let (state, name, _color) = (&mut self.image_fit_state, title, Color::Black);
         let block = block(&name);
         let inner_area = block.inner(area);
         let image = StatefulImage::default().resize(resize);
