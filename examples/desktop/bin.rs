@@ -3,8 +3,9 @@ extern crate gameboy;
 use gameboy::gameboy::{load_rom, Gameboy, RenderMode::Desktop};
 
 fn main() {
+    // TODO: Allow receive path by arguments
     // let gb = Gameboy::new("./../../tests/cpu_instrs/cpu_instrs.gb");
-    if let Ok((data, filepath)) = load_rom("./../pokemon-blue.gb") {
+    if let Ok((data, filepath)) = load_rom("./../pokemon-red.gb") {
     // if let Ok((data, filepath)) = load_rom("./../bakery.gb") {
         // if let Ok((data, filepath)) = load_rom("./../unearthed.gb") {
     // if let Ok((data, filepath)) = load_rom("./../../tests/cpu_instrs/cpu_instrs.gb") {

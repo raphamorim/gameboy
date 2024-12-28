@@ -132,16 +132,10 @@ impl Gameboy {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn render_terminal(self) {
-        // loop {
-        // println!("{:?}", self.image());
-        let _image = self.image();
-        // fn intensity_to_ascii(value: &u8) -> &str {
-        // changes an intensity into an ascii character
-        // this is a central step in creating the ascii art
+    pub fn render_terminal(mut self) {
+        use crate::screen::tui;
 
-        //     std::thread::sleep(std::time::Duration::from_millis(5));
-        // }
+        let _ = tui::run(&mut self);
     }
 
     pub fn check_and_reset_gpu_updated(&mut self) -> bool {
