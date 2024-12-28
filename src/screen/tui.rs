@@ -1,4 +1,5 @@
 use crate::gameboy::Gameboy;
+use crate::input::KeypadKey;
 use std::env;
 use std::{
     error::Error,
@@ -87,7 +88,15 @@ fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
                     if let KeyCode::Char(c) = key.code {
-                        app.on_key(c);
+                        app.on_key(c, gameboy);
+                    } else if let KeyCode::Up = key.code {
+                        gameboy.keydown(KeypadKey::Up);
+                    } else if let KeyCode::Down = key.code {
+                        gameboy.keydown(KeypadKey::Down);
+                    } else if let KeyCode::Left = key.code {
+                        gameboy.keydown(KeypadKey::Left);
+                    } else if let KeyCode::Right = key.code {
+                        gameboy.keydown(KeypadKey::Right);
                     }
                 }
             }
@@ -95,6 +104,9 @@ fn run_app<B: Backend>(
         if last_tick.elapsed() >= app.tick_rate {
             app.on_tick(gameboy);
             gameboy.frame();
+            if let Some(key) = app.last_key.take() {
+                gameboy.keyup(key);
+            }
             last_tick = Instant::now();
         }
         if app.should_quit {
@@ -105,6 +117,7 @@ fn run_app<B: Backend>(
 
 struct App {
     should_quit: bool,
+    last_key: Option<KeypadKey>,
     tick_rate: Duration,
     split_percent: u16,
 
@@ -162,6 +175,7 @@ impl App {
             tick_rate: Duration::from_millis(5),
             split_percent: 40,
             picker,
+            last_key: None,
             image_source,
 
             image_static,
@@ -170,7 +184,7 @@ impl App {
             image_static_offset: (0, 0),
         }
     }
-    pub fn on_key(&mut self, c: char) {
+    pub fn on_key(&mut self, c: char, gameboy: &mut Gameboy) {
         match c {
             'q' => {
                 self.should_quit = true;
@@ -205,6 +219,22 @@ impl App {
             }
             'l' => {
                 self.image_static_offset.0 += 1;
+            }
+            'a' | 'A' => {
+                gameboy.keydown(KeypadKey::A);
+                self.last_key = Some(KeypadKey::A);
+            }
+            'b' | 'B' => {
+                gameboy.keydown(KeypadKey::B);
+                self.last_key = Some(KeypadKey::B);
+            }
+            'z' | 'Z' => {
+                gameboy.keydown(KeypadKey::Select);
+                self.last_key = Some(KeypadKey::Select);
+            }
+            'x' | 'X' => {
+                gameboy.keydown(KeypadKey::Start);
+                self.last_key = Some(KeypadKey::Start);
             }
             _ => {}
         }
