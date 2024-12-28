@@ -117,6 +117,7 @@ fn run_app<B: Backend>(
 
 struct App {
     should_quit: bool,
+    scale: u32,
     last_key: Option<KeypadKey>,
     tick_rate: Duration,
     split_percent: u16,
@@ -133,7 +134,7 @@ fn size() -> Rect {
     Rect::new(0, 0, 30, 16)
 }
 
-fn get_image(gameboy: &mut Gameboy) -> image::DynamicImage {
+fn get_image(gameboy: &mut Gameboy, scale: u32) -> image::DynamicImage {
     // let harvest_moon = "/Users/rapha/harvest-moon.png";
     // image::io::Reader::open(harvest_moon).unwrap().decode().unwrap()
 
@@ -154,13 +155,21 @@ fn get_image(gameboy: &mut Gameboy) -> image::DynamicImage {
         i += 3;
     }
 
-    let buffer = image::ImageBuffer::from_raw(width, height, output_data).unwrap();
+    let mut buffer = image::ImageBuffer::from_raw(width, height, output_data).unwrap();
+    if scale > 1 {
+        buffer = image::imageops::resize(
+            &buffer,
+            width * scale,
+            height * scale,
+            image::imageops::FilterType::Nearest,
+        );
+    }
     image::DynamicImage::ImageRgb8(buffer)
 }
 
 impl App {
     pub fn new<B: Backend>(_: &mut Terminal<B>, gameboy: &mut Gameboy) -> Self {
-        let image_source = get_image(gameboy);
+        let image_source = get_image(gameboy, 1);
 
         let mut picker = Picker::from_query_stdio().unwrap();
         picker.set_background_color([0, 0, 0, 0]);
@@ -172,6 +181,7 @@ impl App {
 
         Self {
             should_quit: false,
+            scale: 1,
             tick_rate: Duration::from_millis(5),
             split_percent: 40,
             picker,
@@ -193,6 +203,13 @@ impl App {
                 self.picker
                     .set_protocol_type(self.picker.protocol_type().next());
                 self.reset_images();
+            }
+            'o' => {
+                if self.scale >= 3 {
+                    self.scale = 1;
+                } else {
+                    self.scale += 1;
+                }
             }
             'H' => {
                 if self.split_percent >= 10 {
@@ -250,7 +267,7 @@ impl App {
 
     #[inline]
     pub fn on_tick(&mut self, gameboy: &mut Gameboy) {
-        self.image_source = get_image(gameboy);
+        self.image_source = get_image(gameboy, self.scale);
         self.image_static = self
             .picker
             .new_protocol(self.image_source.clone(), size(), Resize::Fit(None))
@@ -295,11 +312,12 @@ fn ui(f: &mut Frame<'_>, app: &mut App) {
         paragraph(vec![
             Line::from("Controls:"),
             Line::from("arrows: movement"),
-            Line::from("Key a: A"),
-            Line::from("Key s: B"),
-            Line::from("Key z: select"),
-            Line::from("Key x: start"),
+            Line::from("Key a/A: A"),
+            Line::from("Key s/S: B"),
+            Line::from("Key z/Z: select"),
+            Line::from("Key x/X: start"),
             Line::from("H/L: resize splits"),
+            Line::from(format!("o: scale image (current: {:?})", app.scale)),
             Line::from(format!(
                 "i: cycle image protocols (current: {:?})",
                 app.picker.protocol_type()

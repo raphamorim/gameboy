@@ -255,6 +255,34 @@ fn main() {
 }
 ```
 
+### Terminal ~ Rust usage:
+
+tl;dr: You can see the destop example in the example folder ([`/examples/terminal`](/examples/terminal))
+
+1. Add `gameboy` as dependency:
+
+```toml
+[dependencies]
+gameboy = { version = "0.1.2" }
+```
+
+2. There you go:
+
+> Default scale is `1` (160x144).
+
+```rust
+use gameboy::gameboy::{Gameboy, RenderMode::Terminal};
+
+fn main() {
+    if let Ok((data, filepath)) = load_rom("./my-rom.gb") {
+        let gb = Gameboy::new(data, Some(filepath));
+        gb.render(Terminal);
+    } else {
+        panic!("error loading rom");
+    }
+}
+```
+
 ## Tests
 
 The tests are based on Blargg's Gameboy hardware test ROMs.
