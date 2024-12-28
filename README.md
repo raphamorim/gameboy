@@ -7,8 +7,8 @@
 
 | Web via WebAssembly | Desktop | Terminal |
 | --- | --- | --- |
-| ![Demo Web with Assembly](resources/demo-web.png) | ![First demo desktop GUI](resources/demo-desktop-1.png) ![Second demo desktop GUI](resources/demo-desktop-2.png) |
-| Playing [Cookies Bakery by leafthief](https://leafthief.itch.io/cookies-bakery) | Playing [Unearthed by benjelter](https://benjelter.itch.io/unearthed) | ![Pokemon Blue by Nintendo](resources/demo-terminal-1.png) |
+| ![Demo Web with Assembly](resources/demo-web.png) | ![First demo desktop GUI](resources/demo-desktop-1.png) ![Second demo desktop GUI](resources/demo-desktop-2.png) | ![First terminal demo](resources/demo-terminal-1.png) |
+| Playing [Cookies Bakery by leafthief](https://leafthief.itch.io/cookies-bakery) | Playing [Unearthed by benjelter](https://benjelter.itch.io/unearthed) | ![Pokemon by Nintendo](https://en.wikipedia.org/wiki/Pok%C3%A9mon_Red,_Blue,_and_Yellow) |
 | Firefox 116.0.3 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz | Rio Terminal |
 | `make web` | `make desktop` | `make terminal` |
 
