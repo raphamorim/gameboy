@@ -145,7 +145,7 @@ fn get_image(gameboy: &mut Gameboy, scale: u32) -> image::DynamicImage {
     let height = gameboy.height;
 
     // Get the raw image data as a vector
-    let input: &[u8] = &gameboy.image();
+    let input: &[u8] = gameboy.image();
 
     // Allocate a new buffer for the RGB image, 3 bytes per pixel
     let mut output_data = vec![0u8; width as usize * height as usize * 3];
