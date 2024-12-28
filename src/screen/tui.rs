@@ -160,7 +160,7 @@ impl App {
         Self {
             should_quit: false,
             tick_rate: Duration::from_millis(5),
-            split_percent: 60,
+            split_percent: 40,
             picker,
             image_source,
 
@@ -263,14 +263,17 @@ fn ui(f: &mut Frame<'_>, app: &mut App) {
     let area = block_right_bottom.inner(chunks[1]);
     f.render_widget(
         paragraph(vec![
-            Line::from("Key bindings:"),
-            Line::from("H/L: resize"),
+            Line::from("Controls:"),
+            Line::from("arrows: movement"),
+            Line::from("Key a: A"),
+            Line::from("Key s: B"),
+            Line::from("Key z: select"),
+            Line::from("Key x: start"),
+            Line::from("H/L: resize splits"),
             Line::from(format!(
                 "i: cycle image protocols (current: {:?})",
                 app.picker.protocol_type()
             )),
-            Line::from("o: cycle image"),
-            Line::from(format!("Font size: {:?}", app.picker.font_size())),
         ]),
         area,
     );
