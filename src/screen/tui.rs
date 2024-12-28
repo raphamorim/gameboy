@@ -35,6 +35,8 @@ use ratatui_image::{
     Resize, StatefulImage,
 };
 
+const MAX_SCALE: u32 = 4;
+
 pub fn run(gameboy: &mut Gameboy) -> Result<(), Box<dyn Error>> {
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic| {
@@ -134,6 +136,7 @@ fn size() -> Rect {
     Rect::new(0, 0, 30, 16)
 }
 
+#[inline]
 fn get_image(gameboy: &mut Gameboy, scale: u32) -> image::DynamicImage {
     // let harvest_moon = "/Users/rapha/harvest-moon.png";
     // image::io::Reader::open(harvest_moon).unwrap().decode().unwrap()
@@ -142,7 +145,7 @@ fn get_image(gameboy: &mut Gameboy, scale: u32) -> image::DynamicImage {
     let height = gameboy.height;
 
     // Get the raw image data as a vector
-    let input: &Vec<u8> = &gameboy.image().to_vec();
+    let input: &[u8] = &gameboy.image();
 
     // Allocate a new buffer for the RGB image, 3 bytes per pixel
     let mut output_data = vec![0u8; width as usize * height as usize * 3];
@@ -205,7 +208,7 @@ impl App {
                 self.reset_images();
             }
             'o' => {
-                if self.scale >= 3 {
+                if self.scale >= MAX_SCALE {
                     self.scale = 1;
                 } else {
                     self.scale += 1;

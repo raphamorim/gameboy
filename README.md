@@ -5,12 +5,12 @@
 > Disclaimer 1.1: Altough the emulator already runs a good amount of games, it is still under development and you can track it development by checking [Tests](#tests) section.
 >
 
-| WebGL with WebAssembly | Desktop GUI with Rust |
-| --- | --- |
+| Web via WebAssembly | Desktop | Terminal |
+| --- | --- | --- |
 | ![Demo Web with Assembly](resources/demo-web.png) | ![First demo desktop GUI](resources/demo-desktop-1.png) ![Second demo desktop GUI](resources/demo-desktop-2.png) |
-| Playing [Cookies Bakery by leafthief](https://leafthief.itch.io/cookies-bakery) | Playing [Unearthed by benjelter](https://benjelter.itch.io/unearthed) |
-| Firefox 116.0.3 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz |
-| `make web` | `make desktop` |
+| Playing [Cookies Bakery by leafthief](https://leafthief.itch.io/cookies-bakery) | Playing [Unearthed by benjelter](https://benjelter.itch.io/unearthed) | ![Pokemon Blue by Nintendo](resources/demo-terminal-1.png) |
+| Firefox 116.0.3 (64-bit) | macOS 11.6.2, 16GB, Quad-Core Intel Core i7, 1,2 GHz | Rio Terminal |
+| `make web` | `make desktop` | `make terminal` |
 
 ## WebAssembly quick demo
 

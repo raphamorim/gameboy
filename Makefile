@@ -19,10 +19,16 @@ test:
 	cargo test --release
 
 desktop:
+	cd examples/desktop && cargo run --release
+
+desktop-dev:
 	cd examples/desktop && cargo run
 
-terminal:
+terminal-dev:
 	cd examples/terminal && cargo run
+
+terminal:
+	cd examples/terminal && cargo run --release
 
 web:
 	cd web && npm run serve
