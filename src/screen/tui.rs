@@ -93,12 +93,16 @@ fn run_app<B: Backend>(
                         app.on_key(c, gameboy);
                     } else if let KeyCode::Up = key.code {
                         gameboy.keydown(KeypadKey::Up);
+                        app.last_key = Some(KeypadKey::Up);
                     } else if let KeyCode::Down = key.code {
                         gameboy.keydown(KeypadKey::Down);
+                        app.last_key = Some(KeypadKey::Down);
                     } else if let KeyCode::Left = key.code {
                         gameboy.keydown(KeypadKey::Left);
+                        app.last_key = Some(KeypadKey::Left);
                     } else if let KeyCode::Right = key.code {
                         gameboy.keydown(KeypadKey::Right);
+                        app.last_key = Some(KeypadKey::Right);
                     }
                 }
             }
