@@ -94,7 +94,10 @@ fn run_app<B: Backend>(
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
 
-        let timeout = Duration::from_millis(5);
+        let timeout = app
+            .tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
         if ratatui::crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 let is_pressed = key.kind == KeyEventKind::Press;
