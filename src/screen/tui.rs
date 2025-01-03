@@ -12,6 +12,8 @@ use ratatui::{
     crossterm::{
         event::{
             self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind,
+            KeyboardEnhancementFlags, PopKeyboardEnhancementFlags,
+            PushKeyboardEnhancementFlags,
         },
         execute,
         terminal::{
@@ -38,6 +40,11 @@ use ratatui_image::{
 const MAX_SCALE: u32 = 4;
 
 pub fn run(gameboy: &mut Gameboy) -> Result<(), Box<dyn Error>> {
+    if let Ok(false) = ratatui::crossterm::terminal::supports_keyboard_enhancement() {
+        println!("WARN: The terminal doesn't support use_kitty_protocol config.\r");
+        return Ok(());
+    }
+
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic| {
         disable_raw_mode().unwrap();
@@ -49,6 +56,10 @@ pub fn run(gameboy: &mut Gameboy) -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(
+        stdout,
+        PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::all())
+    )?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -62,7 +73,8 @@ pub fn run(gameboy: &mut Gameboy) -> Result<(), Box<dyn Error>> {
     execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
-        DisableMouseCapture
+        DisableMouseCapture,
+        PopKeyboardEnhancementFlags
     )?;
     terminal.show_cursor()?;
 
@@ -88,31 +100,40 @@ fn run_app<B: Backend>(
             .unwrap_or_else(|| Duration::from_secs(0));
         if ratatui::crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    if let KeyCode::Char(c) = key.code {
-                        app.on_key(c, gameboy);
-                    } else if let KeyCode::Up = key.code {
+                let is_pressed = key.kind == KeyEventKind::Press;
+
+                if let KeyCode::Char(c) = key.code {
+                    app.on_key(c, gameboy, is_pressed);
+                } else if let KeyCode::Up = key.code {
+                    if is_pressed {
                         gameboy.keydown(KeypadKey::Up);
-                        app.last_key = Some(KeypadKey::Up);
-                    } else if let KeyCode::Down = key.code {
+                    } else {
+                        gameboy.keyup(KeypadKey::Up);
+                    }
+                } else if let KeyCode::Down = key.code {
+                    if is_pressed {
                         gameboy.keydown(KeypadKey::Down);
-                        app.last_key = Some(KeypadKey::Down);
-                    } else if let KeyCode::Left = key.code {
+                    } else {
+                        gameboy.keyup(KeypadKey::Down);
+                    }
+                } else if let KeyCode::Left = key.code {
+                    if is_pressed {
                         gameboy.keydown(KeypadKey::Left);
-                        app.last_key = Some(KeypadKey::Left);
-                    } else if let KeyCode::Right = key.code {
+                    } else {
+                        gameboy.keyup(KeypadKey::Left);
+                    }
+                } else if let KeyCode::Right = key.code {
+                    if is_pressed {
                         gameboy.keydown(KeypadKey::Right);
-                        app.last_key = Some(KeypadKey::Right);
+                    } else {
+                        gameboy.keyup(KeypadKey::Right);
                     }
                 }
             }
         }
         if last_tick.elapsed() >= app.tick_rate {
-            app.on_tick(gameboy);
             gameboy.frame();
-            if let Some(key) = app.last_key.take() {
-                gameboy.keyup(key);
-            }
+            app.on_tick(gameboy);
             last_tick = Instant::now();
         }
         if app.should_quit {
@@ -124,7 +145,6 @@ fn run_app<B: Backend>(
 struct App {
     should_quit: bool,
     scale: u32,
-    last_key: Option<KeypadKey>,
     tick_rate: Duration,
     split_percent: u16,
 
@@ -192,7 +212,6 @@ impl App {
             tick_rate: Duration::from_millis(5),
             split_percent: 40,
             picker,
-            last_key: None,
             image_source,
 
             image_static,
@@ -201,64 +220,72 @@ impl App {
             image_static_offset: (0, 0),
         }
     }
-    pub fn on_key(&mut self, c: char, gameboy: &mut Gameboy) {
-        match c {
-            'q' => {
+    pub fn on_key(&mut self, c: char, gameboy: &mut Gameboy, is_pressed: bool) {
+        match (c, is_pressed) {
+            ('q', true) => {
                 self.should_quit = true;
             }
-            'i' => {
+            ('i', true) => {
                 self.picker
                     .set_protocol_type(self.picker.protocol_type().next());
                 self.reset_images();
             }
-            'o' => {
+            ('o', true) => {
                 if self.scale >= MAX_SCALE {
                     self.scale = 1;
                 } else {
                     self.scale += 1;
                 }
             }
-            'H' => {
+            ('H', true) => {
                 if self.split_percent >= 10 {
                     self.split_percent -= 10;
                 }
             }
-            'L' => {
+            ('L', true) => {
                 if self.split_percent <= 90 {
                     self.split_percent += 10;
                 }
             }
-            'h' => {
+            ('h', true) => {
                 if self.image_static_offset.0 > 0 {
                     self.image_static_offset.0 -= 1;
                 }
             }
-            'j' => {
+            ('j', true) => {
                 self.image_static_offset.1 += 1;
             }
-            'k' => {
+            ('k', true) => {
                 if self.image_static_offset.1 > 0 {
                     self.image_static_offset.1 -= 1;
                 }
             }
-            'l' => {
+            ('l', true) => {
                 self.image_static_offset.0 += 1;
             }
-            'a' | 'A' => {
+            ('a', true) | ('A', true) => {
                 gameboy.keydown(KeypadKey::A);
-                self.last_key = Some(KeypadKey::A);
             }
-            'b' | 'B' => {
+            ('b', true) | ('B', true) => {
                 gameboy.keydown(KeypadKey::B);
-                self.last_key = Some(KeypadKey::B);
             }
-            'z' | 'Z' => {
+            ('z', true) | ('Z', true) => {
                 gameboy.keydown(KeypadKey::Select);
-                self.last_key = Some(KeypadKey::Select);
             }
-            'x' | 'X' => {
+            ('x', true) | ('X', true) => {
                 gameboy.keydown(KeypadKey::Start);
-                self.last_key = Some(KeypadKey::Start);
+            }
+            ('a', false) | ('A', false) => {
+                gameboy.keyup(KeypadKey::A);
+            }
+            ('b', false) | ('B', false) => {
+                gameboy.keyup(KeypadKey::B);
+            }
+            ('z', false) | ('Z', false) => {
+                gameboy.keyup(KeypadKey::Select);
+            }
+            ('x', false) | ('X', false) => {
+                gameboy.keyup(KeypadKey::Start);
             }
             _ => {}
         }
