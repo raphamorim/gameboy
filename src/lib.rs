@@ -22,8 +22,7 @@ pub async fn start() {
     // TODO: Process GL
 }
 
-#[no_mangle]
-pub static GAMEBOY: OnceLock<Mutex<Option<crate::gameboy::Gameboy>>> = OnceLock::new();
+static GAMEBOY: OnceLock<Mutex<Option<crate::gameboy::Gameboy>>> = OnceLock::new();
 
 #[cfg(target_vendor = "apple")]
 unsafe impl Send for crate::gameboy::Gameboy {}
@@ -63,28 +62,6 @@ pub extern "C" fn keyup(key: KeypadKey) {
             locked_gb.as_mut().unwrap().keyup(key);
         }
     }
-}
-
-#[no_mangle]
-pub extern "C" fn width() -> u32 {
-    if let Some(gb) = GAMEBOY.get() {
-        if let Ok(mut locked_gb) = gb.lock() {
-            return locked_gb.as_mut().unwrap().width;
-        }
-    }
-
-    0
-}
-
-#[no_mangle]
-pub extern "C" fn height() -> u32 {
-    if let Some(gb) = GAMEBOY.get() {
-        if let Ok(mut locked_gb) = gb.lock() {
-            return locked_gb.as_mut().unwrap().height;
-        }
-    }
-
-    0
 }
 
 #[repr(C)]

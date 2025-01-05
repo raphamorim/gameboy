@@ -10,7 +10,7 @@ edition = "2021"
 [lib]
 name = "gameboy"
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [profile.release]
 opt-level = "s"

@@ -42,3 +42,11 @@ web-publish:
 web-build:
 	cd web && npm run build
 
+# cargo install cbindgen
+ffi-build:
+	cargo build --release
+	cbindgen . -o gameboy.h --lang c
+
+ffi:
+	cp target/release/libgameboy.a examples/ffi-go/
+	cd examples/ffi-go && go build main_static.go
