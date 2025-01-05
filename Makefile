@@ -13,7 +13,7 @@ lint:
 
 build-wasm:
 	cargo build --release --target wasm32-unknown-unknown
-	wasm-opt -O4 ./target/wasm32-unknown-unknown/release/lr35902.wasm -o gameboy.wasm && du -h gameboy.wasm
+	wasm-opt -O4 ./target/wasm32-unknown-unknown/release/gameboy.wasm -o gameboy.wasm && du -h gameboy.wasm
 
 test:
 	cargo test --release
