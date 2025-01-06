@@ -29,9 +29,12 @@ unsafe impl Send for crate::gameboy::Gameboy {}
 #[cfg(target_vendor = "apple")]
 unsafe impl Sync for crate::gameboy::Gameboy {}
 
+/// # Safety
+///
+/// This function is not safe due to from_raw_parts.
 #[no_mangle]
-pub extern "C" fn load_rom(bytes: *const std::ffi::c_uchar, bytes_length: usize) {
-    let bytes = unsafe { std::slice::from_raw_parts(bytes, bytes_length) };
+pub unsafe extern "C" fn load_rom(bytes: *const std::ffi::c_uchar, bytes_length: usize) {
+    let bytes = std::slice::from_raw_parts(bytes, bytes_length);
     let bytes: Vec<u8> = Vec::from(bytes);
     GAMEBOY
         .get_or_init(|| Some(crate::gameboy::Gameboy::new(bytes.to_vec(), None)).into());
