@@ -132,10 +132,10 @@ impl Gameboy {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn render_terminal(mut self) {
+    pub fn render_terminal(self) {
         use crate::screen::tui;
 
-        let _ = tui::run(&mut self);
+        let _ = tui::run(self);
     }
 
     #[inline]
