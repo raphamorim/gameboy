@@ -9,7 +9,7 @@
 
 #define WIDTH 160
 
-enum KeypadKey {
+typedef enum KeypadKey {
   Right,
   Left,
   Up,
@@ -18,8 +18,7 @@ enum KeypadKey {
   B,
   Select,
   Start,
-};
-typedef uint8_t KeypadKey;
+} KeypadKey;
 
 typedef struct String String;
 
@@ -37,9 +36,9 @@ void load(const unsigned char *bytes, uintptr_t bytes_length);
 
 void frame(void);
 
-void keydown(KeypadKey key);
+void keydown(enum KeypadKey key);
 
-void keyup(KeypadKey key);
+void keyup(enum KeypadKey key);
 
 struct ImageBuffer image(void);
 

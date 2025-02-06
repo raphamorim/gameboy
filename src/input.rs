@@ -6,7 +6,7 @@ pub struct Keypad {
 }
 
 #[derive(Copy, Clone)]
-#[repr(u8)]
+#[repr(C)]
 pub enum KeypadKey {
     Right,
     Left,
