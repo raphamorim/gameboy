@@ -28,7 +28,12 @@ typedef struct ImageBuffer {
   const uint8_t *data;
 } ImageBuffer;
 
-void load_rom(const unsigned char *bytes, uintptr_t bytes_length);
+/**
+ * # Safety
+ *
+ * This function is not safe due to from_raw_parts.
+ */
+void load(const unsigned char *bytes, uintptr_t bytes_length);
 
 void frame(void);
 

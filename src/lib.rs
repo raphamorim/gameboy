@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "ffi"))]
 use wasm_bindgen::prelude::*;
 
 pub mod cpu;
@@ -11,6 +11,7 @@ mod input;
 mod mbc;
 mod mmu;
 mod mode;
+#[cfg(not(feature = "ffi"))]
 mod screen;
 
 pub use crate::input::KeypadKey;
@@ -33,7 +34,7 @@ unsafe impl Sync for crate::gameboy::Gameboy {}
 ///
 /// This function is not safe due to from_raw_parts.
 #[no_mangle]
-pub unsafe extern "C" fn load_rom(bytes: *const std::ffi::c_uchar, bytes_length: usize) {
+pub unsafe extern "C" fn load(bytes: *const std::ffi::c_uchar, bytes_length: usize) {
     let bytes = std::slice::from_raw_parts(bytes, bytes_length);
     let bytes: Vec<u8> = Vec::from(bytes);
     GAMEBOY

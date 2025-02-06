@@ -9,14 +9,19 @@ package main
 #include <stdlib.h>
 */
 import "C"
-// import "unsafe"
 
 func main() {
-	// str1 := C.CString("world")
-	// str2 := C.CString("this is code from the static library")
-	// defer C.free(unsafe.Pointer(str1))
-	// defer C.free(unsafe.Pointer(str2))
+	if len(os.Args) <= 1 {
+		fmt.Fprintf(os.Stderr, "Please provide the game path\ne.g: $ boyband my-game.gb")
+		os.Exit(0)
+	}
 
-	// C.hello(str1)
-	// C.whisper(str2)
+	romPath := os.Args[1]
+	romData, romErr := loadROMData(romPath)
+	if romErr != nil {
+		fmt.Fprintf(os.Stderr, "Error while loading the rom file: %s", romErr)
+		os.Exit(1)
+	}
+
+	C.load((*C.uchar)(&romData[0]), C.size_t(len(romData)))
 }

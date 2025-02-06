@@ -44,8 +44,11 @@ web-build:
 
 ffi-build:
 	cargo install cbindgen
-	cargo build --release
+	cargo build --release --no-default-features --features ffi
 	cbindgen . -o gameboy.h --lang c
+
+ffi-size:
+	du -k ./target/release/libgameboy.a
 
 ffi:
 	cp target/release/libgameboy.a examples/ffi-go/

@@ -11,12 +11,12 @@ pub use self::Target::{GameBoy, GameBoyColor, SuperGameBoy};
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Default)]
 pub enum RenderMode {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
     #[default]
     Desktop,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
     Terminal,
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(target_arch = "wasm32", feature = "ffi"))]
     #[default]
     WebAssembly,
 }
@@ -28,7 +28,7 @@ pub enum Target {
     SuperGameBoy,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
 pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String> {
     use std::fs::File;
     use std::io::Read;
@@ -65,22 +65,22 @@ impl Gameboy {
 
     pub fn render(self, render_mode: RenderMode) {
         match render_mode {
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
             RenderMode::Desktop => {
                 self.render_desktop();
             }
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(any(target_arch = "wasm32", feature = "ffi"))]
             RenderMode::WebAssembly => {
                 // crate::screen::web::render();
             }
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
             RenderMode::Terminal => {
                 self.render_terminal();
             }
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
     pub fn render_desktop(mut self) {
         use crate::screen::desktop::*;
 
@@ -131,7 +131,7 @@ impl Gameboy {
         });
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
     pub fn render_terminal(self) {
         use crate::screen::tui;
 
