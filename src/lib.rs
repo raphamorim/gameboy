@@ -1,8 +1,5 @@
-use image::DynamicImage;
 use std::sync::Mutex;
 use std::sync::OnceLock;
-
-use std::ffi::CString;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -98,8 +95,11 @@ pub extern "C" fn image() -> ImageBuffer {
 }
 
 #[no_mangle]
+#[cfg(feature = "ffi")]
 pub extern "C" fn image_base64() -> *const std::os::raw::c_char {
     use base64::{engine::general_purpose, Engine};
+    use image::DynamicImage;
+    use std::ffi::CString;
     use std::io::Cursor;
 
     if let Some(gb) = GAMEBOY.get() {
