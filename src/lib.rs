@@ -102,7 +102,6 @@ pub extern "C" fn scaled_image_png(scale: u8) -> ImageBuffer {
             let height = 144;
 
             let image: &[u8] = locked_gb.as_mut().unwrap().image();
-            let len = image.len() as i32;
             // std::mem::forget(image);
 
             // Allocate a new buffer for the RGB image, 3 bytes per pixel
@@ -127,10 +126,11 @@ pub extern "C" fn scaled_image_png(scale: u8) -> ImageBuffer {
                 );
             }
             let result = image::DynamicImage::ImageRgb8(buffer);
+            let b = result.as_bytes();
 
             return ImageBuffer {
-                len,
-                data: result.as_bytes().as_ptr(),
+                len: b.len() as i32,
+                data: b.as_ptr(),
             };
         }
     }
