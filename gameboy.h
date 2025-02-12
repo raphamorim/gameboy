@@ -40,4 +40,4 @@ void keyup(enum KeypadKey key);
 
 struct ImageBuffer image(void);
 
-struct ImageBuffer scaled_image_png(uint8_t scale);
+const char *image_base64(void);

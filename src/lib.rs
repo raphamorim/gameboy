@@ -1,5 +1,14 @@
+use image::DynamicImage;
 use std::sync::Mutex;
 use std::sync::OnceLock;
+
+use std::ffi::CString;
+
+// #[cfg(feature = "ffi")]
+// use base64::{Engine, engine::general_purpose};
+
+// #[cfg(feature = "ffi")]
+// use std::io::Cursor;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -95,7 +104,7 @@ pub extern "C" fn image() -> ImageBuffer {
 }
 
 #[no_mangle]
-pub extern "C" fn scaled_image_png(scale: u8) -> ImageBuffer {
+pub extern "C" fn image_base64() -> *const std::os::raw::c_char {
     if let Some(gb) = GAMEBOY.get() {
         if let Ok(mut locked_gb) = gb.lock() {
             let width = 160;
@@ -115,28 +124,34 @@ pub extern "C" fn scaled_image_png(scale: u8) -> ImageBuffer {
                 i += 3;
             }
 
-            let mut buffer =
+            let buffer =
                 image::ImageBuffer::from_raw(width, height, output_data).unwrap();
-            if scale > 1 {
-                buffer = image::imageops::resize(
-                    &buffer,
-                    width * (scale as u32),
-                    height * (scale as u32),
-                    image::imageops::FilterType::Nearest,
-                );
-            }
-            let result = image::DynamicImage::ImageRgb8(buffer);
-            let b = result.as_bytes();
+            let img: DynamicImage = image::DynamicImage::ImageRgb8(buffer);
+            // if scale > 1 {
+            //     buffer = image::imageops::resize(
+            //         &buffer,
+            //         width * (scale as u32),
+            //         height * (scale as u32),
+            //         image::imageops::FilterType::Nearest,
+            //     );
+            // }
 
-            return ImageBuffer {
-                len: b.len() as i32,
-                data: b.as_ptr(),
-            };
+            // let mut png: Vec<u8> = vec![];
+            // img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).expect("don't fail img write_to");
+            // let data = general_purpose::STANDARD.encode(&png);
+
+            let cstring_data = CString::new(img.as_bytes()).expect("don't fail");
+            return cstring_data.into_raw();
+
+            // let mut png: Vec<u8> = vec![];
+            // img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).expect("don't fail img write_to");
+            // let data = general_purpose::STANDARD.encode(&png);
+
+            // let cstring_data = CString::new(data).expect("don't fail");
+            // return cstring_data.into_raw();
         }
     }
 
-    ImageBuffer {
-        len: 0,
-        data: std::ptr::null_mut(),
-    }
+    let data = CString::new("").expect("don't fail");
+    data.into_raw()
 }
