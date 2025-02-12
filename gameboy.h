@@ -20,8 +20,6 @@ typedef enum KeypadKey {
   Start,
 } KeypadKey;
 
-typedef struct String String;
-
 typedef struct ImageBuffer {
   int32_t len;
   const uint8_t *data;
@@ -42,6 +40,4 @@ void keyup(enum KeypadKey key);
 
 struct ImageBuffer image(void);
 
-extern void log(struct String s);
-
-extern void log_u32(uint32_t a);
+struct ImageBuffer scaled_image_png(uint8_t scale);

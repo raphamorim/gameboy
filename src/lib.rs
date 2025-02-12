@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
-#[cfg(all(target_arch = "wasm32", feature = "ffi"))]
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 pub mod cpu;
@@ -85,6 +85,53 @@ pub extern "C" fn image() -> ImageBuffer {
             // My guess image will be dropped but let's test
 
             return ImageBuffer { len, data };
+        }
+    }
+
+    ImageBuffer {
+        len: 0,
+        data: std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn scaled_image_png(scale: u8) -> ImageBuffer {
+    if let Some(gb) = GAMEBOY.get() {
+        if let Ok(mut locked_gb) = gb.lock() {
+            let width = 160;
+            let height = 144;
+
+            let image: &[u8] = locked_gb.as_mut().unwrap().image();
+            let len = image.len() as i32;
+            // std::mem::forget(image);
+
+            // Allocate a new buffer for the RGB image, 3 bytes per pixel
+            let mut output_data = vec![0u8; width as usize * height as usize * 3];
+
+            let mut i = 0;
+            // Iterate through 4-byte chunks of the image data (RGBA bytes)
+            for chunk in image.chunks(4) {
+                // ... and copy each of them to output, leaving out the A byte
+                output_data[i..i + 3].copy_from_slice(&chunk[0..3]);
+                i += 3;
+            }
+
+            let mut buffer =
+                image::ImageBuffer::from_raw(width, height, output_data).unwrap();
+            if scale > 1 {
+                buffer = image::imageops::resize(
+                    &buffer,
+                    width * (scale as u32),
+                    height * (scale as u32),
+                    image::imageops::FilterType::Nearest,
+                );
+            }
+            let result = image::DynamicImage::ImageRgb8(buffer);
+
+            return ImageBuffer {
+                len,
+                data: result.as_bytes().as_ptr(),
+            };
         }
     }
 

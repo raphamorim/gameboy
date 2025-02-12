@@ -1,3 +1,5 @@
+#![cfg(not(feature = "ffi"))]
+
 extern crate console_error_panic_hook;
 
 use crate::gameboy::Gameboy;
@@ -12,13 +14,13 @@ use web_sys::{CanvasRenderingContext2d, ImageData};
 
 use std::panic;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: String);
-    #[wasm_bindgen(js_namespace = console, js_name = log)]
-    fn log_u32(a: u32);
-}
+// #[wasm_bindgen]
+// extern "C" {
+//     #[wasm_bindgen(js_namespace = console)]
+//     fn log(s: String);
+//     #[wasm_bindgen(js_namespace = console, js_name = log)]
+//     fn log_u32(a: u32);
+// }
 
 fn window() -> web_sys::Window {
     web_sys::window().expect("no global `window` exists")
@@ -121,7 +123,7 @@ pub async fn render(rom: Vec<u8>) -> Result<(), JsValue> {
                     context.put_image_data(&d, 0.0, 0.0).ok();
                 }
                 Err(err) => {
-                    log(format!("{:?}", err));
+                    // log(format!("{:?}", err));
                 }
             };
 
