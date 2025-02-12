@@ -4,12 +4,6 @@ use std::sync::OnceLock;
 
 use std::ffi::CString;
 
-// #[cfg(feature = "ffi")]
-// use base64::{Engine, engine::general_purpose};
-
-// #[cfg(feature = "ffi")]
-// use std::io::Cursor;
-
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
@@ -105,6 +99,9 @@ pub extern "C" fn image() -> ImageBuffer {
 
 #[no_mangle]
 pub extern "C" fn image_base64() -> *const std::os::raw::c_char {
+    use base64::{engine::general_purpose, Engine};
+    use std::io::Cursor;
+
     if let Some(gb) = GAMEBOY.get() {
         if let Ok(mut locked_gb) = gb.lock() {
             let width = 160;
@@ -136,19 +133,20 @@ pub extern "C" fn image_base64() -> *const std::os::raw::c_char {
             //     );
             // }
 
-            // let mut png: Vec<u8> = vec![];
-            // img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).expect("don't fail img write_to");
-            // let data = general_purpose::STANDARD.encode(&png);
+            let mut png: Vec<u8> = vec![];
+            img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+                .expect("don't fail img write_to");
+            let data = general_purpose::STANDARD.encode(&png);
 
-            let cstring_data = CString::new(img.as_bytes()).expect("don't fail");
-            return cstring_data.into_raw();
-
-            // let mut png: Vec<u8> = vec![];
-            // img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).expect("don't fail img write_to");
-            // let data = general_purpose::STANDARD.encode(&png);
-
-            // let cstring_data = CString::new(data).expect("don't fail");
+            // let cstring_data = CString::new(img.as_bytes()).expect("don't fail");
             // return cstring_data.into_raw();
+
+            // let mut png: Vec<u8> = vec![];
+            // img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).expect("don't fail img write_to");
+            // let data = general_purpose::STANDARD.encode(&png);
+
+            let cstring_data = CString::new(data).expect("don't fail");
+            return cstring_data.into_raw();
         }
     }
 
