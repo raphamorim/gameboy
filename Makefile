@@ -44,7 +44,7 @@ web-build:
 
 ffi-build:
 # 	cargo install cbindgen
-	cargo build --release --no-default-features --features ffi
+	cargo rustc --release --no-default-features --features ffi --crate-type staticlib
 	cbindgen . -o gameboy.h --lang c
 
 ffi-size:

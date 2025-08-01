@@ -1,5 +1,7 @@
 use crate::cpu::core::Cpu;
 use crate::input::KeypadKey;
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
 
 pub struct Gameboy {
     cpu: Cpu<'static>,
@@ -51,11 +53,23 @@ pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String>
 pub const CYCLES: u32 = 70224;
 
 impl Gameboy {
+    #[cfg(not(feature = "ffi"))]
     pub fn new(data: Vec<u8>, filepath: Option<std::path::PathBuf>) -> Gameboy {
         // let rom = load_rom();
 
         let gb = Gameboy {
             cpu: Cpu::new(data, filepath),
+            width: 160,
+            height: 144,
+        };
+
+        gb
+    }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new(data: Vec<u8>, _filepath: Option<()>) -> Gameboy {
+        let gb = Gameboy {
+            cpu: Cpu::new(data, None),
             width: 160,
             height: 144,
         };

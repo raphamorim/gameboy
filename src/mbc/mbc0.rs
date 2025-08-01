@@ -1,5 +1,7 @@
 pub type StrResult<T> = Result<T, &'static str>;
 use crate::mbc::MemoryBankController;
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
 
 pub struct MBC0 {
     rom: Vec<u8>,

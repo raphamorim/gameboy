@@ -1,0 +1,7 @@
+# cbindgen.toml
+
+[export]
+exclude = ["memcpy", "memmove", "memset", "memcmp", "bzero"]
+
+[defines]
+"feature = ffi" = "FFI"

@@ -1,9 +1,16 @@
 use crate::mbc::{ram_banks, rom_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
+#[cfg(not(feature = "ffi"))]
 use std::fs::File;
+#[cfg(not(feature = "ffi"))]
 use std::io::prelude::*;
+#[cfg(not(feature = "ffi"))]
 use std::{io, path};
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
+#[cfg(feature = "ffi")]
+use alloc::vec;
 
 pub struct MBC5 {
     rom: Vec<u8>,
@@ -11,12 +18,16 @@ pub struct MBC5 {
     rombank: usize,
     rambank: usize,
     ram_on: bool,
+    #[cfg(not(feature = "ffi"))]
     savepath: Option<path::PathBuf>,
+    #[cfg(feature = "ffi")]
+    savepath: Option<()>,
     rombanks: usize,
     rambanks: usize,
 }
 
 impl MBC5 {
+    #[cfg(not(feature = "ffi"))]
     pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC5> {
         let subtype = data[0x147];
         let svpath = match subtype {
@@ -32,7 +43,7 @@ impl MBC5 {
 
         let mut res = MBC5 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: ::core::iter::repeat(0u8).take(ramsize).collect(),
             rombank: 1,
             rambank: 0,
             ram_on: false,
@@ -42,7 +53,30 @@ impl MBC5 {
         };
         res.loadram().map(|_| res)
     }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new(data: Vec<u8>, _file: ()) -> StrResult<MBC5> {
+        let subtype = data[0x147];
+        let rambanks = match subtype {
+            0x1A | 0x1B | 0x1D | 0x1E => ram_banks(data[0x149]),
+            _ => 0,
+        };
+        let ramsize = 0x2000 * rambanks;
+        let rombanks = rom_banks(data[0x148]);
 
+        Ok(MBC5 {
+            rom: data,
+            ram: vec![0u8; ramsize],
+            rombank: 1,
+            rambank: 0,
+            ram_on: false,
+            savepath: None,
+            rombanks,
+            rambanks,
+        })
+    }
+
+    #[cfg(not(feature = "ffi"))]
     fn loadram(&mut self) -> StrResult<()> {
         match self.savepath {
             None => Ok(()),
@@ -59,8 +93,14 @@ impl MBC5 {
             }
         }
     }
+    
+    #[cfg(feature = "ffi")]
+    fn loadram(&mut self) -> StrResult<()> {
+        Ok(())
+    }
 }
 
+#[cfg(not(feature = "ffi"))]
 impl Drop for MBC5 {
     fn drop(&mut self) {
         match self.savepath {
@@ -69,6 +109,13 @@ impl Drop for MBC5 {
                 let _ = File::create(path).and_then(|mut f| f.write_all(&self.ram));
             }
         };
+    }
+}
+
+#[cfg(feature = "ffi")]
+impl Drop for MBC5 {
+    fn drop(&mut self) {
+        // No-op for no_std
     }
 }
 

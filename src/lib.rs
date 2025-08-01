@@ -1,5 +1,101 @@
+#![cfg_attr(feature = "ffi", no_std)]
+
+#[cfg(feature = "ffi")]
+extern crate alloc;
+
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
+
+#[cfg(not(feature = "ffi"))]
 use std::sync::Mutex;
+#[cfg(not(feature = "ffi"))]
 use std::sync::OnceLock;
+
+#[cfg(all(feature = "ffi", not(test)))]
+#[global_allocator]
+static ALLOCATOR: linked_list_allocator::LockedHeap = linked_list_allocator::LockedHeap::empty();
+
+
+
+#[cfg(all(feature = "ffi", not(test)))]
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    // In a no_std environment, we can't do much here
+    // In a real implementation, you might write to a debug port or similar
+    loop {}
+}
+
+// Initialize the allocator with some heap memory
+#[cfg(all(feature = "ffi", not(test)))]
+#[no_mangle]
+pub unsafe extern "C" fn init_allocator(heap_start: *mut u8, heap_size: usize) {
+    ALLOCATOR.lock().init(heap_start, heap_size);
+}
+
+// Required memory functions for no_std
+#[cfg(all(feature = "ffi", not(test)))]
+#[no_mangle]
+pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+    let mut i = 0;
+    while i < n {
+        *dest.add(i) = *src.add(i);
+        i += 1;
+    }
+    dest
+}
+
+#[cfg(all(feature = "ffi", not(test)))]
+#[no_mangle]
+pub unsafe extern "C" fn memmove(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+    if src < dest as *const u8 {
+        // Copy backwards
+        let mut i = n;
+        while i > 0 {
+            i -= 1;
+            *dest.add(i) = *src.add(i);
+        }
+    } else {
+        // Copy forwards
+        let mut i = 0;
+        while i < n {
+            *dest.add(i) = *src.add(i);
+            i += 1;
+        }
+    }
+    dest
+}
+
+#[cfg(all(feature = "ffi", not(test)))]
+#[no_mangle]
+pub unsafe extern "C" fn memset(s: *mut u8, c: i32, n: usize) -> *mut u8 {
+    let mut i = 0;
+    while i < n {
+        *s.add(i) = c as u8;
+        i += 1;
+    }
+    s
+}
+
+#[cfg(all(feature = "ffi", not(test)))]
+#[no_mangle]
+pub unsafe extern "C" fn memcmp(s1: *const u8, s2: *const u8, n: usize) -> i32 {
+    let mut i = 0;
+    while i < n {
+        let a = *s1.add(i);
+        let b = *s2.add(i);
+        if a != b {
+            return a as i32 - b as i32;
+        }
+        i += 1;
+    }
+    0
+}
+
+#[cfg(all(feature = "ffi", not(test)))]
+#[no_mangle]
+pub unsafe extern "C" fn bzero(s: *mut u8, n: usize) {
+    memset(s, 0, n);
+}
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -14,6 +110,17 @@ mod mode;
 #[cfg(not(feature = "ffi"))]
 mod screen;
 
+// Prelude for no_std compatibility
+#[cfg(feature = "ffi")]
+#[allow(dead_code)]
+mod prelude {
+    pub use alloc::boxed::Box;
+    pub use alloc::string::String;
+    pub use alloc::vec::Vec;
+    pub use alloc::vec;
+    pub use core::fmt;
+}
+
 pub use crate::input::KeypadKey;
 
 #[cfg(target_arch = "wasm32")]
@@ -23,7 +130,11 @@ pub async fn start() {
     // TODO: Process GL
 }
 
+#[cfg(not(feature = "ffi"))]
 static GAMEBOY: OnceLock<Mutex<Option<crate::gameboy::Gameboy>>> = OnceLock::new();
+
+#[cfg(feature = "ffi")]
+static mut GAMEBOY: Option<crate::gameboy::Gameboy> = None;
 
 #[cfg(target_vendor = "apple")]
 unsafe impl Send for crate::gameboy::Gameboy {}
@@ -34,42 +145,81 @@ unsafe impl Sync for crate::gameboy::Gameboy {}
 ///
 /// This function is not safe due to from_raw_parts.
 #[no_mangle]
-pub unsafe extern "C" fn load(bytes: *const std::ffi::c_uchar, bytes_length: usize) {
-    let bytes = std::slice::from_raw_parts(bytes, bytes_length);
+pub unsafe extern "C" fn load(bytes: *const core::ffi::c_uchar, bytes_length: usize) {
+    let bytes = core::slice::from_raw_parts(bytes, bytes_length);
     let bytes: Vec<u8> = Vec::from(bytes);
-    GAMEBOY
-        .get_or_init(|| Some(crate::gameboy::Gameboy::new(bytes.to_vec(), None)).into());
+    
+    #[cfg(not(feature = "ffi"))]
+    {
+        GAMEBOY
+            .get_or_init(|| Some(crate::gameboy::Gameboy::new(bytes.to_vec(), None)).into());
+    }
+    
+    #[cfg(feature = "ffi")]
+    {
+        GAMEBOY = Some(crate::gameboy::Gameboy::new(bytes.to_vec(), None));
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn frame() {
-    if let Some(gb) = GAMEBOY.get() {
-        if let Ok(mut locked_gb) = gb.lock() {
-            if let Some(gameboy) = locked_gb.as_mut() {
-                gameboy.frame();
-            };
+    #[cfg(not(feature = "ffi"))]
+    {
+        if let Some(gb) = GAMEBOY.get() {
+            if let Ok(mut locked_gb) = gb.lock() {
+                if let Some(gameboy) = locked_gb.as_mut() {
+                    gameboy.frame();
+                };
+            }
+        }
+    }
+    
+    #[cfg(feature = "ffi")]
+    unsafe {
+        if let Some(gameboy) = GAMEBOY.as_mut() {
+            gameboy.frame();
         }
     }
 }
 
 #[no_mangle]
 pub extern "C" fn keydown(key: KeypadKey) {
-    if let Some(gb) = GAMEBOY.get() {
-        if let Ok(mut locked_gb) = gb.lock() {
-            if let Some(gameboy) = locked_gb.as_mut() {
-                gameboy.keydown(key);
+    #[cfg(not(feature = "ffi"))]
+    {
+        if let Some(gb) = GAMEBOY.get() {
+            if let Ok(mut locked_gb) = gb.lock() {
+                if let Some(gameboy) = locked_gb.as_mut() {
+                    gameboy.keydown(key);
+                }
             }
+        }
+    }
+    
+    #[cfg(feature = "ffi")]
+    unsafe {
+        if let Some(gameboy) = GAMEBOY.as_mut() {
+            gameboy.keydown(key);
         }
     }
 }
 
 #[no_mangle]
 pub extern "C" fn keyup(key: KeypadKey) {
-    if let Some(gb) = GAMEBOY.get() {
-        if let Ok(mut locked_gb) = gb.lock() {
-            if let Some(gameboy) = locked_gb.as_mut() {
-                gameboy.keyup(key);
+    #[cfg(not(feature = "ffi"))]
+    {
+        if let Some(gb) = GAMEBOY.get() {
+            if let Ok(mut locked_gb) = gb.lock() {
+                if let Some(gameboy) = locked_gb.as_mut() {
+                    gameboy.keyup(key);
+                }
             }
+        }
+    }
+    
+    #[cfg(feature = "ffi")]
+    unsafe {
+        if let Some(gameboy) = GAMEBOY.as_mut() {
+            gameboy.keyup(key);
         }
     }
 }
@@ -82,82 +232,37 @@ pub struct ImageBuffer {
 
 #[no_mangle]
 pub extern "C" fn image() -> ImageBuffer {
-    if let Some(gb) = GAMEBOY.get() {
-        if let Ok(locked_gb) = gb.lock() {
-            if let Some(gameboy) = locked_gb.as_ref() {
-                let image: &[u8] = gameboy.image();
-                let data = image.as_ptr();
-                let len = image.len() as i32;
-                // std::mem::forget(image);
-                // My guess image will be dropped but let's test
+    #[cfg(not(feature = "ffi"))]
+    {
+        if let Some(gb) = GAMEBOY.get() {
+            if let Ok(locked_gb) = gb.lock() {
+                if let Some(gameboy) = locked_gb.as_ref() {
+                    let image: &[u8] = gameboy.image();
+                    let data = image.as_ptr();
+                    let len = image.len() as i32;
+                    // std::mem::forget(image);
+                    // My guess image will be dropped but let's test
 
-                return ImageBuffer { len, data };
+                    return ImageBuffer { len, data };
+                }
             }
+        }
+    }
+    
+    #[cfg(feature = "ffi")]
+    unsafe {
+        if let Some(gameboy) = GAMEBOY.as_ref() {
+            let image: &[u8] = gameboy.image();
+            let data = image.as_ptr();
+            let len = image.len() as i32;
+            return ImageBuffer { len, data };
         }
     }
 
     ImageBuffer {
         len: 0,
-        data: std::ptr::null_mut(),
+        data: core::ptr::null(),
     }
 }
 
-#[no_mangle]
-#[cfg(feature = "ffi-base64")]
-pub extern "C" fn image_base64() -> *const std::os::raw::c_char {
-    use base64::{engine::general_purpose, Engine};
-    use image::DynamicImage;
-    use std::ffi::CString;
-    use std::io::Cursor;
 
-    if let Some(gb) = GAMEBOY.get() {
-        if let Ok(mut locked_gb) = gb.lock() {
-            let width = 160;
-            let height = 144;
-
-            let image: &[u8] = locked_gb.as_mut().unwrap().image();
-            // std::mem::forget(image);
-
-            // Allocate a new buffer for the RGB image, 3 bytes per pixel
-            let mut output_data = vec![0u8; width as usize * height as usize * 3];
-
-            let mut i = 0;
-            // Iterate through 4-byte chunks of the image data (RGBA bytes)
-            for chunk in image.chunks(4) {
-                // ... and copy each of them to output, leaving out the A byte
-                output_data[i..i + 3].copy_from_slice(&chunk[0..3]);
-                i += 3;
-            }
-
-            let buffer =
-                image::ImageBuffer::from_raw(width, height, output_data).unwrap();
-            let img: DynamicImage = image::DynamicImage::ImageRgb8(buffer);
-            // if scale > 1 {
-            //     buffer = image::imageops::resize(
-            //         &buffer,
-            //         width * (scale as u32),
-            //         height * (scale as u32),
-            //         image::imageops::FilterType::Nearest,
-            //     );
-            // }
-
-            let mut png: Vec<u8> = vec![];
-            img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
-                .expect("don't fail img write_to");
-            let data = general_purpose::STANDARD.encode(&png);
-
-            // let cstring_data = CString::new(img.as_bytes()).expect("don't fail");
-            // return cstring_data.into_raw();
-
-            // let mut png: Vec<u8> = vec![];
-            // img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).expect("don't fail img write_to");
-            // let data = general_purpose::STANDARD.encode(&png);
-
-            let cstring_data = CString::new(data).expect("don't fail");
-            return cstring_data.into_raw();
-        }
-    }
-
-    let data = CString::new("").expect("don't fail");
-    data.into_raw()
-}

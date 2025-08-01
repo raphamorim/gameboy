@@ -1,5 +1,11 @@
+#[cfg(not(feature = "ffi"))]
 use std::io::prelude::*;
+#[cfg(not(feature = "ffi"))]
 use std::{fs, io, path};
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
+#[cfg(feature = "ffi")]
+use alloc::vec;
 
 use crate::mbc::{rom_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
@@ -9,11 +15,15 @@ pub struct MBC2 {
     ram: Vec<u8>,
     ram_on: bool,
     rombank: usize,
+    #[cfg(not(feature = "ffi"))]
     savepath: Option<path::PathBuf>,
+    #[cfg(feature = "ffi")]
+    savepath: Option<()>,
     rombanks: usize,
 }
 
 impl MBC2 {
+    #[cfg(not(feature = "ffi"))]
     pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC2> {
         let svpath = match data[0x147] {
             0x05 => None,
@@ -32,7 +42,22 @@ impl MBC2 {
         };
         res.loadram().map(|_| res)
     }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new(data: Vec<u8>, _file: ()) -> StrResult<MBC2> {
+        let rombanks = rom_banks(data[0x148]);
 
+        Ok(MBC2 {
+            rom: data,
+            ram: vec![0; 512],
+            ram_on: false,
+            rombank: 1,
+            savepath: None,
+            rombanks,
+        })
+    }
+
+    #[cfg(not(feature = "ffi"))]
     fn loadram(&mut self) -> StrResult<()> {
         match self.savepath {
             None => Ok(()),
@@ -50,8 +75,14 @@ impl MBC2 {
             }
         }
     }
+    
+    #[cfg(feature = "ffi")]
+    fn loadram(&mut self) -> StrResult<()> {
+        Ok(())
+    }
 }
 
+#[cfg(not(feature = "ffi"))]
 impl Drop for MBC2 {
     fn drop(&mut self) {
         match self.savepath {
@@ -60,6 +91,13 @@ impl Drop for MBC2 {
                 let _ = fs::File::create(path).and_then(|mut f| f.write_all(&self.ram));
             }
         };
+    }
+}
+
+#[cfg(feature = "ffi")]
+impl Drop for MBC2 {
+    fn drop(&mut self) {
+        // No-op for no_std
     }
 }
 

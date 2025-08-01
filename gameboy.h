@@ -25,6 +25,10 @@ typedef struct ImageBuffer {
   const uint8_t *data;
 } ImageBuffer;
 
+#if defined(FFI)
+void init_allocator(uint8_t *heap_start, uintptr_t heap_size);
+#endif
+
 /**
  * # Safety
  *
@@ -39,5 +43,3 @@ void keydown(enum KeypadKey key);
 void keyup(enum KeypadKey key);
 
 struct ImageBuffer image(void);
-
-const char *image_base64(void);
