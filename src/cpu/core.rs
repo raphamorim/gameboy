@@ -1102,6 +1102,10 @@ impl Cpu<'_> {
                 self.setei = 2;
                 1
             }
+            0xFC => {
+                // Undefined opcode - treat as NOP
+                1
+            }
             0xFE => {
                 data::cpn(self);
                 2

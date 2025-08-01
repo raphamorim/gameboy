@@ -14,7 +14,8 @@ crate-type = ["cdylib", "rlib", "staticlib"]
 
 [features]
 default = ["libc", "glutin", "gl" ,"ratatui" ,"icy_sixel", "image", "ratatui-image"]
-ffi = ["image", "base64"]
+ffi = []
+ffi-base64 = ["image", "base64"]
 
 [profile.release]
 opt-level = "s"

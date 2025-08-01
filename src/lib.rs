@@ -45,7 +45,9 @@ pub unsafe extern "C" fn load(bytes: *const std::ffi::c_uchar, bytes_length: usi
 pub extern "C" fn frame() {
     if let Some(gb) = GAMEBOY.get() {
         if let Ok(mut locked_gb) = gb.lock() {
-            locked_gb.as_mut().unwrap().frame();
+            if let Some(gameboy) = locked_gb.as_mut() {
+                gameboy.frame();
+            };
         }
     }
 }
@@ -54,7 +56,9 @@ pub extern "C" fn frame() {
 pub extern "C" fn keydown(key: KeypadKey) {
     if let Some(gb) = GAMEBOY.get() {
         if let Ok(mut locked_gb) = gb.lock() {
-            locked_gb.as_mut().unwrap().keydown(key);
+            if let Some(gameboy) = locked_gb.as_mut() {
+                gameboy.keydown(key);
+            }
         }
     }
 }
@@ -63,7 +67,9 @@ pub extern "C" fn keydown(key: KeypadKey) {
 pub extern "C" fn keyup(key: KeypadKey) {
     if let Some(gb) = GAMEBOY.get() {
         if let Ok(mut locked_gb) = gb.lock() {
-            locked_gb.as_mut().unwrap().keyup(key);
+            if let Some(gameboy) = locked_gb.as_mut() {
+                gameboy.keyup(key);
+            }
         }
     }
 }
@@ -77,14 +83,16 @@ pub struct ImageBuffer {
 #[no_mangle]
 pub extern "C" fn image() -> ImageBuffer {
     if let Some(gb) = GAMEBOY.get() {
-        if let Ok(mut locked_gb) = gb.lock() {
-            let image: &[u8] = locked_gb.as_mut().unwrap().image();
-            let data = image.as_ptr();
-            let len = image.len() as i32;
-            // std::mem::forget(image);
-            // My guess image will be dropped but let's test
+        if let Ok(locked_gb) = gb.lock() {
+            if let Some(gameboy) = locked_gb.as_ref() {
+                let image: &[u8] = gameboy.image();
+                let data = image.as_ptr();
+                let len = image.len() as i32;
+                // std::mem::forget(image);
+                // My guess image will be dropped but let's test
 
-            return ImageBuffer { len, data };
+                return ImageBuffer { len, data };
+            }
         }
     }
 
@@ -95,7 +103,7 @@ pub extern "C" fn image() -> ImageBuffer {
 }
 
 #[no_mangle]
-#[cfg(feature = "ffi")]
+#[cfg(feature = "ffi-base64")]
 pub extern "C" fn image_base64() -> *const std::os::raw::c_char {
     use base64::{engine::general_purpose, Engine};
     use image::DynamicImage;
