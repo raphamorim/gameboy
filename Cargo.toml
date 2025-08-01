@@ -14,8 +14,7 @@ crate-type = ["cdylib", "rlib", "staticlib"]
 
 [features]
 default = ["libc", "glutin", "gl" ,"ratatui" ,"icy_sixel", "image", "ratatui-image"]
-ffi = []
-ffi-base64 = ["image", "base64"]
+ffi = ["linked_list_allocator"]
 
 [profile.release]
 opt-level = "s"
@@ -31,6 +30,10 @@ split-debuginfo = "unpacked"
 lto = false
 incremental = true
 opt-level = 0
+panic = 'abort'
+
+[dependencies]
+linked_list_allocator = { version = "0.10", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 libc = { version = "0.2.126", optional = true }
@@ -40,7 +43,7 @@ ratatui = { version = "^0.29.0", features = ["crossterm"], optional = true }
 icy_sixel = { version = "^0.1.1", optional = true }
 image = { version = "^0.25.1", default-features = false, features = ["jpeg", "png"], optional = true }
 ratatui-image = { version = "4.2.0", optional = true }
-base64 = { version = "0.21.7", optional = true }
+
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3.59"

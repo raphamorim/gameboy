@@ -1,9 +1,16 @@
 use crate::mbc::{ram_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
+#[cfg(not(feature = "ffi"))]
 use std::io::prelude::*;
+#[cfg(not(feature = "ffi"))]
 use std::path;
+#[cfg(not(feature = "ffi"))]
 use std::{fs, io, time};
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
+#[cfg(feature = "ffi")]
+use alloc::vec;
 
 pub struct MBC3 {
     rom: Vec<u8>,
@@ -13,13 +20,20 @@ pub struct MBC3 {
     rambanks: usize,
     selectrtc: bool,
     ram_on: bool,
+    #[cfg(not(feature = "ffi"))]
     savepath: Option<path::PathBuf>,
+    #[cfg(feature = "ffi")]
+    savepath: Option<()>,
     rtc_ram: [u8; 5],
     rtc_ram_latch: [u8; 5],
+    #[cfg(not(feature = "ffi"))]
+    rtc_zero: Option<u64>,
+    #[cfg(feature = "ffi")]
     rtc_zero: Option<u64>,
 }
 
 impl MBC3 {
+    #[cfg(not(feature = "ffi"))]
     pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC3> {
         let subtype = data[0x147];
         let svpath = match subtype {
@@ -38,7 +52,7 @@ impl MBC3 {
 
         let mut res = MBC3 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: ::core::iter::repeat(0u8).take(ramsize).collect(),
             rombank: 1,
             rambank: 0,
             rambanks,
@@ -68,7 +82,7 @@ impl MBC3 {
 
         let mut res = MBC3 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: ::core::iter::repeat(0u8).take(ramsize).collect(),
             rombank: 1,
             rambank: 0,
             rambanks,
@@ -81,7 +95,13 @@ impl MBC3 {
         };
         res.loadram().map(|_| res)
     }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new(data: Vec<u8>, _file: ()) -> StrResult<MBC3> {
+        Self::new_without_save(data)
+    }
 
+    #[cfg(not(feature = "ffi"))]
     fn loadram(&mut self) -> StrResult<()> {
         match self.savepath {
             None => Ok(()),
@@ -109,12 +129,18 @@ impl MBC3 {
             }
         }
     }
+    
+    #[cfg(feature = "ffi")]
+    fn loadram(&mut self) -> StrResult<()> {
+        Ok(())
+    }
 
     fn latch_rtc_reg(&mut self) {
         self.calc_rtc_reg();
         self.rtc_ram_latch.clone_from_slice(&self.rtc_ram);
     }
 
+    #[cfg(not(feature = "ffi"))]
     fn calc_rtc_reg(&mut self) {
         // Do not modify regs when halted
         if self.rtc_ram[4] & 0x40 == 0x40 {
@@ -146,7 +172,13 @@ impl MBC3 {
             self.calc_rtc_zero();
         }
     }
+    
+    #[cfg(feature = "ffi")]
+    fn calc_rtc_reg(&mut self) {
+        // No-op for no_std
+    }
 
+    #[cfg(not(feature = "ffi"))]
     fn compute_difftime(&self) -> Option<u64> {
         self.rtc_zero?;
         let mut difftime = match time::SystemTime::now().duration_since(time::UNIX_EPOCH)
@@ -163,12 +195,18 @@ impl MBC3 {
         difftime -= days * 3600 * 24;
         Some(difftime)
     }
+    
+    #[cfg(feature = "ffi")]
+    fn compute_difftime(&self) -> Option<u64> {
+        None
+    }
 
     fn calc_rtc_zero(&mut self) {
         self.rtc_zero = self.compute_difftime();
     }
 }
 
+#[cfg(not(feature = "ffi"))]
 impl Drop for MBC3 {
     fn drop(&mut self) {
         match self.savepath {
@@ -189,6 +227,13 @@ impl Drop for MBC3 {
                 };
             }
         };
+    }
+}
+
+#[cfg(feature = "ffi")]
+impl Drop for MBC3 {
+    fn drop(&mut self) {
+        // No-op for no_std
     }
 }
 

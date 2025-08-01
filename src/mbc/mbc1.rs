@@ -1,5 +1,11 @@
+#[cfg(not(feature = "ffi"))]
 use std::io::prelude::*;
+#[cfg(not(feature = "ffi"))]
 use std::{fs, io, path};
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
+#[cfg(feature = "ffi")]
+use alloc::vec;
 
 use crate::mbc::{ram_banks, rom_banks, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
@@ -11,12 +17,16 @@ pub struct MBC1 {
     banking_mode: u8,
     rombank: usize,
     rambank: usize,
+    #[cfg(not(feature = "ffi"))]
     savepath: Option<path::PathBuf>,
+    #[cfg(feature = "ffi")]
+    savepath: Option<()>,
     rombanks: usize,
     rambanks: usize,
 }
 
 impl MBC1 {
+    #[cfg(not(feature = "ffi"))]
     pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC1> {
         let (svpath, rambanks) = match data[0x147] {
             0x02 => (None, ram_banks(data[0x149])),
@@ -28,7 +38,7 @@ impl MBC1 {
 
         let mut res = MBC1 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: ::core::iter::repeat(0u8).take(ramsize).collect(),
             ram_on: false,
             banking_mode: 0,
             rombank: 1,
@@ -38,6 +48,28 @@ impl MBC1 {
             rambanks,
         };
         res.loadram().map(|_| res)
+    }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new(data: Vec<u8>, _file: ()) -> StrResult<MBC1> {
+        let rambanks = match data[0x147] {
+            0x02 | 0x03 => ram_banks(data[0x149]),
+            _ => 0,
+        };
+        let rombanks = rom_banks(data[0x148]);
+        let ramsize = rambanks * 0x2000;
+
+        Ok(MBC1 {
+            rom: data,
+            ram: vec![0u8; ramsize],
+            ram_on: false,
+            banking_mode: 0,
+            rombank: 1,
+            rambank: 0,
+            savepath: None,
+            rombanks,
+            rambanks,
+        })
     }
 
     #[allow(dead_code)]
@@ -52,7 +84,7 @@ impl MBC1 {
 
         let res = MBC1 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: ::core::iter::repeat(0u8).take(ramsize).collect(),
             ram_on: false,
             banking_mode: 0,
             rombank: 1,
@@ -65,6 +97,7 @@ impl MBC1 {
         Ok(res)
     }
 
+    #[cfg(not(feature = "ffi"))]
     fn loadram(&mut self) -> StrResult<()> {
         match self.savepath {
             None => Ok(()),
@@ -82,8 +115,14 @@ impl MBC1 {
             }
         }
     }
+    
+    #[cfg(feature = "ffi")]
+    fn loadram(&mut self) -> StrResult<()> {
+        Ok(())
+    }
 }
 
+#[cfg(not(feature = "ffi"))]
 impl Drop for MBC1 {
     fn drop(&mut self) {
         match self.savepath {
@@ -92,6 +131,13 @@ impl Drop for MBC1 {
                 let _ = fs::File::create(path).and_then(|mut f| f.write_all(&self.ram));
             }
         };
+    }
+}
+
+#[cfg(feature = "ffi")]
+impl Drop for MBC1 {
+    fn drop(&mut self) {
+        // No-op for no_std
     }
 }
 

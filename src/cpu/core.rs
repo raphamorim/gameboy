@@ -1,6 +1,8 @@
 use crate::cpu::registers::Registers;
 use crate::cpu::{data, ld, misc, stack};
 use crate::mmu::MemoryManagementUnit;
+#[cfg(feature = "ffi")]
+use alloc::vec::Vec;
 
 #[allow(dead_code)]
 pub enum Interrupt {
@@ -25,8 +27,26 @@ pub struct Cpu<'a> {
 }
 
 impl Cpu<'_> {
+    #[cfg(not(feature = "ffi"))]
     pub fn new(data: Vec<u8>, file: Option<std::path::PathBuf>) -> Self {
         let memory = MemoryManagementUnit::new_cgb(data, file).unwrap();
+        let registers = Registers::new(memory.gbmode);
+
+        Cpu {
+            registers,
+            memory,
+            ime: false,
+            setdi: 0,
+            setei: 0,
+            halt: 0,
+            stop: 0,
+            _executed_operations: Vec::new(),
+        }
+    }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new(data: Vec<u8>, _file: Option<()>) -> Self {
+        let memory = MemoryManagementUnit::new_cgb(data, None).unwrap();
         let registers = Registers::new(memory.gbmode);
 
         Cpu {
@@ -1115,6 +1135,7 @@ impl Cpu<'_> {
                 4
             }
             _ => {
+                #[cfg(not(feature = "ffi"))]
                 println!(
                     "Instruction at {:#01x} | {:#06x} | {} not implemented, stopping.",
                     op, op, op

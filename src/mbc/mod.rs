@@ -1,6 +1,9 @@
 pub type StrResult<T> = Result<T, &'static str>;
 
+#[cfg(not(feature = "ffi"))]
 use std::path;
+#[cfg(feature = "ffi")]
+use alloc::{boxed::Box, string::String, vec::Vec};
 
 mod mbc0;
 mod mbc1;
@@ -36,6 +39,7 @@ pub trait MemoryBankController: Send {
     }
 }
 
+#[cfg(not(feature = "ffi"))]
 pub fn get_mbc(
     data: Vec<u8>,
     filepath: Option<path::PathBuf>,
@@ -58,6 +62,27 @@ pub fn get_mbc(
         0x0F..=0x13 => mbc3::MBC3::new(data, file)
             .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
         0x19..=0x1E => mbc5::MBC5::new(data, file)
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
+        _ => Err("Unsupported MBC type"),
+    }
+}
+
+#[cfg(feature = "ffi")]
+pub fn get_mbc(
+    data: Vec<u8>,
+    _filepath: Option<()>,
+) -> StrResult<Box<dyn MemoryBankController + 'static>> {
+    match data[0x147] {
+        0x00 => {
+            mbc0::MBC0::new(data).map(|v| Box::new(v) as Box<dyn MemoryBankController>)
+        }
+        0x01..=0x03 => mbc1::MBC1::new(data, ())
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
+        0x05..=0x06 => mbc2::MBC2::new(data, ())
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
+        0x0F..=0x13 => mbc3::MBC3::new(data, ())
+            .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
+        0x19..=0x1E => mbc5::MBC5::new(data, ())
             .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
         _ => Err("Unsupported MBC type"),
     }

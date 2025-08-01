@@ -8,7 +8,10 @@ use crate::mmu::timer::Timer;
 // use crate::sound::Sound;
 use crate::mbc;
 use crate::mode::{GbMode, GbSpeed};
+#[cfg(not(feature = "ffi"))]
 use std::path;
+#[cfg(feature = "ffi")]
+use alloc::{boxed::Box, vec::Vec};
 
 pub type StrResult<T> = Result<T, &'static str>;
 
@@ -59,12 +62,62 @@ fn fill_random(slice: &mut [u8], start: u32) {
 }
 
 impl<'a> MemoryManagementUnit<'a> {
+    #[cfg(not(feature = "ffi"))]
     pub fn new(
         data: Vec<u8>,
         file: Option<path::PathBuf>,
     ) -> StrResult<MemoryManagementUnit<'a>> {
-        let mmu_mbc = mbc::get_mbc(data, file)?;
+        Self::new_impl(data, file, GbMode::Classic)
+    }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new(
+        data: Vec<u8>,
+        _file: Option<()>,
+    ) -> StrResult<MemoryManagementUnit<'a>> {
+        Self::new_impl(data, None, GbMode::Classic)
+    }
 
+    #[cfg(not(feature = "ffi"))]
+    pub fn new_cgb(
+        data: Vec<u8>,
+        file: Option<path::PathBuf>,
+    ) -> StrResult<MemoryManagementUnit<'a>> {
+        Self::new_impl(data, file, GbMode::Color)
+    }
+    
+    #[cfg(feature = "ffi")]
+    pub fn new_cgb(
+        data: Vec<u8>,
+        _file: Option<()>,
+    ) -> StrResult<MemoryManagementUnit<'a>> {
+        Self::new_impl(data, None, GbMode::Color)
+    }
+    
+    #[cfg(not(feature = "ffi"))]
+    fn new_impl(
+        data: Vec<u8>,
+        file: Option<path::PathBuf>,
+        mode: GbMode,
+    ) -> StrResult<MemoryManagementUnit<'a>> {
+        let mmu_mbc = mbc::get_mbc(data, file)?;
+        Self::new_with_mbc(mmu_mbc, mode)
+    }
+    
+    #[cfg(feature = "ffi")]
+    fn new_impl(
+        data: Vec<u8>,
+        _file: Option<()>,
+        mode: GbMode,
+    ) -> StrResult<MemoryManagementUnit<'a>> {
+        let mmu_mbc = mbc::get_mbc(data, None)?;
+        Self::new_with_mbc(mmu_mbc, mode)
+    }
+    
+    fn new_with_mbc(
+        mmu_mbc: Box<dyn mbc::MemoryBankController + 'static>,
+        mode: GbMode,
+    ) -> StrResult<MemoryManagementUnit<'a>> {
         let serial = Serial::default();
         let mut res = MemoryManagementUnit {
             wram: [0; WRAM_SIZE],
@@ -76,10 +129,10 @@ impl<'a> MemoryManagementUnit<'a> {
             serial,
             timer: Timer::default(),
             keypad: Keypad::default(),
-            gpu: Gpu::new(),
+            gpu: if mode == GbMode::Color { Gpu::new_cgb() } else { Gpu::new() },
             // sound: None,
             mbc: mmu_mbc,
-            gbmode: GbMode::Classic,
+            gbmode: mode,
             gbspeed: GbSpeed::Single,
             speed_switch_req: false,
             hdma_src: 0,
@@ -89,46 +142,16 @@ impl<'a> MemoryManagementUnit<'a> {
             undocumented_cgb_regs: [0; 3],
         };
         fill_random(&mut res.wram, 42);
-        if res.rb(0x0143) == 0xC0 {
+        if mode == GbMode::Classic && res.rb(0x0143) == 0xC0 {
             return Err("This game does not work in Classic mode");
+        }
+        if mode == GbMode::Color {
+            res.determine_mode();
         }
         res.set_initial();
         Ok(res)
     }
 
-    pub fn new_cgb(
-        data: Vec<u8>,
-        file: Option<path::PathBuf>,
-    ) -> StrResult<MemoryManagementUnit<'a>> {
-        let mmu_mbc = mbc::get_mbc(data, file)?;
-        let serial = Serial::default();
-        let mut res = MemoryManagementUnit {
-            wram: [0; WRAM_SIZE],
-            zram: [0; ZRAM_SIZE],
-            wrambank: 1,
-            hdma: [0; 4],
-            inte: 0,
-            intf: 0,
-            serial,
-            timer: Timer::default(),
-            keypad: Keypad::default(),
-            gpu: Gpu::new_cgb(),
-            // sound: None,
-            mbc: mmu_mbc,
-            gbmode: GbMode::Color,
-            gbspeed: GbSpeed::Single,
-            speed_switch_req: false,
-            hdma_src: 0,
-            hdma_dst: 0,
-            hdma_status: DMAType::NoDma,
-            hdma_len: 0xFF,
-            undocumented_cgb_regs: [0; 3],
-        };
-        fill_random(&mut res.wram, 42);
-        res.determine_mode();
-        res.set_initial();
-        Ok(res)
-    }
 
     fn set_initial(&mut self) {
         self.wb(0xFF05, 0);

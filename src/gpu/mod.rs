@@ -1,5 +1,10 @@
 use crate::mode::GbMode;
+#[cfg(not(feature = "ffi"))]
 use std::cmp::Ordering;
+#[cfg(feature = "ffi")]
+use core::cmp::Ordering;
+#[cfg(feature = "ffi")]
+use alloc::boxed::Box;
 
 const VRAM_SIZE: usize = 0x4000;
 const VOAM_SIZE: usize = 0xA0;

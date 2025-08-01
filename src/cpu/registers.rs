@@ -1,5 +1,8 @@
 use crate::mode::GbMode;
+#[cfg(not(feature = "ffi"))]
 use std::fmt;
+#[cfg(feature = "ffi")]
+use core::fmt;
 
 #[derive(Debug)]
 pub struct Registers {
