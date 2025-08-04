@@ -39,13 +39,12 @@ pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String>
     }
 
     let file = File::open(filepath);
-    let filepath = Default::default();
     match file.and_then(|mut f| f.read_to_end(&mut rom)) {
         Ok(_) => {}
         Err(e) => return Err(format!("Failed to read {:?}: {}", filepath, e)),
     };
 
-    Ok((rom, filepath))
+    Ok((rom, std::path::PathBuf::from(filepath)))
 }
 
 pub const CYCLES: u32 = 70224;
