@@ -66,15 +66,17 @@ impl VolumeEnvelope {
     }
 
     fn step(&mut self) {
-        if self.delay > 1 {
-            self.delay -= 1;
-        } else if self.delay == 1 {
-            self.delay = self.period;
-            if self.goes_up && self.volume < 15 {
-                self.volume += 1;
-            } else if !self.goes_up && self.volume > 0 {
-                self.volume -= 1;
+        match self.delay {
+            2.. => self.delay -= 1,
+            1 => {
+                self.delay = self.period;
+                if self.goes_up && self.volume < 15 {
+                    self.volume += 1;
+                } else if !self.goes_up && self.volume > 0 {
+                    self.volume -= 1;
+                }
             }
+            _ => {}
         }
     }
 }
@@ -461,6 +463,12 @@ pub struct Sound {
     prev_time: u32,
     next_time: u32,
     output_period: u32,
+}
+
+impl Default for Sound {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Sound {
