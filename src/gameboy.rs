@@ -176,7 +176,6 @@ impl Gameboy {
     }
 
     pub fn frame(&mut self) {
-        // Use rboy's exact timing calculation
         let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
         let mut ticks = 0;
 
