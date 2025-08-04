@@ -121,7 +121,7 @@ impl Gameboy {
         let mut focused = true;
         let mut last_frame_time = std::time::Instant::now();
         let frame_duration = std::time::Duration::from_millis(16); // ~60 FPS
-        
+
         event_loop.run(move |event, _, control_flow| {
             let window = gl_window.window();
             match event {
@@ -146,7 +146,7 @@ impl Gameboy {
                         gl_window.swap_buffers().unwrap();
                         last_frame_time = std::time::Instant::now();
                     }
-                    
+
                     // Schedule next frame
                     let next_frame_time = last_frame_time + frame_duration;
                     *control_flow =
@@ -182,7 +182,7 @@ impl Gameboy {
             ticks += self.cpu.do_cycle();
             // Don't break early - run for the full time period
         }
-        
+
         // Note: we're ignoring the GPU frame signal for now
         // This ensures consistent timing for audio
     }
