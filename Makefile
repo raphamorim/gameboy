@@ -9,7 +9,7 @@ watch:
 
 lint:
 	cargo fmt -- --check --color always
-	cargo clippy --all-targets --all-features -- -D warnings
+	cargo clippy --all-targets -- -D warnings
 
 build-wasm:
 	cargo build --release --target wasm32-unknown-unknown

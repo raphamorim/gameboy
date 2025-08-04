@@ -47,7 +47,8 @@ pub fn load_rom(filepath: &str) -> Result<(Vec<u8>, std::path::PathBuf), String>
     Ok((rom, std::path::PathBuf::from(filepath)))
 }
 
-pub const CYCLES: u32 = 70224;
+// Match rboy's timing: (4194304 / 1000 * 16) = ~67,109 cycles per 16ms frame
+pub const CYCLES: u32 = 67109;
 
 impl Gameboy {
     pub fn new(data: Vec<u8>, filepath: Option<std::path::PathBuf>) -> Gameboy {
@@ -83,6 +84,24 @@ impl Gameboy {
     pub fn render_desktop(mut self) {
         use crate::screen::desktop::*;
 
+        // Initialize audio
+        #[cfg(not(target_arch = "wasm32"))]
+        let _audio_stream = match crate::sound::cpal_audio::CpalPlayer::new() {
+            Some((player, stream)) => {
+                self.enable_audio(Box::new(player));
+                #[cfg(debug_assertions)]
+                eprintln!("Audio enabled successfully");
+                Some(stream)
+            }
+            None => {
+                #[cfg(debug_assertions)]
+                eprintln!("Failed to initialize audio");
+                None
+            }
+        };
+        #[cfg(target_arch = "wasm32")]
+        let _audio_stream = None;
+
         let event_loop: glutin::event_loop::EventLoop<()> =
             glutin::event_loop::EventLoop::with_user_event();
         let inner_size = glutin::dpi::LogicalSize {
@@ -102,6 +121,9 @@ impl Gameboy {
 
         let cx = Glcx::new();
         let mut focused = true;
+        let mut last_frame_time = std::time::Instant::now();
+        let frame_duration = std::time::Duration::from_millis(16); // ~60 FPS
+
         event_loop.run(move |event, _, control_flow| {
             let window = gl_window.window();
             match event {
@@ -112,19 +134,28 @@ impl Gameboy {
                     *control_flow =
                         process_window(window, &wevent, &mut self, &mut focused)
                 }
-                glutin::event::Event::MainEventsCleared => window.request_redraw(),
-                glutin::event::Event::RedrawRequested(_) => {
-                    self.frame();
-                    cx.draw(self.width, self.height, self.image());
-                    gl_window.swap_buffers().unwrap();
-
-                    std::thread::sleep(std::time::Duration::from_millis(5));
+                glutin::event::Event::MainEventsCleared => {
+                    // Only request redraw if enough time has passed
+                    let now = std::time::Instant::now();
+                    if now.duration_since(last_frame_time) >= frame_duration {
+                        window.request_redraw();
+                    }
                 }
-                _ => {
-                    let next_frame_time =
-                        std::time::Instant::now() + std::time::Duration::from_millis(5);
+                glutin::event::Event::RedrawRequested(_) => {
+                    if focused {
+                        self.frame();
+                        cx.draw(self.width, self.height, self.image());
+                        gl_window.swap_buffers().unwrap();
+                        last_frame_time = std::time::Instant::now();
+                    }
+
+                    // Schedule next frame
+                    let next_frame_time = last_frame_time + frame_duration;
                     *control_flow =
                         glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+                }
+                _ => {
+                    // Keep the current control flow
                 }
             }
         });
@@ -145,8 +176,7 @@ impl Gameboy {
     }
 
     pub fn frame(&mut self) {
-        // let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
-        let waitticks = CYCLES;
+        let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
         let mut ticks = 0;
 
         'outer: loop {
@@ -175,5 +205,10 @@ impl Gameboy {
 
     pub fn keyup(&mut self, key: KeypadKey) {
         self.cpu.memory.keypad.keyup(key);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn enable_audio(&mut self, player: Box<dyn crate::sound::AudioPlayer>) {
+        self.cpu.memory.enable_audio(player);
     }
 }

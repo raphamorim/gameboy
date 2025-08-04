@@ -3,11 +3,12 @@ mod timer;
 
 use crate::gpu::Gpu;
 use crate::input::Keypad;
+use crate::mbc;
 use crate::mmu::serial::Serial;
 use crate::mmu::timer::Timer;
-// use crate::sound::Sound;
-use crate::mbc;
 use crate::mode::{GbMode, GbSpeed};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::sound::Sound;
 use std::path;
 
 pub type StrResult<T> = Result<T, &'static str>;
@@ -32,7 +33,8 @@ pub struct MemoryManagementUnit<'a> {
     pub timer: Timer,
     pub keypad: Keypad,
     pub gpu: Gpu,
-    // pub sound: Option<Sound>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub sound: Option<Sound>,
     hdma_status: DMAType,
     hdma_src: u16,
     hdma_dst: u16,
@@ -77,7 +79,8 @@ impl<'a> MemoryManagementUnit<'a> {
             timer: Timer::default(),
             keypad: Keypad::default(),
             gpu: Gpu::new(),
-            // sound: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            sound: None,
             mbc: mmu_mbc,
             gbmode: GbMode::Classic,
             gbspeed: GbSpeed::Single,
@@ -113,7 +116,8 @@ impl<'a> MemoryManagementUnit<'a> {
             timer: Timer::default(),
             keypad: Keypad::default(),
             gpu: Gpu::new_cgb(),
-            // sound: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            sound: None,
             mbc: mmu_mbc,
             gbmode: GbMode::Color,
             gbspeed: GbSpeed::Single,
@@ -193,7 +197,10 @@ impl<'a> MemoryManagementUnit<'a> {
         self.intf |= self.gpu.interrupt;
         self.gpu.interrupt = 0;
 
-        // self.sound.as_mut().map_or((), |s| s.do_cycle(gputicks));
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(ref mut sound) = self.sound {
+            sound.do_cycle(cputicks);
+        }
 
         self.intf |= self.serial.interrupt;
         self.serial.interrupt = 0;
@@ -215,8 +222,12 @@ impl<'a> MemoryManagementUnit<'a> {
             0xFF01..=0xFF02 => self.serial.rb(address),
             0xFF04..=0xFF07 => self.timer.rb(address),
             0xFF0F => self.intf | 0b11100000,
-            0xFF10..=0xFF3F => 0xFF,
-            // self.sound.as_mut().map_or(0xFF, |s| s.rb(address)),
+            0xFF10..=0xFF3F => {
+                #[cfg(not(target_arch = "wasm32"))]
+                return self.sound.as_ref().map_or(0xFF, |s| s.rb(address));
+                #[cfg(target_arch = "wasm32")]
+                0xFF
+            }
             0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70
                 if self.gbmode != GbMode::Color =>
             {
@@ -264,8 +275,13 @@ impl<'a> MemoryManagementUnit<'a> {
             0xFF00 => self.keypad.wb(value),
             0xFF01..=0xFF02 => self.serial.wb(address, value),
             0xFF04..=0xFF07 => self.timer.wb(address, value),
-            0xFF10..=0xFF3F => {}
-            // self.sound.as_mut().map_or((), |s| s.wb(address, value)),
+            0xFF10..=0xFF3F =>
+            {
+                #[cfg(not(target_arch = "wasm32"))]
+                if let Some(ref mut sound) = self.sound {
+                    sound.wb(address, value);
+                }
+            }
             0xFF46 => self.oamdma(value),
             0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70 | 0xFF76..=0xFF77
                 if self.gbmode != GbMode::Color => {}
@@ -412,5 +428,13 @@ impl<'a> MemoryManagementUnit<'a> {
         } else {
             self.hdma_len -= 1;
         }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn enable_audio(&mut self, player: Box<dyn crate::sound::AudioPlayer>) {
+        if self.sound.is_none() {
+            self.sound = Some(crate::sound::Sound::new());
+        }
+        self.sound.as_mut().unwrap().set_player(player);
     }
 }

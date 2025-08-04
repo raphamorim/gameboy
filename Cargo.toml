@@ -41,6 +41,8 @@ icy_sixel = { version = "^0.1.1", optional = true }
 image = { version = "^0.25.1", default-features = false, features = ["jpeg", "png"], optional = true }
 ratatui-image = { version = "4.2.0", optional = true }
 base64 = { version = "0.21.7", optional = true }
+blip_buf = "0.1.4"
+cpal = "0.16.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3.59"
@@ -62,3 +64,11 @@ web-sys = {version = "0.3.4", features = [
 #'ImageBitmap',
 #'WebGlProgram',
 #'WebGlShader',
+
+[[example]]
+name = "desktop"
+path = "examples/desktop/bin.rs"
+
+[[example]]
+name = "terminal"
+path = "examples/terminal/bin.rs"
