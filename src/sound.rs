@@ -186,36 +186,29 @@ impl SquareChannel {
                 self.delay = 0;
             }
         } else {
-            let mut time = start_time;
+            let mut time = start_time + self.delay;
             let pattern = WAVE_PATTERN[self.duty as usize];
             let vol = self.volume.volume as i32;
 
             while time < end_time {
-                if self.delay > 0 {
-                    let delay_time = std::cmp::min(self.delay, end_time - time);
-                    time += delay_time;
-                    self.delay -= delay_time;
-                    if time >= end_time {
-                        break;
-                    }
-                }
-
                 let amp = vol * pattern[self.phase as usize];
                 if amp != self.last_amp {
                     self.blip.add_delta(time, amp - self.last_amp);
                     self.last_amp = amp;
                 }
 
+                time += self.period;
                 self.phase = (self.phase + 1) % 8;
-                self.delay = self.period;
             }
+
+            self.delay = time - end_time;
         }
     }
 
     fn trigger(&mut self) {
         self.enabled = true;
         self.calculate_period();
-        self.delay = 0; // Match rboy - no initial delay for square channels
+        self.delay = 0; // No initial delay for square channels
         if self.sweep_period != 0 || self.sweep_shift != 0 {
             self.sweep_enabled = true;
             self.sweep_freq = self.freq;
@@ -322,7 +315,7 @@ impl WaveChannel {
                 self.delay = 0;
             }
         } else {
-            let mut time = start_time;
+            let mut time = start_time + self.delay;
 
             // Volume shift for wave channel (output at 4x amplitude)
             let volshift = match self.volume_shift {
@@ -334,15 +327,6 @@ impl WaveChannel {
             };
 
             while time < end_time {
-                if self.delay > 0 {
-                    let delay_time = std::cmp::min(self.delay, end_time - time);
-                    time += delay_time;
-                    self.delay -= delay_time;
-                    if time >= end_time {
-                        break;
-                    }
-                }
-
                 let byte = self.waveram[self.wave_pos as usize / 2];
                 let sample = if self.wave_pos & 1 == 0 {
                     byte >> 4
@@ -358,9 +342,11 @@ impl WaveChannel {
                     self.last_amp = amp;
                 }
 
+                time += self.period;
                 self.wave_pos = (self.wave_pos + 1) % 32;
-                self.delay = self.period;
             }
+
+            self.delay = time - end_time;
         }
     }
 
@@ -368,7 +354,7 @@ impl WaveChannel {
         self.enabled = true;
         self.wave_pos = 0;
         self.calculate_period();
-        self.delay = 4; // Match rboy's initial delay
+        self.delay = 4; // Initial delay for wave channel
     }
 }
 
@@ -422,18 +408,9 @@ impl NoiseChannel {
                 self.delay = 0;
             }
         } else {
-            let mut time = start_time;
+            let mut time = start_time + self.delay;
 
             while time < end_time {
-                if self.delay > 0 {
-                    let delay_time = std::cmp::min(self.delay, end_time - time);
-                    time += delay_time;
-                    self.delay -= delay_time;
-                    if time >= end_time {
-                        break;
-                    }
-                }
-
                 // Update LFSR
                 let bit = (self.lfsr & 1) ^ ((self.lfsr >> 1) & 1);
                 self.lfsr = (self.lfsr >> 1) | (bit << 14);
@@ -453,8 +430,10 @@ impl NoiseChannel {
                     self.last_amp = amp;
                 }
 
-                self.delay = self.period;
+                time += self.period;
             }
+
+            self.delay = time - end_time;
         }
     }
 
@@ -558,15 +537,15 @@ impl Sound {
         self.run();
 
         // End frame for all channels
-        self.channel1.blip.end_frame(self.time);
-        self.channel2.blip.end_frame(self.time);
-        self.channel3.blip.end_frame(self.time);
-        self.channel4.blip.end_frame(self.time);
+        self.channel1.blip.end_frame(self.output_period);
+        self.channel2.blip.end_frame(self.output_period);
+        self.channel3.blip.end_frame(self.output_period);
+        self.channel4.blip.end_frame(self.output_period);
 
-        // Adjust next_time before resetting time
-        self.next_time -= self.time;
-        self.time = 0;
-        self.prev_time = 0;
+        // Adjust timing
+        self.time -= self.output_period;
+        self.next_time -= self.output_period;
+        self.prev_time -= self.output_period;
 
         self.play_samples();
     }
