@@ -21,6 +21,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }}
       - run: rustup component add rustfmt clippy
+      - name: Install ALSA development libraries
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
       - run: cargo fetch
       - run: make lint
       - name: cargo test build
