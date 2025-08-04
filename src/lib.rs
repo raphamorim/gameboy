@@ -13,6 +13,8 @@ mod mmu;
 mod mode;
 #[cfg(not(feature = "ffi"))]
 mod screen;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod sound;
 
 pub use crate::input::KeypadKey;
 
