@@ -178,13 +178,16 @@ impl Gameboy {
         let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
         let mut ticks = 0;
 
-        while ticks < waitticks {
-            ticks += self.cpu.do_cycle();
-            // Don't break early - run for the full time period
-        }
+        'outer: loop {
+            while ticks < waitticks {
+                ticks += self.cpu.do_cycle();
+                if self.check_and_reset_gpu_updated() {
+                    break 'outer;
+                }
+            }
 
-        // Note: we're ignoring the GPU frame signal for now
-        // This ensures consistent timing for audio
+            ticks -= waitticks;
+        }
     }
 
     pub fn image(&self) -> &[u8] {
