@@ -89,10 +89,12 @@ impl Gameboy {
         let _audio_stream = match crate::sound::cpal_audio::CpalPlayer::new() {
             Some((player, stream)) => {
                 self.enable_audio(Box::new(player));
+                #[cfg(debug_assertions)]
                 eprintln!("Audio enabled successfully");
                 Some(stream)
             }
             None => {
+                #[cfg(debug_assertions)]
                 eprintln!("Failed to initialize audio");
                 None
             }

@@ -767,6 +767,7 @@ impl Sound {
         }
 
         // Debug: log sound register writes
+        #[cfg(debug_assertions)]
         if a == 0xFF26 && v & 0x80 == 0x80 {
             println!("Sound enabled");
         }
@@ -908,6 +909,7 @@ pub mod cpal_audio {
             let device = match cpal::default_host().default_output_device() {
                 Some(e) => e,
                 None => {
+                    #[cfg(debug_assertions)]
                     eprintln!("No default output device found");
                     return None;
                 }
@@ -917,6 +919,7 @@ pub mod cpal_audio {
             let supported_configs = match device.supported_output_configs() {
                 Ok(e) => e,
                 Err(err) => {
+                    #[cfg(debug_assertions)]
                     eprintln!("Failed to get supported configs: {}", err);
                     return None;
                 }
@@ -935,6 +938,7 @@ pub mod cpal_audio {
                 }
             }
             if supported_config.is_none() {
+                #[cfg(debug_assertions)]
                 eprintln!("No supported audio configuration found");
                 return None;
             }
@@ -944,8 +948,10 @@ pub mod cpal_audio {
             let channels = selected_config.channels();
             let config: cpal::StreamConfig = selected_config.into();
 
-            let err_fn =
-                |err| eprintln!("An error occurred on the output audio stream: {}", err);
+            let err_fn = |err| {
+                #[cfg(debug_assertions)]
+                eprintln!("An error occurred on the output audio stream: {}", err);
+            };
 
             let shared_buffer = Arc::new(Mutex::new(Vec::new()));
             let stream_buffer = shared_buffer.clone();
@@ -970,12 +976,14 @@ pub mod cpal_audio {
             match stream {
                 Ok(s) => {
                     if let Err(e) = s.play() {
+                        #[cfg(debug_assertions)]
                         eprintln!("Failed to play audio stream: {}", e);
                         return None;
                     }
                     Some((player, s))
                 }
                 Err(e) => {
+                    #[cfg(debug_assertions)]
                     eprintln!("Failed to build audio stream: {}", e);
                     None
                 }
