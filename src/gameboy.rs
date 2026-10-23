@@ -52,15 +52,26 @@ pub const CYCLES: u32 = 67109;
 
 impl Gameboy {
     pub fn new(data: Vec<u8>, filepath: Option<std::path::PathBuf>) -> Gameboy {
-        // let rom = load_rom();
+        Self::try_new(data, filepath).unwrap()
+    }
 
-        let gb = Gameboy {
-            cpu: Cpu::new(data, filepath),
+    /// Like `new`, but reports unsupported cartridges and unreadable saves
+    /// instead of panicking. With a `filepath`, battery-backed cartridges keep
+    /// their RAM in a `.gbsave` file next to it.
+    pub fn try_new(
+        data: Vec<u8>,
+        filepath: Option<std::path::PathBuf>,
+    ) -> Result<Gameboy, &'static str> {
+        Ok(Gameboy {
+            cpu: Cpu::try_new(data, filepath)?,
             width: 160,
             height: 144,
-        };
+        })
+    }
 
-        gb
+    /// Writes battery-backed cartridge RAM to its save file now.
+    pub fn save(&self) -> Result<(), &'static str> {
+        self.cpu.memory.mbc.save()
     }
 
     pub fn render(self, render_mode: RenderMode) {

@@ -1,6 +1,7 @@
 pub type StrResult<T> = Result<T, &'static str>;
 
-use std::path;
+use std::io::prelude::*;
+use std::{fs, path};
 
 mod mbc0;
 mod mbc1;
@@ -13,6 +14,11 @@ pub trait MemoryBankController: Send {
     fn readram(&self, a: u16) -> u8;
     fn writerom(&mut self, a: u16, v: u8);
     fn writeram(&mut self, a: u16, v: u8);
+
+    /// Writes battery-backed RAM to the save file, if the cartridge has one.
+    fn save(&self) -> StrResult<()> {
+        Ok(())
+    }
 
     fn romname(&self) -> String {
         const TITLE_START: u16 = 0x134;
@@ -40,12 +46,11 @@ pub fn get_mbc(
     data: Vec<u8>,
     filepath: Option<path::PathBuf>,
 ) -> StrResult<Box<dyn MemoryBankController + 'static>> {
-    if filepath.is_none() {
-        return mbc3::MBC3::new_without_save(data)
-            .map(|v| Box::new(v) as Box<dyn MemoryBankController>);
-    }
+    let file = filepath;
 
-    let file = filepath.unwrap();
+    if data.len() < 0x150 {
+        return Err("ROM is too small to contain a cartridge header");
+    }
 
     match data[0x147] {
         0x00 => {
@@ -61,6 +66,19 @@ pub fn get_mbc(
             .map(|v| Box::new(v) as Box<dyn MemoryBankController>),
         _ => Err("Unsupported MBC type"),
     }
+}
+
+/// Writes `chunks` to `path` through a temporary file, so a crash mid-write
+/// never leaves a truncated save behind.
+fn write_save(path: &path::Path, chunks: &[&[u8]]) -> StrResult<()> {
+    let tmp = path.with_extension("gbsave.tmp");
+    let mut file = fs::File::create(&tmp).map_err(|_| "Could not create save file")?;
+    for chunk in chunks {
+        file.write_all(chunk)
+            .map_err(|_| "Could not write save file")?;
+    }
+    file.sync_all().map_err(|_| "Could not flush save file")?;
+    fs::rename(&tmp, path).map_err(|_| "Could not replace save file")
 }
 
 fn ram_banks(v: u8) -> usize {

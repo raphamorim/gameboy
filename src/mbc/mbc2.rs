@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::{fs, io, path};
 
-use crate::mbc::{rom_banks, MemoryBankController};
+use crate::mbc::{rom_banks, write_save, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 pub struct MBC2 {
@@ -14,10 +14,10 @@ pub struct MBC2 {
 }
 
 impl MBC2 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC2> {
+    pub fn new(data: Vec<u8>, file: Option<path::PathBuf>) -> StrResult<MBC2> {
         let svpath = match data[0x147] {
             0x05 => None,
-            0x06 => Some(file.with_extension("gbsave")),
+            0x06 => file.map(|f| f.with_extension("gbsave")),
             _ => None,
         };
         let rombanks = rom_banks(data[0x148]);
@@ -54,16 +54,17 @@ impl MBC2 {
 
 impl Drop for MBC2 {
     fn drop(&mut self) {
-        match self.savepath {
-            None => {}
-            Some(ref path) => {
-                let _ = fs::File::create(path).and_then(|mut f| f.write_all(&self.ram));
-            }
-        };
+        let _ = self.save();
     }
 }
 
 impl MemoryBankController for MBC2 {
+    fn save(&self) -> StrResult<()> {
+        match self.savepath {
+            None => Ok(()),
+            Some(ref path) => write_save(path, &[&self.ram]),
+        }
+    }
     fn readrom(&self, a: u16) -> u8 {
         let bank = if a < 0x4000 { 0 } else { self.rombank };
         let idx = (bank * 0x4000) | ((a as usize) & 0x3FFF);

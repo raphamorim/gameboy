@@ -76,6 +76,151 @@ pub extern "C" fn keyup(key: KeypadKey) {
     }
 }
 
+static LAST_ERROR: Mutex<Option<std::ffi::CString>> = Mutex::new(None);
+
+fn set_last_error(message: &str) {
+    if let Ok(mut last) = LAST_ERROR.lock() {
+        *last = std::ffi::CString::new(message).ok();
+    }
+}
+
+/// The message for the most recent failed call, or null. Valid until the
+/// next failure.
+#[no_mangle]
+pub extern "C" fn last_error() -> *const std::ffi::c_char {
+    match LAST_ERROR.lock() {
+        Ok(last) => last.as_ref().map_or(std::ptr::null(), |m| m.as_ptr()),
+        Err(_) => std::ptr::null(),
+    }
+}
+
+/// Like `load`, but battery-backed cartridges keep their RAM in a `.gbsave`
+/// file next to `rom_path` (the path only names the save; the ROM is not
+/// read from it). Pass null for no saves.
+///
+/// Returns 0 on success, 1 if a game is already loaded, -1 for invalid
+/// arguments and -2 if the core rejected the cartridge (see `last_error`).
+///
+/// # Safety
+///
+/// `bytes` must point to `bytes_length` readable bytes, and `rom_path` must be
+/// null or a NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn load_with_save(
+    bytes: *const std::ffi::c_uchar,
+    bytes_length: usize,
+    rom_path: *const std::ffi::c_char,
+) -> i32 {
+    if bytes.is_null() {
+        return -1;
+    }
+    if GAMEBOY.get().is_some() {
+        return 1;
+    }
+    let data = std::slice::from_raw_parts(bytes, bytes_length).to_vec();
+    let path = if rom_path.is_null() {
+        None
+    } else {
+        match std::ffi::CStr::from_ptr(rom_path).to_str() {
+            Ok(p) => Some(std::path::PathBuf::from(p)),
+            Err(_) => return -1,
+        }
+    };
+    match crate::gameboy::Gameboy::try_new(data, path) {
+        Ok(gameboy) => match GAMEBOY.set(Some(gameboy).into()) {
+            Ok(()) => 0,
+            Err(_) => 1,
+        },
+        Err(e) => {
+            set_last_error(e);
+            -2
+        }
+    }
+}
+
+/// Writes battery-backed cartridge RAM to its save file now. Safe to call
+/// often; cartridges without a battery do nothing.
+///
+/// Returns 0 on success, -1 if no game is loaded and -2 on a write error
+/// (see `last_error`).
+#[no_mangle]
+pub extern "C" fn save() -> i32 {
+    let Some(gb) = GAMEBOY.get() else { return -1 };
+    let Ok(locked_gb) = gb.lock() else { return -1 };
+    let Some(gameboy) = locked_gb.as_ref() else {
+        return -1;
+    };
+    match gameboy.save() {
+        Ok(()) => 0,
+        Err(e) => {
+            set_last_error(e);
+            -2
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+mod ffi_audio {
+    use crate::sound::cpal_audio::FrameQueue;
+    use std::cell::RefCell;
+    use std::sync::atomic::AtomicU32;
+    use std::sync::OnceLock;
+
+    pub static QUEUE: OnceLock<FrameQueue> = OnceLock::new();
+    pub static SAMPLE_RATE: AtomicU32 = AtomicU32::new(0);
+
+    thread_local! {
+        // The output stream stops when dropped, so it lives as long as the
+        // thread that started it (the host's main thread).
+        pub static STREAM: RefCell<Option<cpal::Stream>> = const { RefCell::new(None) };
+    }
+}
+
+/// Starts sound on the default output device. Call after loading a game, from
+/// the thread that will keep running (usually the main thread).
+///
+/// Returns the output sample rate in Hz, or 0 if audio could not start.
+#[no_mangle]
+#[cfg(not(target_arch = "wasm32"))]
+pub extern "C" fn enable_audio() -> u32 {
+    use crate::sound::AudioPlayer;
+    use std::sync::atomic::Ordering;
+
+    if ffi_audio::QUEUE.get().is_some() {
+        return ffi_audio::SAMPLE_RATE.load(Ordering::Relaxed);
+    }
+    let Some(gb) = GAMEBOY.get() else { return 0 };
+    let Ok(mut locked_gb) = gb.lock() else {
+        return 0;
+    };
+    let Some(gameboy) = locked_gb.as_mut() else {
+        return 0;
+    };
+    let Some((player, stream)) = crate::sound::cpal_audio::CpalPlayer::new() else {
+        set_last_error("No usable audio output device");
+        return 0;
+    };
+
+    let rate = player.samples_rate();
+    let queue = player.queue();
+    gameboy.enable_audio(Box::new(player));
+    ffi_audio::STREAM.with(|s| *s.borrow_mut() = Some(stream));
+    ffi_audio::SAMPLE_RATE.store(rate, Ordering::Relaxed);
+    let _ = ffi_audio::QUEUE.set(queue);
+    rate
+}
+
+/// Stereo frames produced but not yet played. Divide by the sample rate for
+/// latency; hosts use it to pace `frame()` to the audio clock.
+#[no_mangle]
+#[cfg(not(target_arch = "wasm32"))]
+pub extern "C" fn audio_queued() -> u32 {
+    ffi_audio::QUEUE
+        .get()
+        .and_then(|q| q.lock().ok().map(|q| q.len() as u32))
+        .unwrap_or(0)
+}
+
 #[repr(C)]
 pub struct ImageBuffer {
     len: i32,

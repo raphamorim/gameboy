@@ -1,4 +1,4 @@
-use crate::mbc::{ram_banks, rom_banks, MemoryBankController};
+use crate::mbc::{ram_banks, rom_banks, write_save, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 use std::fs::File;
@@ -17,10 +17,10 @@ pub struct MBC5 {
 }
 
 impl MBC5 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC5> {
+    pub fn new(data: Vec<u8>, file: Option<path::PathBuf>) -> StrResult<MBC5> {
         let subtype = data[0x147];
         let svpath = match subtype {
-            0x1B | 0x1E => Some(file.with_extension("gbsave")),
+            0x1B | 0x1E => file.map(|f| f.with_extension("gbsave")),
             _ => None,
         };
         let rambanks = match subtype {
@@ -63,16 +63,17 @@ impl MBC5 {
 
 impl Drop for MBC5 {
     fn drop(&mut self) {
-        match self.savepath {
-            None => {}
-            Some(ref path) => {
-                let _ = File::create(path).and_then(|mut f| f.write_all(&self.ram));
-            }
-        };
+        let _ = self.save();
     }
 }
 
 impl MemoryBankController for MBC5 {
+    fn save(&self) -> StrResult<()> {
+        match self.savepath {
+            None => Ok(()),
+            Some(ref path) => write_save(path, &[&self.ram]),
+        }
+    }
     fn readrom(&self, a: u16) -> u8 {
         let idx = if a < 0x4000 {
             a as usize

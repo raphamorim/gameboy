@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::{fs, io, path};
 
-use crate::mbc::{ram_banks, rom_banks, MemoryBankController};
+use crate::mbc::{ram_banks, rom_banks, write_save, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 pub struct MBC1 {
@@ -17,10 +17,13 @@ pub struct MBC1 {
 }
 
 impl MBC1 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC1> {
+    pub fn new(data: Vec<u8>, file: Option<path::PathBuf>) -> StrResult<MBC1> {
         let (svpath, rambanks) = match data[0x147] {
             0x02 => (None, ram_banks(data[0x149])),
-            0x03 => (Some(file.with_extension("gbsave")), ram_banks(data[0x149])),
+            0x03 => (
+                file.map(|f| f.with_extension("gbsave")),
+                ram_banks(data[0x149]),
+            ),
             _ => (None, 0),
         };
         let rombanks = rom_banks(data[0x148]);
@@ -38,31 +41,6 @@ impl MBC1 {
             rambanks,
         };
         res.loadram().map(|_| res)
-    }
-
-    #[allow(dead_code)]
-    pub fn new_without_save(data: Vec<u8>) -> StrResult<MBC1> {
-        let (svpath, rambanks) = match data[0x147] {
-            0x02 => (None, ram_banks(data[0x149])),
-            0x03 => (None, ram_banks(data[0x149])),
-            _ => (None, 0),
-        };
-        let rombanks = rom_banks(data[0x148]);
-        let ramsize = rambanks * 0x2000;
-
-        let res = MBC1 {
-            rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
-            ram_on: false,
-            banking_mode: 0,
-            rombank: 1,
-            rambank: 0,
-            savepath: svpath,
-            rombanks,
-            rambanks,
-        };
-        // res.loadram().map(|_| res)
-        Ok(res)
     }
 
     fn loadram(&mut self) -> StrResult<()> {
@@ -86,16 +64,17 @@ impl MBC1 {
 
 impl Drop for MBC1 {
     fn drop(&mut self) {
-        match self.savepath {
-            None => {}
-            Some(ref path) => {
-                let _ = fs::File::create(path).and_then(|mut f| f.write_all(&self.ram));
-            }
-        };
+        let _ = self.save();
     }
 }
 
 impl MemoryBankController for MBC1 {
+    fn save(&self) -> StrResult<()> {
+        match self.savepath {
+            None => Ok(()),
+            Some(ref path) => write_save(path, &[&self.ram]),
+        }
+    }
     fn readrom(&self, a: u16) -> u8 {
         let bank = if a < 0x4000 {
             if self.banking_mode == 0 {

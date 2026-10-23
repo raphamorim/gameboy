@@ -907,12 +907,21 @@ pub mod cpal_audio {
     use cpal::{FromSample, Sample};
     use std::sync::{Arc, Mutex};
 
+    /// (left, right) frames waiting for the output device.
+    pub type FrameQueue = Arc<Mutex<Vec<(f32, f32)>>>;
+
     pub struct CpalPlayer {
         buffer: Arc<Mutex<Vec<(f32, f32)>>>,
         sample_rate: u32,
     }
 
     impl CpalPlayer {
+        /// The queue of (left, right) frames waiting for the output device.
+        /// Its length is how far audio is ahead of the speakers.
+        pub fn queue(&self) -> FrameQueue {
+            self.buffer.clone()
+        }
+
         pub fn new() -> Option<(CpalPlayer, cpal::Stream)> {
             let device = match cpal::default_host().default_output_device() {
                 Some(e) => e,
@@ -923,7 +932,7 @@ pub mod cpal_audio {
                 }
             };
 
-            let wanted_samplerate = cpal::SampleRate(44100);
+            let wanted_samplerate: cpal::SampleRate = 44100;
             let supported_configs = match device.supported_output_configs() {
                 Ok(e) => e,
                 Err(err) => {
@@ -966,7 +975,7 @@ pub mod cpal_audio {
 
             let player = CpalPlayer {
                 buffer: shared_buffer,
-                sample_rate: config.sample_rate.0,
+                sample_rate: config.sample_rate,
             };
 
             let stream = match sample_format {
