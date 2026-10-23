@@ -49,8 +49,12 @@ const char *last_error(void);
  * file next to `rom_path` (the path only names the save; the ROM is not
  * read from it). Pass null for no saves.
  *
- * Returns 0 on success, 1 if a game is already loaded, -1 for invalid
- * arguments and -2 if the core rejected the cartridge (see `last_error`).
+ * Calling it again switches games: the running game is dropped, which
+ * writes its save, and sound (if enabled) moves to the new game. If the new
+ * cartridge is rejected, the running game keeps going.
+ *
+ * Returns 0 on success, -1 for invalid arguments and -2 if the core rejected
+ * the cartridge (see `last_error`).
  *
  * # Safety
  *
@@ -70,7 +74,8 @@ int32_t save(void);
 
 /**
  * Starts sound on the default output device. Call after loading a game, from
- * the thread that will keep running (usually the main thread).
+ * the thread that will keep running (usually the main thread). Sound stays
+ * on across `load_with_save` game switches.
  *
  * Returns the output sample rate in Hz, or 0 if audio could not start.
  */
