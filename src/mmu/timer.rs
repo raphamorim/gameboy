@@ -88,3 +88,14 @@ impl Timer {
         }
     }
 }
+
+crate::state::impl_state!(Timer {
+    divider,
+    counter,
+    modulo,
+    enabled,
+    step,
+    internalcnt,
+    internaldiv,
+    interrupt
+});

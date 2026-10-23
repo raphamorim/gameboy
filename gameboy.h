@@ -73,6 +73,24 @@ int32_t load_with_save(const unsigned char *bytes, uintptr_t bytes_length, const
 int32_t save(void);
 
 /**
+ * Writes a save state of the running game to `path` (through a temporary
+ * file, so a crash never leaves half a state behind).
+ *
+ * Returns 0 on success, -1 for invalid arguments or no game, and -2 on a
+ * write error (see `last_error`).
+ */
+int32_t save_state(const char *path);
+
+/**
+ * Restores a save state written by `save_state`. If the file can't be read
+ * or belongs to another game, the running game continues unchanged.
+ *
+ * Returns 0 on success, -1 for invalid arguments or no game, and -2 if the
+ * state was rejected (see `last_error`).
+ */
+int32_t load_state(const char *path);
+
+/**
  * Starts sound on the default output device. Call after loading a game, from
  * the thread that will keep running (usually the main thread). Sound stays
  * on across `load_with_save` game switches.
@@ -86,6 +104,12 @@ uint32_t enable_audio(void);
  * latency; hosts use it to pace `frame()` to the audio clock.
  */
 uint32_t audio_queued(void);
+
+/**
+ * Silences sound without stopping emulation, e.g. while fast-forwarding.
+ * Muting also drops what's already queued.
+ */
+void set_audio_muted(bool muted);
 
 struct ImageBuffer image(void);
 

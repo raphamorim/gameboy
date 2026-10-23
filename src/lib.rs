@@ -15,6 +15,7 @@ mod mode;
 mod screen;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sound;
+mod state;
 
 pub use crate::input::KeypadKey;
 
@@ -169,15 +170,86 @@ pub extern "C" fn save() -> i32 {
     }
 }
 
+/// Writes a save state of the running game to `path` (through a temporary
+/// file, so a crash never leaves half a state behind).
+///
+/// Returns 0 on success, -1 for invalid arguments or no game, and -2 on a
+/// write error (see `last_error`).
+///
+/// # Safety
+///
+/// `path` must be a NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn save_state(path: *const std::ffi::c_char) -> i32 {
+    let Some(path) = path_arg(path) else {
+        return -1;
+    };
+    let Some(gb) = GAMEBOY.get() else { return -1 };
+    let Ok(locked_gb) = gb.lock() else { return -1 };
+    let Some(gameboy) = locked_gb.as_ref() else {
+        return -1;
+    };
+    match crate::mbc::write_save(&path, &[&gameboy.save_state()]) {
+        Ok(()) => 0,
+        Err(e) => {
+            set_last_error(e);
+            -2
+        }
+    }
+}
+
+/// Restores a save state written by `save_state`. If the file can't be read
+/// or belongs to another game, the running game continues unchanged.
+///
+/// Returns 0 on success, -1 for invalid arguments or no game, and -2 if the
+/// state was rejected (see `last_error`).
+///
+/// # Safety
+///
+/// `path` must be a NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn load_state(path: *const std::ffi::c_char) -> i32 {
+    let Some(path) = path_arg(path) else {
+        return -1;
+    };
+    let Ok(data) = std::fs::read(&path) else {
+        set_last_error("Couldn't read the save state.");
+        return -2;
+    };
+    let Some(gb) = GAMEBOY.get() else { return -1 };
+    let Ok(mut locked_gb) = gb.lock() else {
+        return -1;
+    };
+    let Some(gameboy) = locked_gb.as_mut() else {
+        return -1;
+    };
+    match gameboy.load_state(&data) {
+        Ok(()) => 0,
+        Err(e) => {
+            set_last_error(e);
+            -2
+        }
+    }
+}
+
+unsafe fn path_arg(path: *const std::ffi::c_char) -> Option<std::path::PathBuf> {
+    if path.is_null() {
+        return None;
+    }
+    let path = std::ffi::CStr::from_ptr(path).to_str().ok()?;
+    Some(std::path::PathBuf::from(path))
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 mod ffi_audio {
     use crate::sound::cpal_audio::{CpalPlayer, FrameQueue};
     use crate::sound::AudioPlayer;
     use std::cell::RefCell;
-    use std::sync::atomic::{AtomicU32, Ordering};
-    use std::sync::Mutex;
+    use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    use std::sync::{Arc, Mutex};
 
     static QUEUE: Mutex<Option<FrameQueue>> = Mutex::new(None);
+    static MUTED: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
     /// Output sample rate while sound is on, else 0.
     static SAMPLE_RATE: AtomicU32 = AtomicU32::new(0);
 
@@ -204,13 +276,44 @@ mod ffi_audio {
         };
         let rate = player.samples_rate();
         let queue = player.queue();
+        let muted = player.muted();
+        // A new game keeps the mute setting of the one it replaces.
+        muted.store(is_muted(), Ordering::Relaxed);
         gameboy.enable_audio(Box::new(player));
         STREAM.with(|s| *s.borrow_mut() = Some(stream));
         if let Ok(mut q) = QUEUE.lock() {
             *q = Some(queue);
         }
+        if let Ok(mut m) = MUTED.lock() {
+            *m = Some(muted);
+        }
         SAMPLE_RATE.store(rate, Ordering::Relaxed);
         rate
+    }
+
+    fn is_muted() -> bool {
+        MUTED
+            .lock()
+            .ok()
+            .and_then(|m| m.as_ref().map(|m| m.load(Ordering::Relaxed)))
+            .unwrap_or(false)
+    }
+
+    /// Drops new samples while `muted`, and what's already queued when
+    /// muting starts.
+    pub fn set_muted(muted: bool) {
+        if let Ok(m) = MUTED.lock() {
+            if let Some(flag) = m.as_ref() {
+                flag.store(muted, Ordering::Relaxed);
+            }
+        }
+        if muted {
+            if let Ok(q) = QUEUE.lock() {
+                if let Some(mut frames) = q.as_ref().and_then(|q| q.lock().ok()) {
+                    frames.clear();
+                }
+            }
+        }
     }
 
     pub fn queued() -> u32 {
@@ -244,6 +347,13 @@ pub extern "C" fn enable_audio() -> u32 {
         return 0;
     };
     ffi_audio::attach(gameboy)
+}
+
+/// Silences sound without stopping emulation, e.g. while fast-forwarding.
+#[no_mangle]
+#[cfg(not(target_arch = "wasm32"))]
+pub extern "C" fn set_audio_muted(muted: bool) {
+    ffi_audio::set_muted(muted);
 }
 
 /// Stereo frames produced but not yet played. Divide by the sample rate for

@@ -906,11 +906,112 @@ impl Sound {
     }
 }
 
+crate::state::impl_state!(VolumeEnvelope {
+    period,
+    goes_up,
+    delay,
+    initial_volume,
+    volume
+});
+crate::state::impl_state!(LengthCounter {
+    enabled,
+    value,
+    max
+});
+// The blip buffers hold samples not yet played; they are cleared on load.
+crate::state::impl_state!(SquareChannel {
+    enabled,
+    dac_enabled,
+    volume,
+    length,
+    duty,
+    phase,
+    freq,
+    period,
+    delay,
+    sweep_period,
+    sweep_shift,
+    sweep_decrease,
+    sweep_delay,
+    sweep_freq,
+    sweep_enabled,
+    last_amp,
+});
+crate::state::impl_state!(WaveChannel {
+    enabled,
+    dac_enabled,
+    length,
+    freq,
+    period,
+    delay,
+    volume_shift,
+    waveram,
+    wave_pos,
+    last_amp,
+});
+crate::state::impl_state!(NoiseChannel {
+    enabled,
+    dac_enabled,
+    volume,
+    length,
+    shift,
+    width_mode,
+    divisor,
+    lfsr,
+    period,
+    delay,
+    last_amp,
+});
+
+impl crate::state::State for Sound {
+    fn save_state(&self, w: &mut crate::state::Writer) {
+        self.on.save_state(w);
+        self.channel1.save_state(w);
+        self.channel2.save_state(w);
+        self.channel3.save_state(w);
+        self.channel4.save_state(w);
+        self.left_volume.save_state(w);
+        self.right_volume.save_state(w);
+        self.channel_to_left.save_state(w);
+        self.channel_to_right.save_state(w);
+        self.frame_seq_counter.save_state(w);
+        self.time.save_state(w);
+        self.prev_time.save_state(w);
+        self.next_time.save_state(w);
+    }
+    fn load_state(&mut self, r: &mut crate::state::Reader) -> crate::state::Result {
+        self.on.load_state(r)?;
+        self.channel1.load_state(r)?;
+        self.channel2.load_state(r)?;
+        self.channel3.load_state(r)?;
+        self.channel4.load_state(r)?;
+        self.left_volume.load_state(r)?;
+        self.right_volume.load_state(r)?;
+        self.channel_to_left.load_state(r)?;
+        self.channel_to_right.load_state(r)?;
+        self.frame_seq_counter.load_state(r)?;
+        self.time.load_state(r)?;
+        self.prev_time.load_state(r)?;
+        self.next_time.load_state(r)?;
+        self.channel1.blip.clear();
+        self.channel2.blip.clear();
+        self.channel3.blip.clear();
+        self.channel4.blip.clear();
+        // The output period follows the current device's sample rate, which
+        // may differ from the one the state was saved with.
+        let limit = self.output_period.saturating_sub(1);
+        self.time = self.time.min(limit);
+        self.prev_time = self.prev_time.min(self.time);
+        Ok(())
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cpal_audio {
     use super::AudioPlayer;
     use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
     use cpal::{FromSample, Sample};
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
 
     /// (left, right) frames waiting for the output device.
@@ -919,15 +1020,24 @@ pub mod cpal_audio {
     pub struct CpalPlayer {
         buffer: Arc<Mutex<Vec<(f32, f32)>>>,
         sample_rate: u32,
+        muted: Arc<AtomicBool>,
     }
 
     impl CpalPlayer {
+        /// While set, new samples are dropped instead of queued, e.g. while
+        /// the host runs the game faster than real time.
+        pub fn muted(&self) -> Arc<AtomicBool> {
+            self.muted.clone()
+        }
+
         /// The queue of (left, right) frames waiting for the output device.
         /// Its length is how far audio is ahead of the speakers.
         pub fn queue(&self) -> FrameQueue {
             self.buffer.clone()
         }
 
+        // The errors are only printed in debug builds.
+        #[cfg_attr(not(debug_assertions), allow(unused_variables))]
         pub fn new() -> Option<(CpalPlayer, cpal::Stream)> {
             let device = match cpal::default_host().default_output_device() {
                 Some(e) => e,
@@ -982,6 +1092,7 @@ pub mod cpal_audio {
             let player = CpalPlayer {
                 buffer: shared_buffer,
                 sample_rate: config.sample_rate,
+                muted: Arc::new(AtomicBool::new(false)),
             };
 
             let stream = match sample_format {
@@ -1045,6 +1156,9 @@ pub mod cpal_audio {
 
     impl AudioPlayer for CpalPlayer {
         fn play(&mut self, left_channel: &[f32], right_channel: &[f32]) {
+            if self.muted.load(Ordering::Relaxed) {
+                return;
+            }
             let mut buffer = match self.buffer.lock() {
                 Ok(b) => b,
                 Err(_) => return,

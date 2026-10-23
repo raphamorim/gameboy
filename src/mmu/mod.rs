@@ -16,7 +16,7 @@ pub type StrResult<T> = Result<T, &'static str>;
 const WRAM_SIZE: usize = 0x8000;
 const ZRAM_SIZE: usize = 0x7F;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 enum DMAType {
     NoDma,
     Gdma,
@@ -436,5 +436,64 @@ impl<'a> MemoryManagementUnit<'a> {
             self.sound = Some(crate::sound::Sound::new());
         }
         self.sound.as_mut().unwrap().set_player(player);
+    }
+}
+
+crate::state::enum_state!(DMAType { DMAType::NoDma, DMAType::Gdma, DMAType::Hdma });
+
+impl crate::state::State for MemoryManagementUnit<'_> {
+    fn save_state(&self, w: &mut crate::state::Writer) {
+        self.wram.save_state(w);
+        self.zram.save_state(w);
+        self.hdma.save_state(w);
+        self.inte.save_state(w);
+        self.intf.save_state(w);
+        self.serial.save_state(w);
+        self.timer.save_state(w);
+        self.keypad.save_state(w);
+        self.gpu.save_state(w);
+        self.hdma_status.save_state(w);
+        self.hdma_src.save_state(w);
+        self.hdma_dst.save_state(w);
+        self.hdma_len.save_state(w);
+        self.wrambank.save_state(w);
+        self.mbc.save_state(w);
+        self.gbmode.save_state(w);
+        self.gbspeed.save_state(w);
+        self.speed_switch_req.save_state(w);
+        self.undocumented_cgb_regs.save_state(w);
+        // Last, so a state saved without sound support still loads up to here.
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(sound) = &self.sound {
+            sound.save_state(w);
+        }
+    }
+    fn load_state(&mut self, r: &mut crate::state::Reader) -> crate::state::Result {
+        self.wram.load_state(r)?;
+        self.zram.load_state(r)?;
+        self.hdma.load_state(r)?;
+        self.inte.load_state(r)?;
+        self.intf.load_state(r)?;
+        self.serial.load_state(r)?;
+        self.timer.load_state(r)?;
+        self.keypad.load_state(r)?;
+        self.gpu.load_state(r)?;
+        self.hdma_status.load_state(r)?;
+        self.hdma_src.load_state(r)?;
+        self.hdma_dst.load_state(r)?;
+        self.hdma_len.load_state(r)?;
+        self.wrambank.load_state(r)?;
+        self.mbc.load_state(r)?;
+        self.gbmode.load_state(r)?;
+        self.gbspeed.load_state(r)?;
+        self.speed_switch_req.load_state(r)?;
+        self.undocumented_cgb_regs.load_state(r)?;
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(sound) = &mut self.sound {
+            if !r.is_empty() {
+                sound.load_state(r)?;
+            }
+        }
+        Ok(())
     }
 }
