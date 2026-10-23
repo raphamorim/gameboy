@@ -93,8 +93,6 @@ impl Gameboy {
 
     #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
     pub fn render_desktop(mut self) {
-        use crate::screen::desktop::*;
-
         // Initialize audio
         #[cfg(not(target_arch = "wasm32"))]
         let _audio_stream = match crate::sound::cpal_audio::CpalPlayer::new() {
@@ -113,63 +111,9 @@ impl Gameboy {
         #[cfg(target_arch = "wasm32")]
         let _audio_stream = None;
 
-        let event_loop: glutin::event_loop::EventLoop<()> =
-            glutin::event_loop::EventLoop::with_user_event();
-        let inner_size = glutin::dpi::LogicalSize {
-            width: self.width,
-            height: self.height,
-        };
-        let window_builder = glutin::window::WindowBuilder::new()
-            .with_title("Gameboy")
-            .with_inner_size(inner_size)
-            .with_resizable(true);
-        let gl_window = glutin::ContextBuilder::new()
-            .build_windowed(window_builder, &event_loop)
-            .unwrap();
-        let gl_window = unsafe { gl_window.make_current().unwrap() };
-
-        gl::load_with(|s| gl_window.get_proc_address(s) as *const _);
-
-        let cx = Glcx::new();
-        let mut focused = true;
-        let mut last_frame_time = std::time::Instant::now();
-        let frame_duration = std::time::Duration::from_millis(16); // ~60 FPS
-
-        event_loop.run(move |event, _, control_flow| {
-            let window = gl_window.window();
-            match event {
-                glutin::event::Event::WindowEvent {
-                    window_id: _,
-                    event: wevent,
-                } => {
-                    *control_flow =
-                        process_window(window, &wevent, &mut self, &mut focused)
-                }
-                glutin::event::Event::MainEventsCleared => {
-                    // Only request redraw if enough time has passed
-                    let now = std::time::Instant::now();
-                    if now.duration_since(last_frame_time) >= frame_duration {
-                        window.request_redraw();
-                    }
-                }
-                glutin::event::Event::RedrawRequested(_) => {
-                    if focused {
-                        self.frame();
-                        cx.draw(self.width, self.height, self.image());
-                        gl_window.swap_buffers().unwrap();
-                        last_frame_time = std::time::Instant::now();
-                    }
-
-                    // Schedule next frame
-                    let next_frame_time = last_frame_time + frame_duration;
-                    *control_flow =
-                        glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-                }
-                _ => {
-                    // Keep the current control flow
-                }
-            }
-        });
+        if let Err(e) = crate::screen::desktop::run(self) {
+            eprintln!("{e}");
+        }
     }
 
     #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]

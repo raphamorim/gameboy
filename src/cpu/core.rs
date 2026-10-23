@@ -1123,7 +1123,7 @@ impl Cpu<'_> {
             }
             _ => {
                 println!(
-                    "Instruction at {:#01x} | {:#06x} | {} not implemented, stopping.",
+                    "Instruction at {:#x} | {:#06x} | {} not implemented, stopping.",
                     op, op, op
                 );
                 self.stop = 1;

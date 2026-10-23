@@ -32,7 +32,7 @@ impl MBC5 {
 
         let mut res = MBC5 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: vec![0u8; ramsize],
             rombank: 1,
             rambank: 0,
             ram_on: false,

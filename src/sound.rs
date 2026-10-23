@@ -183,7 +183,7 @@ impl SquareChannel {
     fn run(&mut self, start_time: u32, end_time: u32) {
         if !self.enabled || !self.length.is_active() || self.period == 0 {
             if self.last_amp != 0 {
-                self.blip.add_delta(start_time, -self.last_amp);
+                let _ = self.blip.add_delta(start_time, -self.last_amp);
                 self.last_amp = 0;
                 self.delay = 0;
             }
@@ -195,7 +195,7 @@ impl SquareChannel {
             while time < end_time {
                 let amp = vol * pattern[self.phase as usize];
                 if amp != self.last_amp {
-                    self.blip.add_delta(time, amp - self.last_amp);
+                    let _ = self.blip.add_delta(time, amp - self.last_amp);
                     self.last_amp = amp;
                 }
 
@@ -312,7 +312,7 @@ impl WaveChannel {
             || self.period == 0
         {
             if self.last_amp != 0 {
-                self.blip.add_delta(start_time, -self.last_amp);
+                let _ = self.blip.add_delta(start_time, -self.last_amp);
                 self.last_amp = 0;
                 self.delay = 0;
             }
@@ -340,7 +340,7 @@ impl WaveChannel {
                 let amp = ((sample << 2) >> volshift) as i32;
 
                 if amp != self.last_amp {
-                    self.blip.add_delta(time, amp - self.last_amp);
+                    let _ = self.blip.add_delta(time, amp - self.last_amp);
                     self.last_amp = amp;
                 }
 
@@ -405,7 +405,7 @@ impl NoiseChannel {
     fn run(&mut self, start_time: u32, end_time: u32) {
         if !self.enabled || !self.length.is_active() {
             if self.last_amp != 0 {
-                self.blip.add_delta(start_time, -self.last_amp);
+                let _ = self.blip.add_delta(start_time, -self.last_amp);
                 self.last_amp = 0;
                 self.delay = 0;
             }
@@ -428,7 +428,7 @@ impl NoiseChannel {
                 };
 
                 if amp != self.last_amp {
-                    self.blip.add_delta(time, amp - self.last_amp);
+                    let _ = self.blip.add_delta(time, amp - self.last_amp);
                     self.last_amp = amp;
                 }
 
@@ -447,6 +447,8 @@ impl NoiseChannel {
     }
 }
 
+// blip_buf 0.2 reports out-of-range deltas and overflow as `Err` (0.1
+// asserted). Those calls drop the sample rather than abort, hence `let _`.
 pub struct Sound {
     on: bool,
     channel1: SquareChannel,
@@ -477,10 +479,10 @@ impl Sound {
         let mut ch2_blip = BlipBuf::new(OUTPUT_SAMPLE_COUNT_U32 * 2);
         let mut ch3_blip = BlipBuf::new(OUTPUT_SAMPLE_COUNT_U32 * 2);
         let mut ch4_blip = BlipBuf::new(OUTPUT_SAMPLE_COUNT_U32 * 2);
-        ch1_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
-        ch2_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
-        ch3_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
-        ch4_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
+        let _ = ch1_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
+        let _ = ch2_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
+        let _ = ch3_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
+        let _ = ch4_blip.set_rates(CLOCKS_PER_SECOND as f64, SAMPLE_RATE as f64);
 
         let output_period = ((OUTPUT_SAMPLE_COUNT_U32 as u64 * CLOCKS_PER_SECOND as u64)
             / SAMPLE_RATE as u64) as u32;
@@ -507,16 +509,20 @@ impl Sound {
     pub fn set_player(&mut self, player: Box<dyn AudioPlayer>) {
         self.player = Some(player);
         let sample_rate = self.player.as_ref().unwrap().samples_rate();
-        self.channel1
+        let _ = self
+            .channel1
             .blip
             .set_rates(CLOCKS_PER_SECOND as f64, sample_rate as f64);
-        self.channel2
+        let _ = self
+            .channel2
             .blip
             .set_rates(CLOCKS_PER_SECOND as f64, sample_rate as f64);
-        self.channel3
+        let _ = self
+            .channel3
             .blip
             .set_rates(CLOCKS_PER_SECOND as f64, sample_rate as f64);
-        self.channel4
+        let _ = self
+            .channel4
             .blip
             .set_rates(CLOCKS_PER_SECOND as f64, sample_rate as f64);
 
@@ -545,10 +551,10 @@ impl Sound {
         self.run();
 
         // End frame for all channels
-        self.channel1.blip.end_frame(self.output_period);
-        self.channel2.blip.end_frame(self.output_period);
-        self.channel3.blip.end_frame(self.output_period);
-        self.channel4.blip.end_frame(self.output_period);
+        let _ = self.channel1.blip.end_frame(self.output_period);
+        let _ = self.channel2.blip.end_frame(self.output_period);
+        let _ = self.channel3.blip.end_frame(self.output_period);
+        let _ = self.channel4.blip.end_frame(self.output_period);
 
         // Adjust timing
         self.time -= self.output_period;
@@ -567,7 +573,7 @@ impl Sound {
             self.channel3.run(self.prev_time, self.next_time);
             self.channel4.run(self.prev_time, self.next_time);
 
-            if self.frame_seq_counter % 2 == 0 {
+            if self.frame_seq_counter.is_multiple_of(2) {
                 self.channel1.length.step();
                 self.channel2.length.step();
                 self.channel3.length.step();
@@ -980,7 +986,7 @@ pub mod cpal_audio {
 
             let stream = match sample_format {
                 cpal::SampleFormat::F32 => device.build_output_stream(
-                    &config,
+                    config,
                     move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                         cpal_thread(data, &stream_buffer, channels as usize)
                     },

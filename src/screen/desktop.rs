@@ -5,14 +5,30 @@ extern crate libc;
 use crate::gameboy::Gameboy;
 use crate::input::KeypadKey;
 
+use std::error::Error;
 use std::ffi::CString;
-use std::iter::repeat;
 use std::mem;
+use std::num::NonZeroU32;
 use std::ptr;
 use std::str;
+use std::time::{Duration, Instant};
 
 use gl::types::*;
-use glutin::event::{ElementState, VirtualKeyCode};
+use glutin::config::ConfigTemplateBuilder;
+use glutin::context::{
+    ContextApi, ContextAttributesBuilder, NotCurrentGlContext, PossiblyCurrentContext,
+    Version,
+};
+use glutin::display::{GetGlDisplay, GlDisplay};
+use glutin::surface::{GlSurface, Surface, SwapInterval, WindowSurface};
+use glutin_winit::{DisplayBuilder, GlWindow};
+use raw_window_handle::HasWindowHandle;
+use winit::application::ApplicationHandler;
+use winit::dpi::LogicalSize;
+use winit::event::{ElementState, KeyEvent, WindowEvent};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::window::{Window, WindowId};
 
 pub struct Glcx {
     #[allow(unused)]
@@ -31,95 +47,160 @@ pub struct Glcx {
     vao: GLuint,
 }
 
-// pub fn render(gameboy: &mut Gameboy) {
-//     let mut ratio = 1 + (gameboy.height / 10);
-//     let event_loop: glutin::event_loop::EventLoop<()> =
-//         glutin::event_loop::EventLoop::with_user_event();
-//     let inner_size = glutin::dpi::LogicalSize {
-//         width: gameboy.width,
-//         height: gameboy.height,
-//     };
-//     let window_builder = glutin::window::WindowBuilder::new()
-//         .with_title("LR35902")
-//         .with_inner_size(inner_size)
-//         .with_resizable(false);
-//     let gl_window = glutin::ContextBuilder::new()
-//         .build_windowed(window_builder, &event_loop)
-//         .unwrap();
-//     let gl_window = unsafe { gl_window.make_current().unwrap() };
+const FRAME_DURATION: Duration = Duration::from_millis(16); // ~60 FPS
 
-//     gl::load_with(|s| gl_window.get_proc_address(s) as *const _);
+/// Opens a window and runs `gameboy` in it until the window is closed.
+pub fn run(gameboy: Gameboy) -> Result<(), Box<dyn Error>> {
+    let event_loop = EventLoop::new()?;
+    let mut app = DesktopApp {
+        gameboy,
+        gl: None,
+        focused: true,
+        next_frame: Instant::now(),
+    };
+    event_loop.run_app(&mut app)?;
+    Ok(())
+}
 
-//     let cx = Glcx::new();
-//     let mut focused = true;
-//     event_loop.run(move |event, _, control_flow| {
-//         let window = gl_window.window();
-//         match event {
-//             glutin::event::Event::WindowEvent {
-//                 window_id: _,
-//                 event: wevent,
-//             } => *control_flow = process_window(window, &wevent, &mut gameboy, &mut focused),
-//             glutin::event::Event::MainEventsCleared => window.request_redraw(),
-//             glutin::event::Event::RedrawRequested(_) => {
-//                 if focused == true {
-//                     gameboy.frame();
-//                     cx.draw(gameboy.width, gameboy.height, gameboy.image());
-//                     gl_window.swap_buffers().unwrap();
-//                 }
+struct GlState {
+    window: Window,
+    surface: Surface<WindowSurface>,
+    context: PossiblyCurrentContext,
+    cx: Glcx,
+}
 
-//                 thread::sleep(Duration::from_millis(10));
-//             }
-//             _ => {
-//                 let next_frame_time =
-//                     std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
-//                 *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-//             }
-//         }
-//     })
-// }
+struct DesktopApp {
+    gameboy: Gameboy,
+    gl: Option<GlState>,
+    focused: bool,
+    next_frame: Instant,
+}
 
-pub fn process_window(
-    _window: &glutin::window::Window,
-    wevent: &glutin::event::WindowEvent,
-    gameboy: &mut Gameboy,
-    focused: &mut bool,
-) -> glutin::event_loop::ControlFlow {
-    match wevent {
-        glutin::event::WindowEvent::Focused(f) => {
-            *focused = *f;
-            glutin::event_loop::ControlFlow::Poll
+impl DesktopApp {
+    fn create_gl(&self, event_loop: &ActiveEventLoop) -> Result<GlState, Box<dyn Error>> {
+        let attributes = Window::default_attributes()
+            .with_title("Gameboy")
+            .with_inner_size(LogicalSize::new(self.gameboy.width, self.gameboy.height))
+            .with_resizable(true);
+        let (window, config) = DisplayBuilder::new()
+            .with_window_attributes(Some(attributes))
+            .build(event_loop, ConfigTemplateBuilder::new(), |mut configs| {
+                configs.next().expect("no OpenGL config available")
+            })?;
+        let window = window.ok_or("could not create a window")?;
+        let display = config.display();
+
+        // The shaders are GLSL 150, which needs a 3.2 core context.
+        let raw_handle = window.window_handle().ok().map(|h| h.as_raw());
+        let context_attributes = ContextAttributesBuilder::new()
+            .with_context_api(ContextApi::OpenGl(Some(Version::new(3, 2))))
+            .build(raw_handle);
+        let context = unsafe { display.create_context(&config, &context_attributes)? };
+        let surface_attributes = window.build_surface_attributes(Default::default())?;
+        let surface =
+            unsafe { display.create_window_surface(&config, &surface_attributes)? };
+        let context = context.make_current(&surface)?;
+
+        gl::load_with(|symbol| {
+            let symbol = CString::new(symbol).unwrap();
+            display.get_proc_address(&symbol) as *const _
+        });
+        let _ = surface
+            .set_swap_interval(&context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()));
+
+        Ok(GlState {
+            window,
+            surface,
+            context,
+            cx: Glcx::new(),
+        })
+    }
+}
+
+impl ApplicationHandler for DesktopApp {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        if self.gl.is_some() {
+            return;
         }
-        glutin::event::WindowEvent::KeyboardInput { input, .. } => {
-            if let Some(virt_keycode) = input.virtual_keycode {
-                let button = match virt_keycode {
-                    VirtualKeyCode::A => KeypadKey::A,
-                    VirtualKeyCode::B => KeypadKey::B,
-                    VirtualKeyCode::Z => KeypadKey::Select,
-                    VirtualKeyCode::X => KeypadKey::Start,
+        match self.create_gl(event_loop) {
+            Ok(gl) => self.gl = Some(gl),
+            Err(e) => {
+                eprintln!("Failed to create the OpenGL window: {e}");
+                event_loop.exit();
+            }
+        }
+    }
 
-                    VirtualKeyCode::Left => KeypadKey::Left,
-                    VirtualKeyCode::Right => KeypadKey::Right,
-                    VirtualKeyCode::Down => KeypadKey::Down,
-                    VirtualKeyCode::Up => KeypadKey::Up,
-
-                    _ => return glutin::event_loop::ControlFlow::Poll,
-                };
-                match input.state {
-                    ElementState::Pressed => gameboy.keydown(button),
-                    ElementState::Released => gameboy.keyup(button),
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _window_id: WindowId,
+        event: WindowEvent,
+    ) {
+        match event {
+            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::Focused(focused) => self.focused = focused,
+            WindowEvent::Resized(size) => {
+                if let (Some(gl), Some(width), Some(height)) = (
+                    self.gl.as_ref(),
+                    NonZeroU32::new(size.width),
+                    NonZeroU32::new(size.height),
+                ) {
+                    gl.surface.resize(&gl.context, width, height);
+                    unsafe { gl::Viewport(0, 0, size.width as i32, size.height as i32) };
                 }
             }
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(code),
+                        state,
+                        ..
+                    },
+                ..
+            } => {
+                let button = match code {
+                    KeyCode::KeyA => KeypadKey::A,
+                    KeyCode::KeyB => KeypadKey::B,
+                    KeyCode::KeyZ => KeypadKey::Select,
+                    KeyCode::KeyX => KeypadKey::Start,
 
-            glutin::event_loop::ControlFlow::Poll
+                    KeyCode::ArrowLeft => KeypadKey::Left,
+                    KeyCode::ArrowRight => KeypadKey::Right,
+                    KeyCode::ArrowDown => KeypadKey::Down,
+                    KeyCode::ArrowUp => KeypadKey::Up,
+
+                    _ => return,
+                };
+                match state {
+                    ElementState::Pressed => self.gameboy.keydown(button),
+                    ElementState::Released => self.gameboy.keyup(button),
+                }
+            }
+            WindowEvent::RedrawRequested => {
+                if let (true, Some(gl)) = (self.focused, self.gl.as_ref()) {
+                    self.gameboy.frame();
+                    gl.cx.draw(
+                        self.gameboy.width,
+                        self.gameboy.height,
+                        self.gameboy.image(),
+                    );
+                    let _ = gl.surface.swap_buffers(&gl.context);
+                }
+            }
+            _ => {}
         }
-        glutin::event::WindowEvent::Resized(glutin::dpi::PhysicalSize {
-            width: _,
-            height: _,
-        }) => glutin::event_loop::ControlFlow::Poll,
-        glutin::event::WindowEvent::CloseRequested => {
-            glutin::event_loop::ControlFlow::Exit
+    }
+
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        let now = Instant::now();
+        if now >= self.next_frame {
+            if let Some(gl) = self.gl.as_ref() {
+                gl.window.request_redraw();
+            }
+            self.next_frame = now + FRAME_DURATION;
         }
-        _ => glutin::event_loop::ControlFlow::Poll,
+        event_loop.set_control_flow(ControlFlow::WaitUntil(self.next_frame));
     }
 }
 
@@ -288,7 +369,7 @@ impl Glcx {
 
         let mut len: GLint = 0;
         gl::GetProgramiv(program, gl::INFO_LOG_LENGTH, &mut len);
-        let mut buf = repeat(0u8).take(len as usize).collect::<Vec<_>>();
+        let mut buf = vec![0u8; len as usize];
         gl::GetProgramInfoLog(
             program,
             len,

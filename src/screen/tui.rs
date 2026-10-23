@@ -88,7 +88,7 @@ pub fn run(gameboy: Gameboy) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn run_app<B: Backend>(
+fn run_app<B: Backend<Error = io::Error>>(
     terminal: &mut Terminal<B>,
     mut app: App,
     gameboy: Arc<Mutex<Gameboy>>,
@@ -270,10 +270,10 @@ impl App {
         let image_source = get_image(gameboy, 1);
 
         let mut picker = Picker::from_query_stdio().unwrap();
-        picker.set_background_color([0, 0, 0, 0]);
+        picker.set_background_color(Some(image::Rgba([0, 0, 0, 0])));
 
         let image_static = picker
-            .new_protocol(image_source.clone(), size(), Resize::Fit(None))
+            .new_protocol(image_source.clone(), size().into(), Resize::Fit(None))
             .unwrap();
         let image_fit_state = picker.new_resize_protocol(image_source.clone());
 
@@ -292,7 +292,7 @@ impl App {
     fn reset_images(&mut self) {
         self.image_static = self
             .picker
-            .new_protocol(self.image_source.clone(), size(), Resize::Fit(None))
+            .new_protocol(self.image_source.clone(), size().into(), Resize::Fit(None))
             .unwrap();
         self.image_fit_state = self.picker.new_resize_protocol(self.image_source.clone());
     }
@@ -309,7 +309,7 @@ impl App {
         self.image_source = get_image(gameboy, scale);
         self.image_static = self
             .picker
-            .new_protocol(self.image_source.clone(), size(), Resize::Fit(None))
+            .new_protocol(self.image_source.clone(), size().into(), Resize::Fit(None))
             .unwrap();
         self.image_fit_state = self.picker.new_resize_protocol(self.image_source.clone());
     }
@@ -335,14 +335,11 @@ fn ui(f: &mut Frame<'_>, app: &mut App) {
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(
-            [
-                // Constraint::Percentage(app.split_percent),
-                Constraint::Percentage(40),
-                Constraint::Percentage(60),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            // Constraint::Percentage(app.split_percent),
+            Constraint::Percentage(40),
+            Constraint::Percentage(60),
+        ])
         .split(outer_block.inner(f.area()));
     f.render_widget(outer_block, f.area());
 

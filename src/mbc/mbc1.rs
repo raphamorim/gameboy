@@ -31,7 +31,7 @@ impl MBC1 {
 
         let mut res = MBC1 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: vec![0u8; ramsize],
             ram_on: false,
             banking_mode: 0,
             rombank: 1,
