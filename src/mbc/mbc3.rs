@@ -1,4 +1,4 @@
-use crate::mbc::{ram_banks, MemoryBankController};
+use crate::mbc::{ram_banks, write_save, MemoryBankController};
 pub type StrResult<T> = Result<T, &'static str>;
 
 use std::io::prelude::*;
@@ -20,10 +20,10 @@ pub struct MBC3 {
 }
 
 impl MBC3 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC3> {
+    pub fn new(data: Vec<u8>, file: Option<path::PathBuf>) -> StrResult<MBC3> {
         let subtype = data[0x147];
         let svpath = match subtype {
-            0x0F | 0x10 | 0x13 => Some(file.with_extension("gbsave")),
+            0x0F | 0x10 | 0x13 => file.map(|f| f.with_extension("gbsave")),
             _ => None,
         };
         let rambanks = match subtype {
@@ -38,37 +38,7 @@ impl MBC3 {
 
         let mut res = MBC3 {
             rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
-            rombank: 1,
-            rambank: 0,
-            rambanks,
-            selectrtc: false,
-            ram_on: false,
-            savepath: svpath,
-            rtc_ram: [0u8; 5],
-            rtc_ram_latch: [0u8; 5],
-            rtc_zero: rtc,
-        };
-        res.loadram().map(|_| res)
-    }
-
-    pub fn new_without_save(data: Vec<u8>) -> StrResult<MBC3> {
-        let subtype = data[0x147];
-        let svpath = None;
-
-        let rambanks = match subtype {
-            0x10 | 0x12 | 0x13 => ram_banks(data[0x149]),
-            _ => 0,
-        };
-        let ramsize = rambanks * 0x2000;
-        let rtc = match subtype {
-            0x0F | 0x10 => Some(0),
-            _ => None,
-        };
-
-        let mut res = MBC3 {
-            rom: data,
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+            ram: vec![0u8; ramsize],
             rombank: 1,
             rambank: 0,
             rambanks,
@@ -171,28 +141,20 @@ impl MBC3 {
 
 impl Drop for MBC3 {
     fn drop(&mut self) {
-        match self.savepath {
-            None => {}
-            Some(ref path) => {
-                let mut file = match fs::File::create(path) {
-                    Ok(f) => f,
-                    Err(..) => return,
-                };
-                let rtc = self.rtc_zero.unwrap_or(0);
-                let mut ok = true;
-                if ok {
-                    let rtc_bytes = rtc.to_be_bytes();
-                    ok = file.write_all(&rtc_bytes).is_ok();
-                };
-                if ok {
-                    let _ = file.write_all(&self.ram);
-                };
-            }
-        };
+        let _ = self.save();
     }
 }
 
 impl MemoryBankController for MBC3 {
+    fn save(&self) -> StrResult<()> {
+        match self.savepath {
+            None => Ok(()),
+            Some(ref path) => {
+                let rtc = self.rtc_zero.unwrap_or(0).to_be_bytes();
+                write_save(path, &[&rtc, &self.ram])
+            }
+        }
+    }
     fn readrom(&self, a: u16) -> u8 {
         let idx = if a < 0x4000 {
             a as usize

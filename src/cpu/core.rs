@@ -26,10 +26,17 @@ pub struct Cpu<'a> {
 
 impl Cpu<'_> {
     pub fn new(data: Vec<u8>, file: Option<std::path::PathBuf>) -> Self {
-        let memory = MemoryManagementUnit::new_cgb(data, file).unwrap();
+        Self::try_new(data, file).unwrap()
+    }
+
+    pub fn try_new(
+        data: Vec<u8>,
+        file: Option<std::path::PathBuf>,
+    ) -> Result<Self, &'static str> {
+        let memory = MemoryManagementUnit::new_cgb(data, file)?;
         let registers = Registers::new(memory.gbmode);
 
-        Cpu {
+        Ok(Cpu {
             registers,
             memory,
             ime: false,
@@ -38,7 +45,7 @@ impl Cpu<'_> {
             halt: 0,
             stop: 0,
             _executed_operations: Vec::new(),
-        }
+        })
     }
     fn mut_find_or_insert<T: PartialEq>(vec: &mut Vec<T>, val: T) -> &mut T {
         if let Some(i) = vec.iter().position(|each| *each == val) {
@@ -1116,7 +1123,7 @@ impl Cpu<'_> {
             }
             _ => {
                 println!(
-                    "Instruction at {:#01x} | {:#06x} | {} not implemented, stopping.",
+                    "Instruction at {:#x} | {:#06x} | {} not implemented, stopping.",
                     op, op, op
                 );
                 self.stop = 1;
