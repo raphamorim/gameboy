@@ -69,6 +69,25 @@ impl Drop for MBC1 {
 }
 
 impl MemoryBankController for MBC1 {
+    fn save_state(&self, w: &mut crate::state::Writer) {
+        use crate::state::State;
+        self.ram.save_state(w);
+        self.ram_on.save_state(w);
+        self.banking_mode.save_state(w);
+        self.rombank.save_state(w);
+        self.rambank.save_state(w);
+    }
+
+    fn load_state(&mut self, r: &mut crate::state::Reader) -> crate::state::Result {
+        use crate::state::State;
+        self.ram.load_state(r)?;
+        self.ram_on.load_state(r)?;
+        self.banking_mode.load_state(r)?;
+        self.rombank.load_state(r)?;
+        self.rambank.load_state(r)?;
+        Ok(())
+    }
+
     fn save(&self) -> StrResult<()> {
         match self.savepath {
             None => Ok(()),

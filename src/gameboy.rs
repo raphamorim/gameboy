@@ -74,6 +74,49 @@ impl Gameboy {
         self.cpu.memory.mbc.save()
     }
 
+    /// Identifies the cartridge: the header and global checksums.
+    fn cartridge_id(&self) -> [u8; 3] {
+        let mbc = &self.cpu.memory.mbc;
+        [mbc.readrom(0x14D), mbc.readrom(0x14E), mbc.readrom(0x14F)]
+    }
+
+    /// A snapshot of the whole machine, which `load_state` can restore.
+    pub fn save_state(&self) -> Vec<u8> {
+        use crate::state::{State, Writer, MAGIC, VERSION};
+        let mut w = Writer::default();
+        w.bytes(MAGIC);
+        VERSION.save_state(&mut w);
+        w.bytes(&self.cartridge_id());
+        self.cpu.save_state(&mut w);
+        w.0
+    }
+
+    /// Restores a snapshot from `save_state`. On failure the machine is left
+    /// as it was.
+    pub fn load_state(&mut self, data: &[u8]) -> Result<(), &'static str> {
+        use crate::state::{Reader, State, MAGIC, VERSION, WRONG_GAME};
+        let mut r = Reader::new(data);
+        if r.bytes(MAGIC.len()).ok() != Some(MAGIC.as_slice()) {
+            return Err("This file isn't a save state.");
+        }
+        let mut version = 0u16;
+        version.load_state(&mut r)?;
+        if version != VERSION {
+            return Err("The save state is from an unsupported version.");
+        }
+        if r.bytes(3)? != self.cartridge_id() {
+            return Err(WRONG_GAME);
+        }
+        // A failure can stop partway through, so keep a copy to roll back to.
+        let backup = self.save_state();
+        let result = self.cpu.load_state(&mut r);
+        if result.is_err() {
+            let mut r = Reader::new(&backup[MAGIC.len() + 2 + 3..]);
+            let _ = self.cpu.load_state(&mut r);
+        }
+        result
+    }
+
     pub fn render(self, render_mode: RenderMode) {
         match render_mode {
             #[cfg(not(any(target_arch = "wasm32", feature = "ffi")))]
@@ -165,5 +208,49 @@ impl Gameboy {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn enable_audio(&mut self, player: Box<dyn crate::sound::AudioPlayer>) {
         self.cpu.memory.enable_audio(player);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Gameboy;
+
+    /// A 32 KiB ROM-only cartridge that counts in A and stores it to WRAM
+    /// forever, so the machine state changes every frame.
+    fn rom(checksum: u8) -> Vec<u8> {
+        let mut rom = vec![0u8; 0x8000];
+        // 0x100: INC A; LD (0xC000), A; JR back to 0x100
+        rom[0x100..0x106].copy_from_slice(&[0x3C, 0xEA, 0x00, 0xC0, 0x18, 0xFA]);
+        rom[0x14E] = checksum;
+        rom
+    }
+
+    #[test]
+    fn restored_state_replays_identically() {
+        let mut gb = Gameboy::new(rom(1), None);
+        (0..10).for_each(|_| gb.frame());
+        let state = gb.save_state();
+
+        (0..30).for_each(|_| gb.frame());
+        let expected = (gb.image().to_vec(), gb.save_state());
+
+        gb.load_state(&state).unwrap();
+        assert_eq!(gb.save_state(), state);
+        (0..30).for_each(|_| gb.frame());
+        assert_eq!((gb.image().to_vec(), gb.save_state()), expected);
+    }
+
+    #[test]
+    fn rejects_other_games_and_damaged_states() {
+        let mut gb = Gameboy::new(rom(1), None);
+        (0..5).for_each(|_| gb.frame());
+        let before = gb.save_state();
+
+        let other = Gameboy::new(rom(2), None).save_state();
+        assert!(gb.load_state(&other).is_err());
+        assert!(gb.load_state(&before[..before.len() / 2]).is_err());
+        assert!(gb.load_state(b"not a state").is_err());
+        // Every rejected load left the running game untouched.
+        assert_eq!(gb.save_state(), before);
     }
 }

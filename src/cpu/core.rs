@@ -1132,3 +1132,24 @@ impl Cpu<'_> {
         }
     }
 }
+
+impl crate::state::State for Cpu<'_> {
+    fn save_state(&self, w: &mut crate::state::Writer) {
+        self.registers.save_state(w);
+        self.ime.save_state(w);
+        self.setdi.save_state(w);
+        self.setei.save_state(w);
+        self.halt.save_state(w);
+        self.stop.save_state(w);
+        self.memory.save_state(w);
+    }
+    fn load_state(&mut self, r: &mut crate::state::Reader) -> crate::state::Result {
+        self.registers.load_state(r)?;
+        self.ime.load_state(r)?;
+        self.setdi.load_state(r)?;
+        self.setei.load_state(r)?;
+        self.halt.load_state(r)?;
+        self.stop.load_state(r)?;
+        self.memory.load_state(r)
+    }
+}

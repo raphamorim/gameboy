@@ -148,3 +148,10 @@ mod test {
         }
     }
 }
+
+crate::state::impl_state!(Keypad {
+    row0,
+    row1,
+    data,
+    interrupt
+});

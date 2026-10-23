@@ -106,3 +106,16 @@ impl Registers {
         self.f & mask > 0
     }
 }
+
+crate::state::impl_state!(Registers {
+    a,
+    b,
+    c,
+    d,
+    e,
+    h,
+    l,
+    f,
+    pc,
+    sp
+});

@@ -64,3 +64,16 @@ impl Default for Serial<'static> {
         }
     }
 }
+
+impl crate::state::State for Serial<'_> {
+    fn save_state(&self, w: &mut crate::state::Writer) {
+        self.data.save_state(w);
+        self.control.save_state(w);
+        self.interrupt.save_state(w);
+    }
+    fn load_state(&mut self, r: &mut crate::state::Reader) -> crate::state::Result {
+        self.data.load_state(r)?;
+        self.control.load_state(r)?;
+        self.interrupt.load_state(r)
+    }
+}

@@ -20,6 +20,12 @@ pub trait MemoryBankController: Send {
         Ok(())
     }
 
+    /// Banking registers and cartridge RAM, for save states.
+    fn save_state(&self, _w: &mut crate::state::Writer) {}
+    fn load_state(&mut self, _r: &mut crate::state::Reader) -> crate::state::Result {
+        Ok(())
+    }
+
     fn romname(&self) -> String {
         const TITLE_START: u16 = 0x134;
         const CGB_FLAG: u16 = 0x143;
@@ -70,8 +76,10 @@ pub fn get_mbc(
 
 /// Writes `chunks` to `path` through a temporary file, so a crash mid-write
 /// never leaves a truncated save behind.
-fn write_save(path: &path::Path, chunks: &[&[u8]]) -> StrResult<()> {
-    let tmp = path.with_extension("gbsave.tmp");
+pub(crate) fn write_save(path: &path::Path, chunks: &[&[u8]]) -> StrResult<()> {
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = path::PathBuf::from(tmp);
     let mut file = fs::File::create(&tmp).map_err(|_| "Could not create save file")?;
     for chunk in chunks {
         file.write_all(chunk)
