@@ -146,6 +146,10 @@ impl Drop for MBC3 {
 }
 
 impl MemoryBankController for MBC3 {
+    fn rom_bank(&self) -> usize {
+        self.rombank
+    }
+
     fn save_state(&self, w: &mut crate::state::Writer) {
         use crate::state::State;
         self.ram.save_state(w);

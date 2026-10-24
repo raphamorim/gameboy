@@ -111,6 +111,62 @@ uint32_t audio_queued(void);
  */
 void set_audio_muted(bool muted);
 
+/**
+ * CPU state for debuggers.
+ */
+typedef struct DebugRegisters {
+  uint8_t a;
+  uint8_t f;
+  uint8_t b;
+  uint8_t c;
+  uint8_t d;
+  uint8_t e;
+  uint8_t h;
+  uint8_t l;
+  uint16_t sp;
+  uint16_t pc;
+  bool ime;
+  bool halted;
+  /**
+   * The ROM bank mapped at 0x4000-0x7FFF.
+   */
+  uint16_t rom_bank;
+} DebugRegisters;
+
+/**
+ * Like `frame`, but stops early when the CPU reaches one of `breakpoints`.
+ * Returns true if it stopped at a breakpoint; calling again continues.
+ */
+bool debug_frame(const uint16_t *breakpoints, uintptr_t count);
+
+/**
+ * Executes a single instruction. Returns the clock cycles it took, or 0
+ * if no game is loaded.
+ */
+uint32_t debug_step(void);
+
+struct DebugRegisters debug_registers(void);
+
+/**
+ * Reads a byte as the CPU sees it, without side effects.
+ */
+uint8_t debug_peek(uint16_t address);
+
+/**
+ * Writes a byte as the CPU would.
+ */
+void debug_poke(uint16_t address, uint8_t value);
+
+/**
+ * Both VRAM banks, 0x4000 bytes, owned by the core.
+ */
+struct ImageBuffer debug_vram(void);
+
+/**
+ * Sprite attribute memory, 0xA0 bytes, owned by the core.
+ */
+struct ImageBuffer debug_oam(void);
+
 struct ImageBuffer image(void);
 
 const char *image_base64(void);

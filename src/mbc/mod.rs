@@ -20,6 +20,11 @@ pub trait MemoryBankController: Send {
         Ok(())
     }
 
+    /// The ROM bank mapped at 0x4000-0x7FFF, for debuggers.
+    fn rom_bank(&self) -> usize {
+        1
+    }
+
     /// Banking registers and cartridge RAM, for save states.
     fn save_state(&self, _w: &mut crate::state::Writer) {}
     fn load_state(&mut self, _r: &mut crate::state::Reader) -> crate::state::Result {

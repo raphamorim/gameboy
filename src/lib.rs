@@ -364,10 +364,115 @@ pub extern "C" fn audio_queued() -> u32 {
     ffi_audio::queued()
 }
 
+/// CPU state for debuggers.
+#[repr(C)]
+#[derive(Default)]
+pub struct DebugRegisters {
+    pub a: u8,
+    pub f: u8,
+    pub b: u8,
+    pub c: u8,
+    pub d: u8,
+    pub e: u8,
+    pub h: u8,
+    pub l: u8,
+    pub sp: u16,
+    pub pc: u16,
+    pub ime: bool,
+    pub halted: bool,
+    /// The ROM bank mapped at 0x4000-0x7FFF.
+    pub rom_bank: u16,
+}
+
+/// Runs `body` on the loaded game, or returns `fallback` if there is none.
+fn with_gameboy<T>(
+    fallback: T,
+    body: impl FnOnce(&mut crate::gameboy::Gameboy) -> T,
+) -> T {
+    let Some(gb) = GAMEBOY.get() else {
+        return fallback;
+    };
+    let Ok(mut locked_gb) = gb.lock() else {
+        return fallback;
+    };
+    match locked_gb.as_mut() {
+        Some(gameboy) => body(gameboy),
+        None => fallback,
+    }
+}
+
+/// Like `frame`, but stops early when the CPU reaches one of `breakpoints`.
+/// Returns true if it stopped at a breakpoint; calling again continues.
+///
+/// # Safety
+///
+/// `breakpoints` must point to `count` addresses, or be null with `count` 0.
+#[no_mangle]
+pub unsafe extern "C" fn debug_frame(breakpoints: *const u16, count: usize) -> bool {
+    let breakpoints = if breakpoints.is_null() || count == 0 {
+        &[]
+    } else {
+        std::slice::from_raw_parts(breakpoints, count)
+    };
+    with_gameboy(false, |gb| gb.frame_until(breakpoints))
+}
+
+/// Executes a single instruction. Returns the clock cycles it took, or 0
+/// if no game is loaded.
+#[no_mangle]
+pub extern "C" fn debug_step() -> u32 {
+    with_gameboy(0, |gb| gb.step())
+}
+
+#[no_mangle]
+pub extern "C" fn debug_registers() -> DebugRegisters {
+    with_gameboy(DebugRegisters::default(), |gb| gb.debug_registers())
+}
+
+/// Reads a byte as the CPU sees it, without side effects.
+#[no_mangle]
+pub extern "C" fn debug_peek(address: u16) -> u8 {
+    with_gameboy(0xFF, |gb| gb.peek(address))
+}
+
+/// Writes a byte as the CPU would.
+#[no_mangle]
+pub extern "C" fn debug_poke(address: u16, value: u8) {
+    with_gameboy((), |gb| gb.poke(address, value))
+}
+
+/// Both VRAM banks, 0x4000 bytes, owned by the core.
+#[no_mangle]
+pub extern "C" fn debug_vram() -> ImageBuffer {
+    with_gameboy(ImageBuffer::empty(), |gb| ImageBuffer::of(gb.vram()))
+}
+
+/// Sprite attribute memory, 0xA0 bytes, owned by the core.
+#[no_mangle]
+pub extern "C" fn debug_oam() -> ImageBuffer {
+    with_gameboy(ImageBuffer::empty(), |gb| ImageBuffer::of(gb.oam()))
+}
+
 #[repr(C)]
 pub struct ImageBuffer {
     len: i32,
     data: *const u8,
+}
+
+impl ImageBuffer {
+    fn empty() -> Self {
+        ImageBuffer {
+            len: 0,
+            data: std::ptr::null(),
+        }
+    }
+
+    fn of(bytes: &[u8]) -> Self {
+        ImageBuffer {
+            len: bytes.len() as i32,
+            data: bytes.as_ptr(),
+        }
+    }
 }
 
 #[no_mangle]

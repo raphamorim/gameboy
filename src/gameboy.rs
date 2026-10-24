@@ -174,19 +174,79 @@ impl Gameboy {
     }
 
     pub fn frame(&mut self) {
+        self.frame_until(&[]);
+    }
+
+    /// Runs until the next frame is drawn, or until the CPU reaches one of
+    /// `breakpoints` (addresses in the CPU's memory map). The instruction
+    /// it's stopped on doesn't count, so calling again continues. Returns
+    /// whether it stopped at a breakpoint.
+    pub fn frame_until(&mut self, breakpoints: &[u16]) -> bool {
         let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
         let mut ticks = 0;
+        // Halted, the PC doesn't move; only break once it has.
+        let start = self.cpu.registers.pc;
+        let mut moved = false;
 
-        'outer: loop {
+        loop {
             while ticks < waitticks {
+                let pc = self.cpu.registers.pc;
+                moved |= pc != start;
+                if moved && breakpoints.contains(&pc) {
+                    return true;
+                }
                 ticks += self.cpu.do_cycle();
                 if self.check_and_reset_gpu_updated() {
-                    break 'outer;
+                    return false;
                 }
             }
 
             ticks -= waitticks;
         }
+    }
+
+    /// Executes one instruction (or one interrupt dispatch, or one halted
+    /// cycle) and returns the clock cycles it took.
+    pub fn step(&mut self) -> u32 {
+        self.cpu.do_cycle()
+    }
+
+    pub fn debug_registers(&self) -> crate::DebugRegisters {
+        let r = &self.cpu.registers;
+        crate::DebugRegisters {
+            a: r.a,
+            f: r.f,
+            b: r.b,
+            c: r.c,
+            d: r.d,
+            e: r.e,
+            h: r.h,
+            l: r.l,
+            sp: r.sp,
+            pc: r.pc,
+            ime: self.cpu.ime,
+            halted: self.cpu.halt != 0,
+            rom_bank: self.cpu.memory.mbc.rom_bank() as u16,
+        }
+    }
+
+    /// Reads memory as the CPU sees it. Reads have no side effects here.
+    pub fn peek(&mut self, address: u16) -> u8 {
+        self.cpu.memory.rb(address)
+    }
+
+    pub fn poke(&mut self, address: u16, value: u8) {
+        self.cpu.memory.wb(address, value)
+    }
+
+    /// Both VRAM banks (0x2000 bytes each; the second is Color only).
+    pub fn vram(&self) -> &[u8] {
+        &self.cpu.memory.gpu.vram
+    }
+
+    /// Sprite attributes: 40 entries of 4 bytes.
+    pub fn oam(&self) -> &[u8] {
+        &self.cpu.memory.gpu.voam
     }
 
     pub fn image(&self) -> &[u8] {
@@ -238,6 +298,39 @@ mod tests {
         assert_eq!(gb.save_state(), state);
         (0..30).for_each(|_| gb.frame());
         assert_eq!((gb.image().to_vec(), gb.save_state()), expected);
+    }
+
+    #[test]
+    fn stops_at_breakpoints_and_continues() {
+        let mut gb = Gameboy::new(rom(1), None);
+        // Run until the loop is reached, then break on its JR.
+        while gb.debug_registers().pc != 0x100 {
+            gb.step();
+        }
+        assert!(gb.frame_until(&[0x104]));
+        assert_eq!(gb.debug_registers().pc, 0x104);
+        let a = gb.debug_registers().a;
+        // Continuing goes round the loop once and stops there again.
+        assert!(gb.frame_until(&[0x104]));
+        assert_eq!(gb.debug_registers().pc, 0x104);
+        assert_eq!(gb.debug_registers().a, a.wrapping_add(1));
+        assert_eq!(gb.peek(0xC000), a.wrapping_add(1));
+        // Without breakpoints a frame runs to completion.
+        assert!(!gb.frame_until(&[]));
+    }
+
+    #[test]
+    fn steps_one_instruction() {
+        let mut gb = Gameboy::new(rom(1), None);
+        while gb.debug_registers().pc != 0x100 {
+            gb.step();
+        }
+        gb.step(); // INC A
+        assert_eq!(gb.debug_registers().pc, 0x101);
+        gb.step(); // LD (0xC000), A
+        assert_eq!(gb.debug_registers().pc, 0x104);
+        gb.step(); // JR back
+        assert_eq!(gb.debug_registers().pc, 0x100);
     }
 
     #[test]
